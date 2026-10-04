@@ -1,0 +1,476 @@
+--- PAGE 1 ---
+          SignalX | BuildXMVPPlan | 1
+SignalX
+Find the signal. Skip the noise.
+معماری نهایی و برنامه اجرایی۵نفره  روزه تیم سه
+ی  شده برای مسابقه ی اصلاح نسخه - BuildX MVP آنلاین با قلبAgentic
+هدف نهایی
+تا پایان روز پنجم، SignalXها نام  ورود  تعریف محصول  ورود پیام  صورت آنلاین و قابل داوری کار کند: ثبت  باید به→→→ 
+ اجرای →Agent  کشف →Lead  نمایش →Context ،Score ،Cost و SuggestedResponse.
+تقسیم نقش نهایی
+فاطیمارهامستایش
+    Frontend/UI/UX
+تمام رابط کاربری و تجربه کاربر
+Dashboard، صفحات،Integration ،
+ DemoUI
+  Backend/Platform
+API ،DB ،Auth ،Worker ،
+Deployment ،Integration
+  AI/Agent
+Screening ،Context ،Qualification ،
+Scoring ،Cost ،Evaluation
+برنامه برای۵ی قابل تحویل آماده باشد.  روز کاری فشرده - روز پنجم باید نسخه
+--- PAGE 2 ---
+          SignalX | BuildXMVPPlan | 2
+۱. تصمیم نهایی و اصول اجرای پروژه
+SignalXکند، های یک جامعه آنلاین را در ارتباط با یک محصول بررسی می  پیامContextخواند، نیاز و قصد خرید  گفتگو را می 
+دهد،  را تشخیص می ProductFitگیرد کدام پیام باید سنجد و تصمیم می  را میIgnore ،Review یاRespond شود
+گیری و قابل استفاده برای تیم فروش باشد. خروجی باید قابل توضیح، قابل اندازه
+نفره است و هر نفر یک مالکیت واضح دارد؛ هیچ بخش   تیم سه•UIشود  بین افراد تقسیم نمی
+ •Authentication جزء0Pنام، ورود، خروج و محافظت از مسیرهای اصلی باید در نسخه آنلاین کار کند  است: ثبت
+ •Deployشود؛ نسخه آنلاین نباید به روز آخر موکول شود  از روز دوم وارد جریان توسعه می
+ یک • VerticalSliceشود؛ دو روز معماری صرف روی کاغذ ممنوع  واقعی از روز اول ساخته می
+ تا پایان روز سوم •Agent واقعی باید حداقل یک مسیر-- End to End را باProvider واقعی اجرا کند
+ روز چهارم • FeatureFreeze نرم و پایان روز چهارم FeatureFreeze کامل است؛ روز پنجم فقطRelease ،Test و 
+Delivery.
+شود؛  هیچ پیام خودکاری به کاربران جامعه ارسال نمی• SuggestedReply فقط تولید، ویرایش، تأییدرد و /Copyشود  می
+ها با جهت خودکار باید درست باشد.  نسخه اول انگلیسی است، اما نمایش متن فارسیانگلیسی در پیام •/ 
+سه اصلاح کلیدی نسبت به نسخه قبلی
+۱ )Auth از0P منتقل شد۲ )Deploy به پایان روز دوم جلو آمد۳ بار )Backend از طریق قراردادهای
+شده و جداسازی مالکیت  فریزUI/Agentشود  کنترل می
+۲ی ثابت  . محدودهMVP
+ضروری برای تحویلی این  خارج از محدوده۵ روز
+     Signup/Login/Logout و RouteProtection ForgotPassword ،  GoogleLogin ،2FA ،  PhoneVerification
+ساخت ProductProfile و ImportCSVاتصال-Real time بهTelegram/Discord/Reddit
+Screening آگاه ازContextارسال خودکار پیام یاOutreach بدون تأیید انسان
+--- PAGE 3 ---
+          SignalX | BuildXMVPPlan | 3
+ضروری برای تحویلی این  خارج از محدوده۵ روز
+       ContextRetrieval+Qualification+Score+ReasonCRM ،Billing، چندWorkspace وRBAC پیچیده
+ LeadList و LeadDetail-Multi agent پیچیده وorchestration نمایشی
+        CostperMessage/CostperLead/Usage VectorDB مستقل،Microservices ،Kubernetes
+ SuggestedReply باGenerate/Edit/Approve/Reject/Copy-Fine tuning یا اجرای LocalLLM
+Feedback وEvaluation پایهUI انیمیشنی سنگین یا MarketingSite جدا
+نسخه آنلاین  +      README+Docs+Video+ZIPدامنه اختصاصی
+اگر زمان کم شد، ترتیب حذف Scope این است: نمودارهای تزئینی→   JSON ImportE mbedding  صفحات →
+غیرضروری. مسیر اصلی، Auth ،Agent واقعی،Cost/Qualityشوند  و نسخه آنلاین حذف نمی
+۳. معماری پیشنهادی SignalX
+معماری پیشنهادی یکMonorepo با ModularMonolith استBackend یک کدبیس دارد وAPI وWorker از همان
+شوند. برای  پروژه اجرا میMVPروزه یک  پنجWorker کافی است و صف با جدولanalysis_runs درPostgreSQL 
+شود؛ مدیریت میRedis/Celeryشود  فقط در صورت نیاز واقعی اضافه می
+جزءانتخابمالکدلیل
+Web
+.     Nextjs+TypeScript+
+ TailwindCSS
+فاطیما
+ها،  فرمDashboard ،  Lead
+Detail و تجربه کاربر
+API    Python+FastAPI+Pydanticرهام
+Validation ،OpenAPI و
+قرارداد typed
+Auth
+  Email/Password+
+Session/JWT امن
+رهام  +UI توسط فاطیماالزام مسابقه و مسیر داوری
+Persistence
+    PostgreSQL+SQLAlchemy+
+Alembic
+رهامUser ،Product ،Message ،
+--- PAGE 4 ---
+          SignalX | BuildXMVPPlan | 4
+جزءانتخابمالکدلیل
+Run ،Lead ،Usage و 
+Feedback
+Worker
+ Pythonprocess از همان 
+Backend
+رهام+Pipeline ستایش
+ Batchprocessing بدون
+داشتن  نگه HTTPrequest
+AI
+یکProvider واقعی+ Mock
+Adapter
+ستایش
+توسعه مستقل، تست و 
+گیری هزینه اندازه
+ QueueMVPanalysis_runs درPostgreSQLرهام
+سادگی و پایداری برای ۰۰۵ 
+پیام
+ProgressPolling هر حدود۲ ثانیهفاطیما
+تر از  سادهWebSocket برای 
+MVP
+Deploy
+Docker/Container روی
+سرویس آنلاین
+رهام؛ تست هر سه نفرنسخه آنلاین از روز دوم
+USER
+↓
+Next.js UI
+↓
+FastAPI / Auth
+↓
+PostgreSQL + analysis_runs
+↓
+Worker
+↓
+Screen → Context → Qualify → Score
+↓
+LLM Provider
+↓
+Lead + Evidence + Cost + Suggested Reply
+ •Frontend فقطAPIزند؛  را صدا میDB و ProviderKey درFrontendگیرند  قرار نمی
+ منطق •Scoring داخلRouteشود؛ تابع  نوشته نمیDeterministic مستقل وVersioned است
+ •Agent ورودی و خروجیTyped درoا دارد و مستقیمDBنویسد  نمی
+--- PAGE 5 ---
+          SignalX | BuildXMVPPlan | 5
+ • Communitycontentی نامطمئن است، نه دستور  داده PromptInjection داخل پیام نباید سیستم را کنترل کند
+ برای حداکثر •۰۰۵ پیام، Embeddingشدن  اجباری نیست؛ در صورت اضافهCache شود و VectorDB مستقل لازم نیست
+۴. مسیر اصلی محصول و داوری
+Sign Up
+↓
+Login
+↓
+Create Product
+↓
+Upload CSV
+↓
+Run SignalX
+↓
+Agent Processing
+↓
+Lead Dashboard
+↓
+Open Lead
+↓
+Context + Evidence + Score + Cost
+↓
+Generate Suggested Reply
+ی آنلاین بدون دخالت تیم سازنده کار کند. هر ویژگی که به این جریان کمک نکند، در اولویت دوم این مسیر باید روی نسخه
+است.
+۵. Pipeline هوش مصنوعی و قلبAgentic
+مرحلهوظیفهخروجیمالک
+Normalize
+سازی سبک متن با حفظ پاک 
+متن اصلی
+normalized_textستایش
+Screening
+تشخیص اولیه  حفظ +
+های وابسته به  پیامContext
+    candidate/ignore+reasonستایش
+ ContextSelection
+Parentهای همان ، پیام 
+Conversationهای  و همسایه
+محدود
+context_message_idsستایش؛Query با رهام
+--- PAGE 6 ---
+          SignalX | BuildXMVPPlan | 6
+مرحلهوظیفهخروجیمالک
+Qualification
+Intent ،Need ،  ProductFit ،
+Evidence ،Limitations
+ structuredsignalsستایش
+Scoring
+محاسبهdeterministic و 
+versioned
+0..100  +decisionستایش
+Persist
+ها، ذخیره نتیجه، نسخهusage 
+وstatus
+-  audit readyrecordرهام
+  ReplyonDemand
+تولید پاسخgrounded فقط با 
+کلیک کاربر
+ draftresponseستایش؛UI فاطیما
+اصل مهم Screening
+پیامی مثلContextمعنی باشد، اما اگر در پاسخ به معرفی دوره آمده باشد  شاید بیLead مهمی
+است. Screening بایدRecall را حفظ کند؛ کاهش هزینه نباید باعث حذفLead واقعی شود
+ی امتیازدهی: فرمول اولیه
+raw_score = 30×purchase_intent + 30×product_fit + 15×need_strength
++ 10×urgency + 10×confidence + 5×response_opportunity
+lead_score = round(raw_score)  →  clamp(0..100)
+ •۰ تا۹۳:   Ignore| ۴۰ تا۹۶:   Review| ۷۰ تا۰۰۱: Respond
+ اگر•0.60Confidence< باشد، حتیScore بالا بهReviewکند  تنزل می
+ اگر •0.50ProductFit< یاEvidence نامعتبر باشد، تصمیمReview است
+ •Budget نامعلوم=unknown؛Agent نباید بودجه یا فوریت را اختراع کند
+ •Confidence مدل درصدAccuracy واقعی نیست؛Evaluation مستقل باید گزارش شود
+--- PAGE 7 ---
+          SignalX | BuildXMVPPlan | 7
+۶. قرارداد داده،API و امنیت پایه
+ورودی CSV
+فیلدهای اجباری , , , , external_id conversation_id author content timestamp. فیلد اختیاری 
+ .reply_to_external_id community_name وproduct_idشوند  در فرم وارد می
+ •8  -8 UTF /UTF BOM؛timestamp دارایtimezone؛ سقف پیشنهادی۵ MB و۰۰۵ ردیف.
+ هر ردیف نامعتبر  کل •→ Import رد شود و شماره ردیففیلد اعلام شود؛ /Import نصفه ممنوع
+ •external_id در هرbatch یکتا وImport تکراری باchecksum کنترل شود
+Endpointهای0P
+  Method/Pathهدفمالک UI
+ POST/auth/registerساخت کاربرفاطیما
+ POST/auth/loginورودفاطیما
+ POST/auth/logoutخروجفاطیما
+ GET/meکاربر جاری/guardفاطیما
+ POST/productsساخت محصولفاطیما
+ POST/importsآپلودCSVفاطیما
+ POST/analysis/runsشروع تحلیلفاطیما
+ GET/analysis/runs/{id}Polling وضعیتفاطیما
+ GET/leads?run_id...=فهرستLeadفاطیما
+ GET/leads/{id}جزئیات+  Context+Evidenceفاطیما
+ POST/leads/{id}/responseتولیدDraftفاطیما
+ PATCH/leads/{id}/responseEdit/Approve/Rejectفاطیما
+--- PAGE 8 ---
+          SignalX | BuildXMVPPlan | 8
+  Method/Pathهدفمالک UI
+ PUT/leads/{id}/feedback Relevant/NotRelevantفاطیما
+ GET/analytics/overview   Cost+Qualitymetricsفاطیما
+ •Passwordها فقطHash شده ذخیره شوند؛Session/Cookie یاToken با تنظیمات امن
+های   تمام داده•Product/Run/Lead باید بهuser_id مربوط باشند؛ کاربر نباید دادهUser دیگر را ببیند
+ •Secretها فقط درEnvironment؛ هیچ APIKey درRepo ،Frontend ،Screenshot یاVideo قرار نگیرد
+۷. Cost ،Quality و صداقتDemo
+Cost
+ •usageهای پولی شامل  تمام تماسretry ،repair ،reply وembedding احتمالی ثبت شود
+ •        cost=input_tokens×input_rate+output_tokens×output_rate بر اساس نرخ versionedProvider.
+ •Usage یاRate نامعلوم→  cost=null وcost_status=unknown؛ هرگز صفر فرض نشود
+ •Mock بایدBadge واضح داشته باشد و آمارش با اجرای واقعی مخلوط نشود
+ نمایش پیشنهادی: • TotalCost ،Cost/Message ،  Cost/QualifiedLead ،   UnknownUsageCount.
+Quality
+معیارتعریف
+ QualifiedLeads  decision=respond؛review جداگانه
+ FeedbackAcceptance    Relevantvotes÷receivedvotes؛ باCoverage
+ OfflinePrecision    TP/(TP+FP) روی TestSet مستقل
+ OfflineRecall    TP/(TP+FN) روی همه TestMessages
+ ScreeningRecall
+Leadهای واقعی عبورکرده ازScreening  کل ÷Leadهای
+واقعی
+--- PAGE 9 ---
+          SignalX | BuildXMVPPlan | 9
+معیارتعریف
+LatencyMedian و95p برایCandidate وBatch
+Dataset پیشنهادیFixture کوچک روز اول، DevelopmentSet حدود۰۵ تا ۰۶ پیام،  TestSet مستقل حداقل۰۰۱ پیام 
+تا روز چهارم. Conversationهای یکسان بینDev/Test پخش نشوند TestSet برای تنظیمThreshold مصرف نشود
+۸. تقسیم مسئولیت نهایی تیم
+عضومالکیت اصلیهای دقیق مسئولیت
+فاطیما    Frontend/UI/UX
+تمامUI بدون تقسیم DesignSystem ،
+ AuthUI ،  ProductForm ،Import ،
+Progress ،Dashboard ،  LeadList ،  Lead
+Detail ،Error/Empty/Loading ،
+Responsive ،  APIintegration ،  Demo
+flow ،Screenshots و طراحیPitch.
+رهام  Backend/Platform
+FastAPI ،PostgreSQL ،User/Auth ،
+Models/Schemas ،Migrations ،  CSV
+Import ،Run/Worker ،Persistence ،
+Usage ،API ،Docker ،CI سبک، 
+Deployment وRelease.
+ستایش  AI/Agent
+ Agentcontracts ،  Mock/RealProvider ،
+Screening ،  Contextselection ،
+Qualification ،  PromptGuard ،
+ DeterministicScoring ،  SuggestedReply، 
+ Costlogic ،Evaluation ،  Datasetlabels و 
+ AIdocs.
+--- PAGE 10 ---
+          SignalX | BuildXMVPPlan | 10
+قانون مالکیت
+ی بصری و  فاطیما مالک تمام تجربهFrontend است؛ رهامUIسازد و ستایش هم  نمیUIسازد. در مقابل فاطیما  نمی
+منطق AI یاPersistence را واردFrontendکند. مرزها واضح،  نمیIntegration روزانه
+۹. ساختار پیشنهادی Repository
+signalx/
+├── README.md
+├── .env.example
+├── compose.yaml
+├── docs/
+│   ├── architecture.md
+│   ├── api-contract.md
+│   ├── evaluation.md
+│   └── demo-script.md
+├── backend/
+│   ├── app/api/
+│   ├── app/auth/
+│   ├── app/db/
+│   ├── app/services/
+│   ├── app/agents/
+│   └── tests/
+├── frontend/
+│   ├── app/
+│   ├── components/
+│   └── lib/api.ts
+└── data/
+    ├── demo_messages.csv
+    └── evaluation/
+۱۰. برنامه اجرایی فشرده۵ روزه
+قاعده برنامه
+ تمام شدoاهایی مثل پایان هر روز باید
+معیار پایان تسک نیست.
+--- PAGE 11 ---
+          SignalX | BuildXMVPPlan | 11
+روز۱ - قرارداد  +   Skeleton+VerticalSlice
+فاطیمارهامستایش
+ •     . Nextjs+Layout+DesignSystem
+ صفحات•Register/Login
+ • ProductForm
+ • Dashboardshell
+ • APIclient باxture
+ •    Monorepo+env+Compose
+ •  PostgreSQL+Migration
+ • 0User/AuthP
+ • ProductAPI
+ • Pydantic/OpenAPIcontract
+ • Agentcontracts
+ •MockProvider
+ •1score_v  تست مرزها +
+ •۰۲ پیام xture
+ •-  strong/noise/context dependent
+samples
+شرط پایان روز۱نام  ورود  ساخت محصول  اجرای تحلیل  : ثبت→→→ Mock  مشاهده نتیجه. هر سه نفر باید پروژه را از →
+یک checkout تمیز اجرا کنند
+روز ۲ -   CSV+Run/Worker  اولین نسخه آنلاین +
+فاطیمارهامستایش
+ • UploadCSV  خطای ردیفی +
+ • ProgressPolling
+ • LeadList
+ •Loading/Error/Empty اولیه
+ تست نسخه •Online
+ •Import اتمیک+Dedup
+ •  analysis_runs+Worker
+ • StatusAPI
+ • ContextQuery
+ •Deploy اولیه و پایدار
+ •- Screeningcontext aware
+ • ContextSelection
+ •  RealProviderAdapter
+ •Validation خروجی
+ •۳ سناریوی پایه Pipeline
+شرط پایان روز۲نام، ورود، محصول،  : نسخه آنلاین با ثبتCSV، تحلیل و فهرستLead در حالتMock کار کندoلا کام 
+Deploy دیگر کار روز آخر نیست
+روز ۳ - Agent واقعی-- EndtoEnd
+فاطیمارهامستایش
+ • LeadDetail ذخیره خروجی واقعی•+ Usage •Prompt واقعی+Guards
+--- PAGE 12 ---
+          SignalX | BuildXMVPPlan | 12
+فاطیمارهامستایش
+ نمایش •Context وEvidence
+ • Mock/Realbadge
+ • Partial/Errorstate
+ مرور•UX مسیر اصلی
+ • Timeout/Retry/PartialFailure
+ •Idempotency
+ •  LeadDetailAPI
+ حفاظت• userownership
+ • Qualificationstructured
+ • Evidencevalidation
+ • Budget/Usageattempts
+ اجرای•۰۲-۰۳ پیام با Provider واقعی
+Gate اصلی          UploadAnalyze withRealProviderOpen LeadC ontext/Evidence/Score. اگر
+این مسیر شکست خورد، هیچ Feature جانبی در روز۴شود.  شروع نمی
+روز ۴ -        Cost+Reply+Evaluation+FeatureFreeze
+فاطیمارهامستایش
+ • Generate/Edit/Copy/Approve/RejectUI
+ • Cost/Qualitycards
+ • FeedbackUI
+ • Responsivepolish
+ •  DraftDemoflow و Pitchvisual
+ • Response/Feedbackendpoints
+ • AnalyticsAPI
+ • Costpersistence
+ • Restart/Interruptedhandling
+ •  Deployreleasecandidate
+ • GroundedReply
+ •  Costcalculationversioned
+ • Evalscript
+ • Devtuning
+ • TestSet اجرا+ ConfusionMatrix
+پایان روز۴:  FeatureFreeze کامل. از این لحظهArchitecture/API/Schema جدید ممنوع؛ فقطBugfix ،Polish و 
+Delivery.
+روز۵ - Release ،Test ،Docs و تحویل
+فاطیمارهامستایش
+ • FunctionalQA کامل در مرورگر
+ • UIpolish نهایی
+ •Screenshot
+ •  PitchDeckvisual
+ • Blockerfixes
+ •  Cleancheckouttest
+ • Productionconfig
+ • Releasetag/ZIP
+ •  AIclaimsreview
+ •   Precision/Recall+Costreport
+ •۳ مثالExplainable
+ •Limitations
+--- PAGE 13 ---
+          SignalX | BuildXMVPPlan | 13
+فاطیمارهامستایش
+ ضبط •3-5Videoای  دقیقه پایداری •URL برای داوری •  TechnicalAIdocs
+شرط پایان روز۵: هر سه نفر مستقل با مرورگر تازه مسیر داوری را اجرا کنند. اگر یکی نتوانست بدون کمک بقیه نتیجه بگیرد، 
+Release هنوز آماده نیست
+۱۱. مسیر بحرانی و قواعد همکاری
+مسیر بحرانی پروژه:  →                 ContractA uth P roduct Import R un/Worker R eal AgentP ersist L ead Detail
+      Cost/ReplyD eploy E valuation D elivery.
+ •mainشده؛  محافظتBranch کوتاه مثلfeat/auth یا-feat/lead detail؛PRروزه  کوچک و حداکثر یک
+ صبح •۰۱ دقیقه -Stand up: کار امروز،dependency ،blocker. شب۰۱ تا ۵۱ دقیقه Demo واقعی از خروجی همان روز
+ •Blocker بیشتر از۰۳ها رعایت شود.  دقیقه همان روز اعلام شود؛ مالکیت فایل
+ •Schema/API تا میانه روز اولFreeze اولیه شود؛ هر تغییر بعدی     OpenAPI+TypeScripttypes+fixtures را با هم
+روزرسانی کند. به
+ فاطیما برای منتظرنماندن از •xture وMockکند؛  استفاده میxture oا باید دقیقSchema واقعی را داشته باشد
+ رهام • Deployowner است، اما فاطیما و ستایش هر روز نسخه آنلاین را SmokeTestکنند  می
+کس روز پنجم   هیچ•Featureکند  جدید اضافه نمی
+۲۱شود؟ . اگر عقب افتادیم چه چیزی حذف می
+زمان تشخیصاقدام فوری
+روز ۲ - Embedding آماده نیست
+حذف Embedding؛   - Screeningcontext aware+LLM
+qualification کافی است
+روز ۲ - Deploy مشکل دارد
+رهام اولویت کامل روی URL آنلاین؛ بقیه باMock ادامه
+دهند. می
+روز ۳ - Provider واقعی وصل نیسترهام  ستایش تمام تمرکز روی اتصال؛ +Feature جدید
+--- PAGE 14 ---
+          SignalX | BuildXMVPPlan | 14
+زمان تشخیصاقدام فوری
+متوقف.
+روز ۳ - UI عقب است
+فاطیما نمودارها و صفحات فرعی را حذف کند؛ مسیر اصلی 
+و  LeadDetail حفظ شود
+روز ۴ - Evaluationبر است  زمان
+حداقل  TestSet مستقل+Precision/Recallهای   نمونه +
+خطا؛ ادعای جعلی ممنوع.
+روز ۴ - زمان خیلی کم است
+ JSONImport، نمودارهای تزئینی،Animation و تنظیمات
+فرعی حذف شوند.
+روز ۵ -  BugblockerفقطBugfix؛ هیچRefactor بزرگ یا Schemachange.
+۱۳ .  DefinitionofDone نهایی
+  کاربر جدید روی ☐URLشود و کند، وارد می نام می  عمومی ثبتLogoutکند  می
+  داده هر ☐User ازUser دیگر جداست و مسیرهای اصلی بدونAuth قابل دسترسی نیستند
+  ☐Productشود و  ساخته میCSVشود؛  سالم وارد میCSV خراب خطای قابل فهم دارد
+  ☐-Double click تحلیل دوRunکند و  ناخواسته ایجاد نمیFailure یک پیام کلBatchخواباند  را نمی
+  حداقل یک ☐Run واقعی باProvider واقعی،Usage واقعی وCost قابل گزارش وجود دارد
+  ☐Context ازConversationکند و  دیگر نشت نمیEvidenceکند  به متن واقعی اشاره می
+  ☐Score وDecision در کدdeterministicشوند؛  تعیین میLLMکند تنهایی عدد نهایی را تعیین نمی  به
+  ☐ PromptInjection داخلMessageشود  باعث اجرای دستور مهاجم نمی
+  ☐ SuggestedReply بر اساس  Product+Context است و ارسال خودکار ندارد
+  ☐ Costunknown ازzero جداست؛Mock ازReal جداست؛Cost/Message وCost/Lead تعریف درست دارند
+  ☐Precision/Recall روی TestSet مستقل از FeedbackAcceptanceشود  گزارش می
+  ☐Loading ،Empty ،Error و PartialState درUI وجود دارد وMobile/Responsive قابل استفاده است
+--- PAGE 15 ---
+          SignalX | BuildXMVPPlan | 15
+  نسخه آنلاین حداقل تا☐۱۰شود  روز بعد از پایان مسابقه در دسترس نگه داشته می
+  ☐README ،  TechnicalDocs ،  BusinessPlan ،Pitch ،  Videolink ،  Productlink و SourceCode درZIP نهایی هستند
+  هیچ ☐Secret درRepo ،Screenshot ،Video یا فایل تحویل وجود ندارد
+۴۱. سناریوی Demo نهایی برای داور
+1. Create Account
+2. Login
+3. Define a Product
+4. Upload Community CSV
+5. Run SignalX
+6. Watch Agent Progress
+7. Open a Qualified Lead
+8. Inspect Context + Evidence
+9. See Score + Decision + Cost
+10. Generate Suggested Reply
+در ویدیوی۵ای همین مسیر واقعی روی نسخه آنلاین نمایش داده شود. توضیح کوتاه مسئله، کاربر هدف و نقش  دقیقه 
+Agent قبل ازDemo؛Business و مزیت رقابتی در پایان
+۵۱بندی اجرایی . جمع
+قاعده طلایی SignalX
+محصول باید بدونAgentمعنی شود  بیAgent فقطChatbot یا KeywordFilterکند، ها را غربال می  نیست: پیام 
+Contextخواند،  را میIntent وFitگیری تحویل ی قابل توضیح و قابل اندازه گیرد و نتیجه سنجد، تصمیم می  را می
+دهد. می
+اگر تیم طبق این برنامه جلو برود، پایان روز دوم نسخه آنلاین اولیه، پایان روز سوم Agent واقعی، پایان روز چهارم Release
+Candidateی قابل تحویل خواهد داشت. هدف این برنامه  و پایان روز پنجم نسخهFeature»
+ترین محصول داوریAgentic»

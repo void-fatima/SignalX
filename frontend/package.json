@@ -1,0 +1,18 @@
+{
+  "name": "singnalx-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --hostname 0.0.0.0",
+    "build": "next build",
+    "start": "next start --hostname 0.0.0.0",
+    "typecheck": "tsc --noEmit",
+    "generate:api": "openapi-typescript ../contracts/openapi.json -o lib/generated/api.d.ts"
+  },
+  "dependencies": {"next": "16.3.8", "react": "19.3.0", "react-dom": "19.3.0"},
+  "devDependencies": {
+    "typescript": "~5.9.3", "@types/node": "^24.0.0", "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0", "tailwindcss": "4.3.3", "@tailwindcss/postcss": "4.3.3",
+    "openapi-typescript": "^7.0.0"
+  }
+}

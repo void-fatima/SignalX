@@ -1,0 +1,11 @@
+.env
+**/.venv/
+**/__pycache__/
+**/.pytest_cache/
+**/pytest-cache-files-*/
+**/node_modules/
+**/.next/
+*.db
+*.db-*
+*.tsbuildinfo
+*.egg-info/

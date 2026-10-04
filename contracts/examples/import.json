@@ -1,0 +1,13 @@
+{
+  "batch": {
+    "id": "746df548-0ca1-4729-8f75-21c716787e05",
+    "community_name": "smoke-demo",
+    "filename": "demo.csv",
+    "checksum": "5c5ae23707a2c9b53226c06c8470830f1e550c381a5b961aecc4fb00f8e7de41",
+    "row_count": 20,
+    "created_at": "2026-10-04T12:06:59.259079Z"
+  },
+  "count": 20,
+  "duplicate": false,
+  "warnings": []
+}

@@ -1,0 +1,86 @@
+{
+  "analysis": {
+    "id": "a3da4adb-6b26-4844-9747-67f47dfa9aa2",
+    "run_id": "72059a08-e457-4f04-b543-932be4087a1b",
+    "message_id": "bd942785-4495-4de7-ba03-f012c076867c",
+    "status": "completed",
+    "is_candidate": true,
+    "screening_reason": "explicit_need",
+    "signals": {
+      "purchase_intent": 0.9,
+      "product_fit": 0.9,
+      "need_strength": 0.8,
+      "urgency": 0.5,
+      "confidence": 0.9,
+      "response_opportunity": 0.8
+    },
+    "intent": "searching_for_course",
+    "need": "project-based backend learning",
+    "budget_signal": "unknown",
+    "lead_score": 84,
+    "decision": "respond",
+    "decision_reason": "score_threshold_met",
+    "reason": "The author explicitly requests a project-based backend course.",
+    "evidence": [
+      {
+        "message_id": "bd942785-4495-4de7-ba03-f012c076867c",
+        "quote": "دنبال دوره بک‌اند پروژه‌محور هستم"
+      }
+    ],
+    "context_message_ids": [
+      "d0eb28c9-9fe4-4c4d-8bc1-9e6a632ca3ec",
+      "cc414d60-f9b4-4119-85ed-77dd11306d2b"
+    ],
+    "limitations": [
+      "Synthetic Mock output; not an AI prediction",
+      "Budget is unknown",
+      "Urgency is not inferred beyond the demo fixture"
+    ],
+    "scoring_version": "score_v1",
+    "prompt_version": "qualify_v1",
+    "provider_mode": "mock"
+  },
+  "message": {
+    "id": "bd942785-4495-4de7-ba03-f012c076867c",
+    "batch_id": "746df548-0ca1-4729-8f75-21c716787e05",
+    "external_id": "m03",
+    "conversation_id": "course",
+    "author": "mina",
+    "content": "دنبال دوره بک‌اند پروژه‌محور هستم",
+    "timestamp": "2026-10-04T08:02:00Z",
+    "reply_to_external_id": null
+  },
+  "context": [
+    {
+      "id": "d0eb28c9-9fe4-4c4d-8bc1-9e6a632ca3ec",
+      "batch_id": "746df548-0ca1-4729-8f75-21c716787e05",
+      "external_id": "m04",
+      "conversation_id": "course",
+      "author": "navid",
+      "content": "من هم یک دوره backend عملی معرفی می‌کنم",
+      "timestamp": "2026-10-04T08:03:00Z",
+      "reply_to_external_id": "m03"
+    },
+    {
+      "id": "cc414d60-f9b4-4119-85ed-77dd11306d2b",
+      "batch_id": "746df548-0ca1-4729-8f75-21c716787e05",
+      "external_id": "m05",
+      "conversation_id": "course",
+      "author": "mina",
+      "content": "آره ولی گرونه",
+      "timestamp": "2026-10-04T08:04:00Z",
+      "reply_to_external_id": "m04"
+    }
+  ],
+  "product_snapshot": {
+    "name": "Backend Course",
+    "description": "دوره بک‌اند پروژه‌محور",
+    "target_customer": "Developers",
+    "problems_solved": [],
+    "best_fit": [],
+    "not_fit": [],
+    "price": null,
+    "currency": "USD"
+  },
+  "offline_context": true
+}

@@ -1,0 +1,19 @@
+{
+  "id": "72059a08-e457-4f04-b543-932be4087a1b",
+  "product_id": "0d7c4618-665e-499b-ac4b-f24d3c07b53b",
+  "batch_id": "746df548-0ca1-4729-8f75-21c716787e05",
+  "status": "completed",
+  "total_count": 20,
+  "processed_count": 20,
+  "failed_count": 0,
+  "error": null,
+  "heartbeat_at": "2026-10-04T12:07:00.115282Z",
+  "started_at": "2026-10-04T12:06:59.744871Z",
+  "finished_at": "2026-10-04T12:07:00.120437Z",
+  "created_at": "2026-10-04T12:06:59.298316Z",
+  "config_snapshot": {
+    "provider_mode": "mock",
+    "context_max_chars": 8000,
+    "offline_context": true
+  }
+}

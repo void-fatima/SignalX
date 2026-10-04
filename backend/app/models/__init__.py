@@ -1,0 +1,135 @@
+from datetime import datetime, timezone
+from uuid import uuid4
+from sqlalchemy import String, Text, Integer, Boolean, DateTime, Numeric, ForeignKey, UniqueConstraint, Index, JSON
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.types import TypeDecorator
+
+
+def utcnow():
+    return datetime.now(timezone.utc)
+
+
+class UTCDateTime(TypeDecorator):
+    """SQLite loses timezone metadata; restore UTC consistently on reads."""
+    impl = DateTime(timezone=True)
+    cache_ok = True
+
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return None
+        if value.tzinfo is None:
+            raise ValueError("Timestamp requires a timezone")
+        return value.astimezone(timezone.utc)
+
+    def process_result_value(self, value, dialect):
+        if value is None:
+            return None
+        return value.replace(tzinfo=timezone.utc) if value.tzinfo is None else value.astimezone(timezone.utc)
+
+
+class Base(DeclarativeBase):
+    pass
+
+
+json_type = JSON().with_variant(JSONB(), "postgresql")
+
+
+class Record:
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
+
+
+class Product(Record, Base):
+    __tablename__ = "products"
+    name: Mapped[str] = mapped_column(String(200))
+    description: Mapped[str] = mapped_column(Text)
+    target_customer: Mapped[str] = mapped_column(Text)
+    problems_solved: Mapped[list] = mapped_column(json_type)
+    best_fit: Mapped[list] = mapped_column(json_type)
+    not_fit: Mapped[list] = mapped_column(json_type)
+    price: Mapped[float | None] = mapped_column(Numeric(12, 2), nullable=True)
+    currency: Mapped[str] = mapped_column(String(3))
+
+
+class ImportBatch(Record, Base):
+    __tablename__ = "import_batches"
+    __table_args__ = (UniqueConstraint("community_name", "checksum"),)
+    community_name: Mapped[str] = mapped_column(String(200))
+    filename: Mapped[str] = mapped_column(String(255))
+    checksum: Mapped[str] = mapped_column(String(64))
+    row_count: Mapped[int] = mapped_column(Integer)
+
+
+class Message(Record, Base):
+    __tablename__ = "messages"
+    __table_args__ = (UniqueConstraint("batch_id", "external_id"), Index("ix_messages_context", "batch_id", "conversation_id", "timestamp"))
+    batch_id: Mapped[str] = mapped_column(ForeignKey("import_batches.id"))
+    external_id: Mapped[str] = mapped_column(String(200))
+    conversation_id: Mapped[str] = mapped_column(String(200))
+    author: Mapped[str] = mapped_column(String(200))
+    content: Mapped[str] = mapped_column(Text)
+    normalized_content: Mapped[str] = mapped_column(Text)
+    timestamp: Mapped[datetime] = mapped_column(UTCDateTime())
+    reply_to_external_id: Mapped[str | None] = mapped_column(String(200), nullable=True)
+
+
+class AnalysisRun(Record, Base):
+    __tablename__ = "analysis_runs"
+    __table_args__ = (Index("ix_runs_queue", "status", "created_at"),)
+    product_id: Mapped[str] = mapped_column(ForeignKey("products.id"))
+    batch_id: Mapped[str] = mapped_column(ForeignKey("import_batches.id"))
+    product_snapshot: Mapped[dict] = mapped_column(json_type)
+    config_snapshot: Mapped[dict] = mapped_column(json_type)
+    idempotency_key: Mapped[str] = mapped_column(String(200), unique=True)
+    status: Mapped[str] = mapped_column(String(20), default="queued")
+    total_count: Mapped[int] = mapped_column(Integer)
+    processed_count: Mapped[int] = mapped_column(Integer, default=0)
+    failed_count: Mapped[int] = mapped_column(Integer, default=0)
+    heartbeat_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+    started_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+    finished_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+    error: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+
+class Analysis(Record, Base):
+    __tablename__ = "analyses"
+    __table_args__ = (UniqueConstraint("run_id", "message_id"), Index("ix_leads", "run_id", "decision", "lead_score"))
+    run_id: Mapped[str] = mapped_column(ForeignKey("analysis_runs.id"))
+    message_id: Mapped[str] = mapped_column(ForeignKey("messages.id"))
+    status: Mapped[str] = mapped_column(String(20))
+    is_candidate: Mapped[bool] = mapped_column(Boolean)
+    screening_reason: Mapped[str] = mapped_column(Text)
+    signals: Mapped[dict | None] = mapped_column(json_type, nullable=True)
+    intent: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    need: Mapped[str | None] = mapped_column(Text, nullable=True)
+    budget_signal: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    lead_score: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    decision: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    decision_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    reason: Mapped[str] = mapped_column(Text)
+    evidence: Mapped[list] = mapped_column(json_type, default=list)
+    context_message_ids: Mapped[list] = mapped_column(json_type, default=list)
+    limitations: Mapped[list] = mapped_column(json_type, default=list)
+    scoring_version: Mapped[str] = mapped_column(String(50), default="score_v1")
+    prompt_version: Mapped[str] = mapped_column(String(50), default="qualify_v1")
+    provider_mode: Mapped[str] = mapped_column(String(20), default="mock")
+
+
+class Usage(Record, Base):
+    __tablename__ = "llm_usage"
+    run_id: Mapped[str] = mapped_column(ForeignKey("analysis_runs.id"), index=True)
+    message_id: Mapped[str | None] = mapped_column(ForeignKey("messages.id"), nullable=True)
+    analysis_id: Mapped[str | None] = mapped_column(ForeignKey("analyses.id"), nullable=True)
+    stage: Mapped[str] = mapped_column(String(30))
+    attempt_no: Mapped[int] = mapped_column(Integer, default=1)
+    request_id: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    model: Mapped[str] = mapped_column(String(100), default="deterministic-mock-v1")
+    provider_mode: Mapped[str] = mapped_column(String(20), default="mock")
+    input_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    output_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    cost_usd: Mapped[float | None] = mapped_column(Numeric(14, 8), nullable=True)
+    cost_status: Mapped[str] = mapped_column(String(20), default="mock")
+    price_version: Mapped[str] = mapped_column(String(50), default="mock_v1")
+    latency_ms: Mapped[int] = mapped_column(Integer, default=0)
+    outcome: Mapped[str] = mapped_column(String(20))

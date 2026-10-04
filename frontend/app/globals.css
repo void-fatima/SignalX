@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+:root { color-scheme: light; }
+body { background: #f4f6fa; color: #172337; font-family: Arial, sans-serif; }
+input, textarea, select { border: 1px solid #c3ccd9; border-radius: 8px; padding: 10px; background: white; width: 100%; }
+label { display: block; font-weight: 600; margin: 14px 0 6px; }
+button, .button { display: inline-block; border-radius: 8px; padding: 10px 18px; background: #2452ba; color: white; cursor: pointer; }
+button:disabled { opacity: .5; cursor: wait; }
+a { color: #2452ba; }
+.card { background: white; border: 1px solid #dce1e9; border-radius: 14px; padding: 24px; margin-bottom: 20px; }
+h1 { font-size: 28px; font-weight: 700; margin-bottom: 16px; }
+h2 { font-size: 20px; font-weight: 600; margin-bottom: 12px; }
+p { margin-bottom: 12px; line-height: 1.7; }
+.badge { font-size: 12px; padding: 4px 8px; background: #fff0c1; color: #725000; border-radius: 6px; }
+pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+th, td { padding: 14px 10px; border-bottom: 1px solid #e6eaf0; text-align: left; }
+:focus-visible { outline: 3px solid #89b5ff; outline-offset: 2px; }

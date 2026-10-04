@@ -1,0 +1,42 @@
+from contextlib import asynccontextmanager
+import logging
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+from app.core.config import settings
+from app.core.errors import AppError
+from app.agents.pipeline import get_provider
+from app.api.routes.main import router
+from app.schemas.api import ErrorOut
+
+
+@asynccontextmanager
+async def lifespan(app):
+    get_provider(settings().provider_mode)
+    yield
+
+
+app = FastAPI(title="singnalX API", version="0.1.0", lifespan=lifespan,
+    responses={404: {"model": ErrorOut}, 409: {"model": ErrorOut}, 422: {"model": ErrorOut}})
+app.add_middleware(CORSMiddleware, allow_origins=settings().cors_origins.split(","), allow_methods=["GET", "POST", "PATCH"], allow_headers=["Content-Type", "Idempotency-Key"])
+
+
+@app.exception_handler(Exception)
+async def unexpected_error(request: Request, exc: Exception):
+    logging.getLogger(__name__).exception("Unexpected API error", exc_info=exc)
+    return JSONResponse(status_code=500, content={"error": {"code": "internal_error", "message": "An unexpected server error occurred", "details": []}})
+
+
+@app.exception_handler(AppError)
+async def app_error(request: Request, exc: AppError):
+    return JSONResponse(status_code=exc.status, content={"error": {"code": exc.code, "message": exc.message, "details": exc.details}})
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_error(request: Request, exc: RequestValidationError):
+    return JSONResponse(status_code=422, content={"error": {"code": "validation_error", "message": "Invalid request",
+        "details": [{"field": ".".join(map(str, e["loc"])), "message": e["msg"]} for e in exc.errors()]}})
+
+
+app.include_router(router, prefix="/api/v1")

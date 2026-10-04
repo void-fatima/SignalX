@@ -1,0 +1,53 @@
+name: singnalx
+x-backend: &backend
+  build: ./backend
+  environment:
+    DATABASE_URL: postgresql+psycopg://signalx:signalx@database:5432/signalx
+    PROVIDER_MODE: mock
+    CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+    WORKER_POLL_SECONDS: ${WORKER_POLL_SECONDS:-1}
+    HEARTBEAT_TIMEOUT_SECONDS: ${HEARTBEAT_TIMEOUT_SECONDS:-120}
+services:
+  database:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: signalx
+      POSTGRES_USER: signalx
+      POSTGRES_PASSWORD: signalx
+    ports: ["127.0.0.1:5432:5432"]
+    volumes: ["postgres_data:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U signalx -d signalx"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+  migration:
+    <<: *backend
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      database: {condition: service_healthy}
+  api:
+    <<: *backend
+    ports: ["127.0.0.1:8000:8000"]
+    depends_on:
+      migration: {condition: service_completed_successfully}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/ready')"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  worker:
+    <<: *backend
+    command: ["python", "-m", "app.worker"]
+    depends_on:
+      migration: {condition: service_completed_successfully}
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000/api/v1}
+    ports: ["127.0.0.1:3000:3000"]
+    depends_on:
+      api: {condition: service_healthy}
+volumes:
+  postgres_data:
