@@ -29,8 +29,9 @@ performed. No empirical AI accuracy or cost-savings claim is made.
 
 Lockfiles were generated and dependencies installed. Production backend Docker
 uses Python 3.12; that Linux image remains unverified until Compose runs.
-The local demo database is ignored by Git. Contracts examples contain real IDs
-from the local synthetic smoke run, not portable seeded IDs for every database.
+The local demo database is ignored by Git. Contract examples are portable
+fixtures; the HTTP smoke script reports generated IDs without writing them into
+the repository.
 
 ## Revised five-day skeleton review — 4 October 2026
 

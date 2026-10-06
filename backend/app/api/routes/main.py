@@ -1,7 +1,11 @@
 from typing import Annotated, Literal
+from pathlib import Path
 from uuid import UUID
 from fastapi import APIRouter, Depends, UploadFile, File, Form, Header, Query
-from sqlalchemy import select, func, text
+from alembic.config import Config
+from alembic.runtime.migration import MigrationContext
+from alembic.script import ScriptDirectory
+from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 from app.db.session import get_session
 from app.models import User, UserSession, Product, ImportBatch, Message, AnalysisRun, Analysis, Usage
@@ -46,8 +50,12 @@ def health():
 @router.get("/ready")
 def ready(session: DB):
     try:
-        revision = session.execute(text("SELECT version_num FROM alembic_version")).scalar()
-        if revision != "0002":
+        connection = session.connection()
+        revision = MigrationContext.configure(connection).get_current_revision()
+        config = Config(str(Path(__file__).resolve().parents[3] / "alembic.ini"))
+        config.set_main_option("script_location", str(Path(__file__).resolve().parents[3] / "migrations"))
+        expected_revision = ScriptDirectory.from_config(config).get_current_head()
+        if revision != expected_revision:
             raise ValueError("Migration revision is not current")
         for model in (User, UserSession, Product, ImportBatch, Message, AnalysisRun, Analysis, Usage):
             session.execute(select(model.id).limit(1))

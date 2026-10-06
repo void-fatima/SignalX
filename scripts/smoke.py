@@ -52,8 +52,6 @@ def main():
     assert detail["analysis"]["lead_score"] == 84
     assert detail["analysis"]["provider_mode"] == "mock"
     assert all(m["conversation_id"] == detail["message"]["conversation_id"] for m in detail["context"])
-    for filename, value in [("product", product), ("import", imported), ("run", current), ("lead", detail)]:
-        (root / "contracts" / "examples" / f"{filename}.json").write_text(json.dumps(value, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(f"HTTP smoke passed: 20 messages, {leads['total']} respond results, sample score 84; run={run['id']}")
 
 

@@ -103,8 +103,8 @@ With the API and worker running, verify the actual HTTP flow from the root:
 .\backend\.venv\Scripts\python.exe scripts/smoke.py
 ```
 
-This smoke script creates a synthetic product/import/run and refreshes JSON
-examples in contracts/examples with IDs that refer to that run's actual records.
+This smoke script creates a synthetic product/import/run and reports the result;
+it does not modify contract fixtures or other repository files.
 
 Backend lockfiles pin all transitive dependencies. Regenerate after intentional
 dependency changes (from backend):
