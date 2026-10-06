@@ -121,11 +121,13 @@ def persist_agent_output(
         ),
         intent=qualification.intent if qualification else None,
         need=qualification.need if qualification else None,
-        budget_signal=None,
+        # The Agent contract has no budget field; preserve the legacy API's
+        # explicit unknown sentinel for qualified leads.
+        budget_signal="unknown" if qualification else None,
         lead_score=scoring.score if scoring else None,
         decision=decision,
         decision_reason=None,
-        reason=output.screening.reason,
+        reason=qualification.need if qualification else output.screening.reason,
         evidence=[item.model_dump(mode="json") for item in qualification.evidence] if qualification else [],
         context_message_ids=[item.id for item in inputs.context_messages],
         limitations=qualification.limitations if qualification else [],

@@ -54,6 +54,8 @@ def test_worker_contract_path_persists_complete_agent_output(client, factory):
         assert all(analysis.agent_output is not None for analysis in analyses)
         assert any(analysis.agent_output["scoring"]["score"] == analysis.lead_score
                    for analysis in analyses if analysis.lead_score is not None)
+        assert all(analysis.reason == analysis.need and analysis.budget_signal == "unknown"
+                   for analysis in analyses if analysis.is_candidate)
         assert any(event.model is None or event.model == "deterministic-mock-v1" for event in usage)
         assert any(event.cost_status == "mock" and event.cost_usd == 0 for event in usage)
 

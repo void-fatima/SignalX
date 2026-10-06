@@ -101,7 +101,7 @@ def process_one(factory, provider_override=None, agent_orchestrator=None) -> boo
             except Exception as exc:
                 usage = getattr(exc, "usage", [])
                 result = AnalysisResult(status="failed", is_candidate=True, screening_reason="processing_error",
-                    decision=None, reason=str(exc)[:1000])
+                    decision=None, reason=str(exc)[:1000], provider_mode=config.provider_mode)
             with factory() as session:
                 analysis = Analysis(run_id=run_id, message_id=target.id, **result.model_dump(mode="json"))
                 session.add(analysis)

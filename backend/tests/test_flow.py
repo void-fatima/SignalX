@@ -78,6 +78,24 @@ def test_partial_failure_and_attempt_usage(client, factory):
         assert session.scalar(select(Usage).where(Usage.outcome == "error")) is not None
 
 
+def test_real_contract_failure_keeps_real_provider_mode(client, factory):
+    _, run = setup_run(client, key="real-contract-failure")
+    with factory() as session:
+        current = session.get(AnalysisRun, run["id"])
+        current.config_snapshot = {**current.config_snapshot, "provider_mode": "real"}
+        session.commit()
+
+    def fail_agent(_inputs):
+        raise RuntimeError("Synthetic real-provider failure")
+
+    assert process_one(factory, agent_orchestrator=fail_agent)
+    with factory() as session:
+        failed = session.scalar(select(Analysis).where(
+            Analysis.run_id == run["id"], Analysis.status == "failed"))
+        assert failed is not None
+        assert failed.provider_mode == "real"
+
+
 def test_expired_worker_recovery(client, factory):
     _, run = setup_run(client)
     with factory() as session:
