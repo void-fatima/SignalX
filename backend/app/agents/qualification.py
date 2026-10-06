@@ -3,7 +3,7 @@ import re
 from pydantic import ValidationError
 from app.agents.contracts import (
     ContextMessage, Evidence, EvidenceItem, MessageInput, ProductInput, ProductSnapshot,
-    Qualification, QualificationResult, Signals, TargetMessage, UsageEvent,
+    Qualification, QualificationResult, Signals, TargetMessage, UsageEvent, UsageInfo,
 )
 from app.agents.providers.base import ProviderError
 from app.agents.screening import INSTRUCTION_PATTERNS, STOP_WORDS, normalize, words
@@ -179,9 +179,33 @@ def validate_qualification(
         qualification = Qualification.model_validate(output.model_dump())
     except (ValidationError, AttributeError) as exc:
         raise ProviderError("Provider returned invalid qualification signals", usage) from exc
+    target_evidence = _validate_evidence(qualification.evidence, target, context, usage)
+    return qualification, target_evidence
+
+
+def validate_qualification_result(
+    output: QualificationResult,
+    target: TargetMessage,
+    context: list[TargetMessage],
+    usage: list[UsageInfo],
+) -> tuple[QualificationResult, bool]:
+    """Revalidate frozen structured data and ground evidence using the legacy rules."""
+    try:
+        qualification = QualificationResult.model_validate(output.model_dump(), strict=True)
+    except (ValidationError, AttributeError, TypeError):
+        raise ProviderError("Provider returned invalid structured qualification", usage) from None
+    target_evidence = _validate_evidence(qualification.evidence, target, context, usage)
+    return qualification, target_evidence
+
+
+def _validate_evidence(
+    evidence: list[Evidence] | list[EvidenceItem],
+    target: TargetMessage,
+    context: list[TargetMessage],
+    usage: list[UsageEvent] | list[UsageInfo],
+) -> bool:
     allowed = {m.id: m.content for m in [target, *context]}
     if any(e.message_id not in allowed or not e.quote.strip() or e.quote not in allowed[e.message_id]
-           for e in qualification.evidence):
+           for e in evidence):
         raise ProviderError("Provider evidence is not grounded in supplied messages", usage)
-    target_evidence = any(e.message_id == target.id for e in qualification.evidence)
-    return qualification, target_evidence
+    return any(e.message_id == target.id for e in evidence)

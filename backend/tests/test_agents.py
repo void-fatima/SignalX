@@ -36,7 +36,7 @@ def message(id, content, conversation="a", parent=None):
         content=content, timestamp=datetime(2026, 10, 4, tzinfo=timezone.utc) + timedelta(minutes=id), reply_to_external_id=parent)
 
 
-def test_context_and_dependent_screening():
+def test_context_and_dependent_screening(monkeypatch):
     product = ProductSnapshot(name="Backend course", description="دوره بک‌اند پروژه‌محور", target_customer="Developers")
     parent = message(1, "دنبال دوره بک‌اند پروژه‌محور هستم")
     target = message(2, "آره ولی گرونه", parent="1")
@@ -50,7 +50,8 @@ def test_context_and_dependent_screening():
     noise = message(4, "امروز هوا عالیه", "noise")
     result, usage = analyze(product, noise, [noise], RunConfig(), get_provider("mock"))
     assert result.lead_score is None and result.signals is None and usage == []
-    with pytest.raises(ValueError, match="not configured"):
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    with pytest.raises(ProviderError, match="not configured"):
         get_provider("real")
 
 

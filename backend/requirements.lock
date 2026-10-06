@@ -4,6 +4,8 @@
 #
 #    pip-compile --no-index --output-file=requirements.lock pyproject.toml
 #
+# httpx runtime pins below were copied from requirements-dev.lock; an offline
+# pip-compile rerun could not resolve the existing dependencies from its cache.
 alembic==1.20.0
     # via singnalx-backend (pyproject.toml)
 annotated-doc==0.0.5
@@ -11,7 +13,13 @@ annotated-doc==0.0.5
 annotated-types==0.8.0
     # via pydantic
 anyio==4.15.1
-    # via starlette
+    # via
+    #   httpx
+    #   starlette
+certifi==2026.7.22
+    # via
+    #   httpcore
+    #   httpx
 click==8.5.0
     # via uvicorn
 fastapi==0.142.2
@@ -19,9 +27,17 @@ fastapi==0.142.2
 greenlet==3.5.6
     # via sqlalchemy
 h11==0.16.0
-    # via uvicorn
+    # via
+    #   httpcore
+    #   uvicorn
+httpcore==1.0.9
+    # via httpx
+httpx==0.28.1
+    # via singnalx-backend (pyproject.toml)
 idna==3.20
-    # via anyio
+    # via
+    #   anyio
+    #   httpx
 mako==1.4.3
     # via alembic
 markupsafe==3.0.4

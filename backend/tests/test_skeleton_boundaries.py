@@ -8,6 +8,7 @@ from app.agents.prompts.qualification import build_messages
 from app.agents.prompts.reply import build_messages as build_reply
 from app.agents.reply import ReplyInput
 from app.agents.providers.real import RealProvider
+from app.agents.providers.base import ProviderError
 
 
 def sample():
@@ -17,7 +18,7 @@ def sample():
     return product, target
 
 
-def test_prompt_keeps_untrusted_content_in_data_and_rejects_foreign_context():
+def test_prompt_keeps_untrusted_content_in_data_and_rejects_foreign_context(monkeypatch):
     product, target = sample()
     messages = build_messages(product, target, [])
     assert target.content not in messages[0]["content"]
@@ -25,7 +26,8 @@ def test_prompt_keeps_untrusted_content_in_data_and_rejects_foreign_context():
     assert "lead_score" not in json.loads(messages[1]["content"])["output_schema"]["properties"]
     with pytest.raises(ValueError):
         build_messages(product, target, [target.model_copy(update={"id": "foreign", "conversation_id": "b"})])
-    with pytest.raises(RuntimeError, match="not implemented"):
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    with pytest.raises(ProviderError, match="not configured"):
         RealProvider().qualify(product, target, [])
 
 
