@@ -40,8 +40,28 @@ class Record:
     created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
 
 
+class User(Record, Base):
+    __tablename__ = "users"
+    __table_args__ = (UniqueConstraint("email", name="uq_users_email"),)
+    email: Mapped[str] = mapped_column(String(254))
+    password_hash: Mapped[str] = mapped_column(String(255))
+
+
+class UserSession(Record, Base):
+    __tablename__ = "user_sessions"
+    __table_args__ = (
+        Index("ix_user_sessions_user_id", "user_id"),
+        UniqueConstraint("token_digest", name="uq_user_sessions_token_digest"),
+    )
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"))
+    token_digest: Mapped[str] = mapped_column(String(64))
+    expires_at: Mapped[datetime] = mapped_column(UTCDateTime())
+    revoked_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+
+
 class Product(Record, Base):
     __tablename__ = "products"
+    user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id"), nullable=True, index=True)
     name: Mapped[str] = mapped_column(String(200))
     description: Mapped[str] = mapped_column(Text)
     target_customer: Mapped[str] = mapped_column(Text)
@@ -54,7 +74,8 @@ class Product(Record, Base):
 
 class ImportBatch(Record, Base):
     __tablename__ = "import_batches"
-    __table_args__ = (UniqueConstraint("community_name", "checksum"),)
+    __table_args__ = (UniqueConstraint("user_id", "community_name", "checksum", name="uq_import_user_community_checksum"),)
+    user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id"), nullable=True, index=True)
     community_name: Mapped[str] = mapped_column(String(200))
     filename: Mapped[str] = mapped_column(String(255))
     checksum: Mapped[str] = mapped_column(String(64))
@@ -76,12 +97,16 @@ class Message(Record, Base):
 
 class AnalysisRun(Record, Base):
     __tablename__ = "analysis_runs"
-    __table_args__ = (Index("ix_runs_queue", "status", "created_at"),)
+    __table_args__ = (
+        Index("ix_runs_queue", "status", "created_at"),
+        UniqueConstraint("user_id", "idempotency_key", name="uq_runs_user_idempotency_key"),
+    )
+    user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id"), nullable=True, index=True)
     product_id: Mapped[str] = mapped_column(ForeignKey("products.id"))
     batch_id: Mapped[str] = mapped_column(ForeignKey("import_batches.id"))
     product_snapshot: Mapped[dict] = mapped_column(json_type)
     config_snapshot: Mapped[dict] = mapped_column(json_type)
-    idempotency_key: Mapped[str] = mapped_column(String(200), unique=True)
+    idempotency_key: Mapped[str] = mapped_column(String(200))
     status: Mapped[str] = mapped_column(String(20), default="queued")
     total_count: Mapped[int] = mapped_column(Integer)
     processed_count: Mapped[int] = mapped_column(Integer, default=0)

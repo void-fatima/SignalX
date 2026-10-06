@@ -3,15 +3,17 @@ import json
 import os
 import time
 import uuid
+from http.cookiejar import CookieJar
 from pathlib import Path
-from urllib.request import Request, urlopen
+from urllib.request import Request, build_opener, HTTPCookieProcessor
 
 root = Path(__file__).resolve().parents[1]
 base = os.environ.get("SMOKE_API_URL", "http://127.0.0.1:8000/api/v1")
+opener = build_opener(HTTPCookieProcessor(CookieJar()))
 
 
 def request(path, data=None, headers=None):
-    with urlopen(Request(base + path, data=data, headers=headers or {}), timeout=10) as response:
+    with opener.open(Request(base + path, data=data, headers=headers or {}), timeout=10) as response:
         return response.status, json.load(response)
 
 
@@ -21,6 +23,9 @@ def post(path, body, headers=None):
 
 def main():
     assert request("/ready")[0] == 200
+    credentials = {"email": f"smoke-{uuid.uuid4().hex}@example.test", "password": "correct horse battery"}
+    assert post("/auth/register", credentials)[0] == 201
+    assert post("/auth/login", credentials)[0] == 200
     status, product = post("/products", {"name": "Backend Course", "description": "دوره بک‌اند پروژه‌محور", "target_customer": "Developers"})
     assert status == 201
     boundary = "signalx-" + uuid.uuid4().hex

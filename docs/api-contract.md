@@ -6,12 +6,19 @@ API server for interactive documentation. JSON uses snake_case, UUID strings,
 UTC times and lowercase enums. Lists return items/total/limit/offset (20, max 100).
 Errors are {"error":{"code":"...","message":"...","details":[]}}.
 
-Implemented foundation: health/ready; POST/GET/PATCH products; POST imports;
+Implemented endpoints: health/ready; POST/GET/PATCH products; POST imports;
 GET messages; POST analysis/runs (202, required Idempotency-Key);
 GET analysis/runs/{id}; GET leads (run_id required, decision/min_score filters);
-GET leads/{id}. Same idempotency key with a different payload returns 409.
-The import endpoint accepts multipart file + community_name. Import belongs to a
-community; the selected product is bound when creating the run.
+GET leads/{id}; POST /auth/register; POST /auth/login; POST /auth/logout;
+GET /auth/me. Authenticated product, import, message, run, and lead operations
+are scoped to the current user. Same-user reuse of an idempotency key with a
+different payload returns 409. Import accepts multipart file + community_name.
+Import checksum and idempotency uniqueness are scoped per user.
+
+Authentication uses an HttpOnly, SameSite=Lax opaque session cookie. The token
+is stored only as a digest in the database and revoked on logout. The frontend
+must send requests with credentials included. Set `AUTH_COOKIE_SECURE=true`
+behind HTTPS; local HTTP uses the default `false`.
 
 Runs snapshot the product and config. processed_count includes failed messages;
 successful count is processed_count minus failed_count. Screened-out analyses
@@ -26,12 +33,15 @@ characters. Product edits never change old run snapshots.
 Reply, feedback and analytics endpoints in the architecture are later-stage
 work, outside the bootstrap scope. Do not show a generated reply as a real AI result.
 
-Revised five-day plan: POST /auth/register, POST /auth/login, POST /auth/logout
-and GET /me are P0 but **not implemented**. Roham must add auth and ownership
-scopes for all products/imports/messages/runs/leads/usage before online release.
-Do not use the current global import checksum or Idempotency-Key scope across
-multiple users. Fatima owns auth UI/guards. Setayesh owns Agent logic only.
-The current Agent improvements do not change the public API schema.
+Pre-authentication rows remain unowned after migration 0002 and are inaccessible
+through authenticated API routes. Auth endpoints and ownership enforcement are
+implemented in the local backend. Fatima owns auth UI/guards and must use
+credentialed API requests. Setayesh owns Agent logic; the agreed internal
+AgentInput/AgentOutput schema is separate from this public OpenAPI contract.
+The shared Agent fixtures are in `contracts/examples/agent-input.json` and
+`agent-output.json`. The output is a schema example; its score is not a verified
+execution result. `message.id` and evidence/context IDs use internal message IDs;
+Backend maps `reply_to_external_id` to the matching same-conversation internal ID.
 
 Regenerate from the repository root:
 

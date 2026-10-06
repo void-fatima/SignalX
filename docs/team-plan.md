@@ -21,7 +21,8 @@
 | 4 | response/feedback/analytics/cost persistence/restart + release candidate | grounded reply/cost/dev tuning/test evaluation | reply/feedback/cost cards/responsive/demo | freeze کامل پایان روز 4 |
 | 5 | blocker/clean checkout/production/release | AI claims + metrics/cost/limitations/examples/docs | مرورگر QA/screenshots/pitch/video | اجرای مستقل مسیر داوری و تحویل |
 
-وضعیت امروز: مسیر محلی Product→CSV→Mock worker→Lead/detail آماده است؛ Auth، آنلاین
-شدن و provider واقعی آماده نیستند. این وضعیت گیت نهایی روز اولِ برنامهٔ جدید را کامل
-نمی‌کند، چون Auth هنوز وجود ندارد. Cost/evaluation utility آماده است اما حسابداری و
-ارزیابی واقعی انجام نشده‌اند. [وضعیت و کارهای ستایش](setayesh-plan.md)
+وضعیت checkout فعلی: مسیر محلی Product→CSV→Mock worker→Lead/detail آماده است؛ Auth،
+sessionهای قابل ابطال و scope کاربر در Backend پیاده شده‌اند. اتصال UI/auth با فاطیما،
+اجرای PostgreSQL/Compose و deployment آنلاین هنوز باقی‌اند. Provider واقعی آماده نیست.
+Cost/evaluation utility موجود است اما حسابداری و ارزیابی واقعی انجام نشده‌اند.
+[وضعیت و کارهای ستایش](setayesh-plan.md)

@@ -5,7 +5,7 @@
 | محدوده | فایل/پوشه | وضعیت |
 | --- | --- | --- |
 | Backend پایه | api/routes/main.py، core، db، models، schemas/api.py، services، worker، migrations | مسیر Mock قابل اجرا |
-| Auth | app/auth/contracts.py، security.py، README.md | interface و نقشهٔ migration/route؛ پیاده‌سازی با رهام |
+| Auth | app/auth/contracts.py، security.py، service.py، dependencies.py، api/routes/auth.py | register/login/logout/me، scrypt hash، نشست قابل ابطال و HttpOnly cookie پیاده شده؛ UI و deployment هنوز باقی |
 | Draft/Feedback | schemas/response.py، services/response_service.py | typed contracts؛ persistence/endpoint هنوز آماده نیست |
 | Analytics | schemas/analytics.py، services/analytics_service.py | typed contracts؛ query/aggregation هنوز آماده نیست |
 | Agent | contracts/screening/context/qualification/scoring/pipeline/cost/evaluation | منطق پایه و تست‌ها آماده |
@@ -20,7 +20,7 @@
 | CI | .github/workflows/ci.yml | تست backend، قراردادها، typecheck/build فرانت؛ اجرای GitHub هنوز انجام نشده |
 | مستندات | architecture/api-contract/team-plan/setayesh-plan/ai-engine/evaluation/deployment/delivery/demo/verification | راهنمای توسعه و محدودیت‌ها |
 
-Routeهای Auth/Response/Feedback/Analytics و مدل‌ها/migrationهای مربوط به آن‌ها هنگام
-پیاده‌سازی رفتار واقعی اضافه و mount می‌شوند؛ endpoint خالی یا schema ذخیره‌سازی
-صوری به پروژه وصل نشده است. AuthGuard هم تا تعیین session contract ساخته نمی‌شود.
-سه عضو تیم از این فایل‌ها برای توسعه استفاده می‌کنند؛ docs/team-plan.md مالکیت را دارد.
+Auth routes و migration واقعی 0002 به API متصل شده‌اند. Routeهای Response/Feedback/
+Analytics و persistence آن‌ها هنوز پیاده نشده‌اند. AuthGuard و ارسال credentialed request
+در UI با فاطیماست. سه عضو تیم از این فایل‌ها برای توسعه استفاده می‌کنند؛
+docs/team-plan.md مالکیت را دارد.

@@ -11,14 +11,18 @@ from app.agents.screening import normalize
 from app.core.errors import AppError
 
 
-def import_csv(session, content: bytes, filename: str, community_name: str):
+def import_csv(session, content: bytes, filename: str, community_name: str, user_id: str):
     community_name = community_name.strip()
     if not community_name or len(community_name) > 200:
         raise AppError("invalid_csv", "Community name must contain 1–200 characters")
     if len(content) > 5 * 1024 * 1024:
         raise AppError("invalid_csv", "CSV exceeds 5 MB")
     checksum = hashlib.sha256(content).hexdigest()
-    existing = session.scalar(select(ImportBatch).where(ImportBatch.community_name == community_name, ImportBatch.checksum == checksum))
+    existing = session.scalar(select(ImportBatch).where(
+        ImportBatch.user_id == user_id,
+        ImportBatch.community_name == community_name,
+        ImportBatch.checksum == checksum,
+    ))
     if existing:
         return existing, True, []
     try:
@@ -54,7 +58,8 @@ def import_csv(session, content: bytes, filename: str, community_name: str):
             parent = by_external.get(row.reply_to_external_id)
             if parent is None or parent.conversation_id != row.conversation_id:
                 warnings.append({"row": number, "field": "reply_to_external_id", "message": "Parent missing or belongs to another conversation; excluded from context"})
-    batch = ImportBatch(community_name=community_name, filename=(filename or "messages.csv")[:255], checksum=checksum, row_count=len(rows))
+    batch = ImportBatch(user_id=user_id, community_name=community_name,
+        filename=(filename or "messages.csv")[:255], checksum=checksum, row_count=len(rows))
     try:
         session.add(batch)
         session.flush()
@@ -65,7 +70,11 @@ def import_csv(session, content: bytes, filename: str, community_name: str):
         session.commit()
     except IntegrityError:
         session.rollback()
-        batch = session.scalar(select(ImportBatch).where(ImportBatch.community_name == community_name, ImportBatch.checksum == checksum))
+        batch = session.scalar(select(ImportBatch).where(
+            ImportBatch.user_id == user_id,
+            ImportBatch.community_name == community_name,
+            ImportBatch.checksum == checksum,
+        ))
         if batch:
             return batch, True, warnings
         raise

@@ -1,22 +1,27 @@
-# Auth implementation boundary — Roham
+# Backend authentication
 
-contracts.py/security.py define interfaces only. No working login, hashing,
-sessions or route protection exists yet. Credentials.email is a draft string
-contract; add proper email validation and normalization with the chosen dependency.
+The backend exposes `POST /api/v1/auth/register`, `POST /api/v1/auth/login`,
+`POST /api/v1/auth/logout`, and `GET /api/v1/auth/me`.
 
-Next steps, in one coordinated backend/frontend contract change:
+- Emails are trimmed, case-folded, and unique.
+- Passwords are stored as salted `scrypt` hashes; plaintext passwords are never
+  persisted or logged.
+- Login issues an opaque random session token in an HttpOnly, SameSite=Lax
+  cookie. The database stores only its SHA-256 digest. Logout revokes the
+  server-side session. Session lifetime defaults to seven days.
+- Configure `AUTH_COOKIE_SECURE=true` behind HTTPS. Local HTTP development uses
+  the default `false`. Keep `CORS_ORIGINS` limited to trusted frontend origins.
+- Mutating auth and product/import/run requests reject an unconfigured browser
+  `Origin`. Requests without an `Origin` remain available for non-browser API
+  clients.
+- Product, import batch, and analysis run records created after migration are
+  owned by the authenticated user. Message, analysis, and usage access is
+  scoped through those owned records. Import checksum and run idempotency keys
+  are unique per user.
 
-1. Add users and sessions ORM models + a new migration. Preserve existing runs.
-2. Add user ownership to products/import_batches/analysis_runs and scope all
-   messages/analyses/usage/drafts/feedback through their owning records.
-3. Scope import checksum and Idempotency-Key uniqueness per user. Test two users.
-4. Implement PasswordHasher using an audited password-hashing library and
-   AuthService/SessionStore with expiry and logout revocation.
-5. Add api/routes/auth.py with POST /auth/register, /login, /logout and GET /me.
-   Mount only when implemented. Choose secure HttpOnly cookie/session or JWT;
-   define CSRF/CORS, error codes and credentials behavior consistently.
-6. Coordinate Fatima's login/register UI and guards; export OpenAPI/types/examples.
+Migration `0002` leaves pre-authentication rows unowned rather than inventing a
+user for them; authenticated APIs do not expose those rows. The session cookie
+is returned only by login and is excluded from the JSON response body.
 
-SessionGrant deliberately excludes the token from automatic serialization.
-Never log plaintext credentials or substitute a fake logged-in user. The current
-API remains the local, unauthenticated Mock foundation.
+The login/register UI and API client credential handling remain Fatima's
+frontend work. The AgentInput/AgentOutput schema is unchanged by this auth work.

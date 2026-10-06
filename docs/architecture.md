@@ -15,7 +15,8 @@ API و یک worker مستقل از همان کدبیس و image. Redis/Celery، 
 
 مسیر MVP نهایی: Register/Login → Product → CSV → Run → Worker →
 Screen/Context/Qualify/Score → Lead/Evidence/Cost → Reply on demand.
-مسیر موجود فعلاً از Product شروع می‌شود و فقط Mock دارد؛ Auth و provider واقعی آماده نیستند.
+Routeهای Auth و session و scope کاربر در Backend به‌صورت محلی پیاده شده‌اند؛
+اتصال UI/client احراز هویت هنوز با فاطیماست. Provider واقعی پیاده نشده است.
 
 ## مالکیت
 
@@ -34,7 +35,7 @@ context با ستایش است. تولید متن پاسخ با ستایش، ذ�
 - `/api/v1`، UUID string، UTC، snake_case، enum lowercase؛ خطای مشترک error/code/message/details.
 - فهرست items/total/limit/offset؛ قرارداد واقعی در contracts/openapi.json و typeهای تولیدشده.
 - CSV: UTF-8/BOM، timezone، 5 MB، 500 ردیف، content تا 4000 کاراکتر؛ اعتبارسنجی کامل قبل از insert.
-- Import dedup بر اساس community/checksum؛ run با Idempotency-Key و پاسخ 202؛ payload متفاوت با همان key برابر 409.
+- Import dedup بر اساس user/community/checksum؛ run با Idempotency-Key در محدودهٔ کاربر و پاسخ 202؛ payload متفاوت با همان key برابر 409.
 - Snapshot محصول/config برای run؛ صف و claim کوتاه؛ هیچ transaction هنگام provider call باز نیست.
 - Run: queued/running/completed/partial/failed/interrupted؛ خطای یک پیام بقیه را متوقف نمی‌کند.
 - Context فقط از همان batch/conversation؛ parent اولویت دارد؛ حداکثر 3 قبل و 2 بعد، 5 پیام و 8000 کاراکتر.
@@ -60,11 +61,11 @@ Rate با واحد **USD به ازای یک میلیون توکن** به تاب�
 
 ## تغییرهای لازم برای نسخه آنلاین — هنوز پیاده نشده‌اند
 
-Auth اکنون P0 است: register/login/logout/me، password hash و session/token امن.
-Products، batches/messages، runs، analyses، usage و draft/feedback باید با مالک کاربر
-محدود شوند. Import dedup و idempotency هم باید در scope همان کاربر تعریف شوند؛
-وجود UUID یا Auth UI به‌تنهایی isolation ایجاد نمی‌کند. رهام migration و تمام queryها را
-با تست دو کاربر اصلاح می‌کند؛ فاطیما guard و auth UI را می‌سازد.
+Routeهای Auth، password hashing، نشست قابل ابطال و scope محصول، import، پیام، run
+و lead در Backend به‌صورت محلی پیاده شده‌اند. Migration 0002 داده‌های قبل از Auth
+را بدون مالک می‌گذارد تا API احراز‌شده آن‌ها را نشان ندهد. فاطیما باید UI احراز هویت
+را به API وصل کند و درخواست‌ها را با credentials بفرستد. بررسی PostgreSQL/Compose
+و deployment آنلاین باقی است.
 
 Deploy تا پایان روز 2، provider واقعی تا پایان روز 3، Cost/Reply/Feedback/Evaluation
 و freeze کامل تا پایان روز 4، release روز 5. نسخهٔ کنونی local Mock است و آمادهٔ
@@ -74,9 +75,9 @@ Deploy تا پایان روز 2، provider واقعی تا پایان روز 3،
 
 ساختار تفصیلی فعلی را حفظ می‌کنیم؛ schema، models، migrations، contracts/generated types
 و tests واقعی از درخت خلاصهٔ PDF حذف نمی‌شوند. بخش Agent اکنون qualification validation،
-provider factory، cost و evaluation مستقل دارد. فایل‌های auth/reply/analytics و UI
-اکنون interface و shell صریح دارند؛ endpoint نمایشی یا migration صوری به اجرا وصل
-نشده است. [راهنمای فایل‌ها](file-skeleton.md) وضعیت هر بخش را مشخص می‌کند.
+provider factory، cost و evaluation مستقل دارد. Auth route/service فعال است؛ reply،
+analytics و UI هنوز placeholder هستند و storage صوری یا ارسال reply وصل نشده است.
+[راهنمای فایل‌ها](file-skeleton.md) وضعیت هر بخش را مشخص می‌کند.
 
 [مقایسه و تصمیم‌ها](architecture-comparison.md) · [برنامه تیم](team-plan.md) ·
 [برنامه ستایش](setayesh-plan.md) · [مرز AI](ai-engine.md)

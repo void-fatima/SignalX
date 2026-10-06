@@ -67,3 +67,26 @@ implemented session security. See docs/file-skeleton.md for file readiness.
 Frontend typecheck and production build passed with the three new shell routes.
 Public OpenAPI is unchanged. A GitHub CI workflow was added, but has not run on
 GitHub; local checks are not a claim that the Linux workflow or hosting passed.
+
+## Backend Day 1 — 6 October 2026
+
+Implemented account registration/login/logout/current-user routes, revocable
+server-side sessions, salted scrypt password hashes, HttpOnly session cookies,
+per-user Product/ImportBatch/AnalysisRun ownership, and user-scoped API reads.
+Import checksum and run idempotency uniqueness are now per user. Migration 0002
+preserves pre-authentication rows with null ownership; authenticated routes do
+not expose them. AgentInput/AgentOutput schemas were not changed; shared contract
+fixtures were added.
+
+Checks run on the local Windows environment:
+
+- Backend suite: **207 passed**.
+- Alembic upgrade to 0002 on SQLite: passed; `alembic check`: no schema drift.
+- A populated 0001→0002 SQLite migration preserved legacy product, batch, and run
+  rows and left their owner IDs null.
+- OpenAPI export, including the session-cookie security scheme on protected
+  routes, and TypeScript generation: passed.
+- Frontend typecheck and production build: passed.
+
+The PostgreSQL/Compose migration and live browser login flow have not yet been
+verified. Fatima still owns frontend auth UI and credentialed API client wiring.

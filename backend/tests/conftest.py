@@ -16,7 +16,7 @@ def factory(tmp_path):
 
 
 @pytest.fixture
-def client(factory):
+def app_client(factory):
     def dependency():
         with factory() as session:
             yield session
@@ -24,3 +24,13 @@ def client(factory):
     with TestClient(app) as client:
         yield client
     app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def client(app_client):
+    credentials = {"email": "default@example.test", "password": "correct horse battery"}
+    registered = app_client.post("/api/v1/auth/register", json=credentials)
+    assert registered.status_code == 201
+    logged_in = app_client.post("/api/v1/auth/login", json=credentials)
+    assert logged_in.status_code == 200
+    yield app_client

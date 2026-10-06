@@ -6,6 +6,8 @@ from app.services.analysis_service import process_one, recover_interrupted
 from app.agents.providers.mock import MockProvider
 from app.agents.providers.base import ProviderError
 from app.agents.contracts import UsageEvent
+from fastapi.testclient import TestClient
+from app.main import app
 
 DATA = Path(__file__).resolve().parents[2] / "data" / "demo_messages.csv"
 PRODUCT = {"name": "Backend course", "description": "دوره بک‌اند پروژه‌محور", "target_customer": "Developers"}
@@ -108,3 +110,36 @@ def test_duplicate_row_is_rejected(client, factory):
     assert response.status_code == 422
     with factory() as session:
         assert session.scalar(select(func.count()).select_from(Message)) == 0
+
+
+def test_user_data_isolation_and_per_user_deduplication(client, factory):
+    first_payload, first_run = setup_run(client, key="same-key")
+    first_product_id = first_payload["product_id"]
+
+    with TestClient(app) as second:
+        credentials = {"email": "second@example.test", "password": "correct horse battery"}
+        assert second.post("/api/v1/auth/register", json=credentials).status_code == 201
+        assert second.post("/api/v1/auth/login", json=credentials).status_code == 200
+        assert second.get("/api/v1/products").json()["total"] == 0
+        assert second.get(f"/api/v1/products/{first_product_id}").status_code == 404
+        assert second.get(f"/api/v1/messages?batch_id={first_payload['batch_id']}").status_code == 404
+        assert second.get(f"/api/v1/analysis/runs/{first_run['id']}").status_code == 404
+        assert second.get(f"/api/v1/leads?run_id={first_run['id']}").status_code == 404
+
+        product = second.post("/api/v1/products", json=PRODUCT)
+        assert product.status_code == 201
+        batch = second.post("/api/v1/imports", data={"community_name": "demo"},
+            files={"file": ("demo.csv", DATA.read_bytes(), "text/csv")})
+        assert batch.status_code == 201 and batch.json()["duplicate"] is False
+        payload = {"product_id": product.json()["id"], "batch_id": batch.json()["batch"]["id"]}
+        cross_user_run = {"product_id": product.json()["id"], "batch_id": first_payload["batch_id"]}
+        assert second.post("/api/v1/analysis/runs", json=cross_user_run,
+            headers={"Idempotency-Key": "cross-user"}).status_code == 404
+        run = second.post("/api/v1/analysis/runs", json=payload, headers={"Idempotency-Key": "same-key"})
+        assert run.status_code == 202
+        assert run.json()["id"] != first_run["id"]
+
+
+def test_api_rejects_requests_without_a_session(app_client):
+    assert app_client.get("/api/v1/products").status_code == 401
+    assert app_client.post("/api/v1/products", json=PRODUCT).status_code == 401

@@ -101,6 +101,11 @@
       "post": {
         "summary": "Add Product",
         "operationId": "add_product_api_v1_products_post",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -157,6 +162,11 @@
       "get": {
         "summary": "Products",
         "operationId": "products_api_v1_products_get",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
         "parameters": [
           {
             "name": "limit",
@@ -230,6 +240,11 @@
       "get": {
         "summary": "Product",
         "operationId": "product_api_v1_products__id__get",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
         "parameters": [
           {
             "name": "id",
@@ -288,6 +303,11 @@
       "patch": {
         "summary": "Patch Product",
         "operationId": "patch_product_api_v1_products__id__patch",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
         "parameters": [
           {
             "name": "id",
@@ -409,13 +429,23 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ]
       }
     },
     "/api/v1/messages": {
       "get": {
         "summary": "Messages",
         "operationId": "messages_api_v1_messages_get",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
         "parameters": [
           {
             "name": "batch_id",
@@ -499,6 +529,11 @@
       "post": {
         "summary": "Start Run",
         "operationId": "start_run_api_v1_analysis_runs_post",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
         "parameters": [
           {
             "name": "Idempotency-Key",
@@ -568,6 +603,11 @@
       "get": {
         "summary": "Run",
         "operationId": "run_api_v1_analysis_runs__id__get",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
         "parameters": [
           {
             "name": "id",
@@ -628,6 +668,11 @@
       "get": {
         "summary": "Leads",
         "operationId": "leads_api_v1_leads_get",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
         "parameters": [
           {
             "name": "run_id",
@@ -750,6 +795,11 @@
       "get": {
         "summary": "Lead",
         "operationId": "lead_api_v1_leads__id__get",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
         "parameters": [
           {
             "name": "id",
@@ -804,6 +854,228 @@
             "description": "Unprocessable Content"
           }
         }
+      }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Register",
+        "operationId": "register_api_v1_auth_register_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Credentials"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurrentUser"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Login",
+        "operationId": "login_api_v1_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Credentials"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionGrant"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Logout",
+        "operationId": "logout_api_v1_auth_logout_post",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Me",
+        "operationId": "me_api_v1_auth_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurrentUser"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ]
       }
     }
   },
@@ -1048,6 +1320,53 @@
           "community_name"
         ],
         "title": "Body_upload_api_v1_imports_post"
+      },
+      "Credentials": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "maxLength": 254,
+            "minLength": 3,
+            "title": "Email"
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 8,
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "Credentials"
+      },
+      "CurrentUser": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "email",
+          "created_at"
+        ],
+        "title": "CurrentUser"
       },
       "ErrorBody": {
         "properties": {
@@ -1726,6 +2045,24 @@
         ],
         "title": "RunOut"
       },
+      "SessionGrant": {
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/CurrentUser"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user",
+          "expires_at"
+        ],
+        "title": "SessionGrant"
+      },
       "Signals": {
         "properties": {
           "purchase_intent": {
@@ -1775,6 +2112,14 @@
           "response_opportunity"
         ],
         "title": "Signals"
+      }
+    },
+    "securitySchemes": {
+      "SessionCookie": {
+        "type": "apiKey",
+        "description": "Opaque HttpOnly session cookie issued by POST /auth/login.",
+        "in": "cookie",
+        "name": "singnalx_session"
       }
     }
   }

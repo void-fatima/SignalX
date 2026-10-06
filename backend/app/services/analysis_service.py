@@ -10,28 +10,28 @@ from app.agents.pipeline import analyze, get_provider
 from app.services.context_service import load_messages
 
 
-def create_run(session, payload, key: str):
+def create_run(session, payload, key: str, user_id: str):
     if not key.strip() or len(key) > 200:
         raise AppError("invalid_idempotency_key", "Idempotency-Key must contain 1–200 characters")
-    existing = session.scalar(select(AnalysisRun).where(AnalysisRun.idempotency_key == key))
+    existing = session.scalar(select(AnalysisRun).where(AnalysisRun.user_id == user_id, AnalysisRun.idempotency_key == key))
     if existing:
         if existing.product_id != str(payload.product_id) or existing.batch_id != str(payload.batch_id):
             raise AppError("idempotency_conflict", "Key was used with a different payload", 409)
         return existing
-    product = session.get(Product, str(payload.product_id))
-    batch = session.get(ImportBatch, str(payload.batch_id))
+    product = session.scalar(select(Product).where(Product.id == str(payload.product_id), Product.user_id == user_id))
+    batch = session.scalar(select(ImportBatch).where(ImportBatch.id == str(payload.batch_id), ImportBatch.user_id == user_id))
     if product is None or batch is None:
         raise AppError("not_found", "Product or batch does not exist", 404)
     get_provider(settings().provider_mode)
-    snapshot = ProductOut.model_validate(product).model_dump(mode="json", exclude={"id", "created_at"})
-    run = AnalysisRun(product_id=product.id, batch_id=batch.id, product_snapshot=snapshot,
+    snapshot = ProductOut.model_validate(product).model_dump(mode="json", exclude={"created_at"})
+    run = AnalysisRun(user_id=user_id, product_id=product.id, batch_id=batch.id, product_snapshot=snapshot,
         config_snapshot=RunConfig(provider_mode=settings().provider_mode).model_dump(), idempotency_key=key, total_count=batch.row_count)
     try:
         session.add(run)
         session.commit()
     except IntegrityError:
         session.rollback()
-        return create_run(session, payload, key)
+        return create_run(session, payload, key, user_id)
     return run
 
 

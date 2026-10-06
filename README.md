@@ -1,9 +1,9 @@
 # singnalX
 
-The file skeleton now includes auth/service contracts, real-provider and reply
-integration slots, prompt builders, login/register/dashboard UI shells and data/
-deployment handoffs. See [file readiness](docs/file-skeleton.md). These shells do
-not implement authentication, real AI, response persistence or online deployment.
+The backend now includes account/session endpoints and user-scoped data access.
+The login/register pages remain UI shells until Fatima connects them to the API.
+Real provider, response persistence and online deployment remain pending. See
+[file readiness](docs/file-skeleton.md).
 
 Runnable Mock foundation aligned with the revised SignalX five-day architecture, created directly in
 the cloned SignalX repository. English UI supports Persian/English messages.
@@ -74,8 +74,9 @@ course request scores 84. Price objections retain conversation context. See
 
 CSV is UTF-8/BOM, maximum 5 MB / 500 rows; content limit is 4000 characters.
 All rows validate before any insert. Timestamps require a timezone. Same file
-bytes/community reuse the batch. Idempotency-Key reuses a run; changed payload
-with the same key is a conflict. Product/config snapshots are immutable per run.
+bytes/community/user reuse the batch. Idempotency-Key reuses a run within the
+current user; changed payload with the same key is a conflict. Product/config
+snapshots are immutable per run.
 Failures are isolated per message; stale running jobs become interrupted on
 worker restart and are not retried automatically. Offline context includes up to
 three earlier and two later messages from the same batch/conversation.
@@ -122,12 +123,12 @@ types must change together; [ownership](docs/team-plan.md),
 Mock output is synthetic demonstration data, not real LLM analysis or measured
 accuracy. Recorded Mock usage has no real tokens, cost zero and cost_status=mock.
 Screened-out messages have null scores; failed messages have null decisions.
-No authentication or automatic message sending. Real provider/embedding, paid
-usage/budget control, response generation, feedback, advanced analytics,
-evaluation datasets, deployment and presentation media are next-stage work.
-Authentication and per-user data isolation are **P0 for the online MVP** under
-the revised plan; they are not implemented in this local foundation. Auth alone
-must not leave imports/runs/leads shared between users.
+No automatic message sending. Real provider/embedding, paid usage/budget control,
+response generation, feedback, advanced analytics, evaluation datasets,
+deployment and presentation media are next-stage work. Backend authentication and
+user isolation are implemented locally. The auth UI, browser credential handling,
+PostgreSQL/Compose verification and online deployment remain pending.
+Pre-authentication records are unowned and inaccessible through authenticated APIs.
 
 Pure cost utilities and an offline evaluation CLI are now implemented; real
 provider accounting, budget enforcement and measured evaluation remain pending.

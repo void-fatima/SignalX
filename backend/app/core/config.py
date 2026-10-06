@@ -7,6 +7,9 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./singnalx.db"
     provider_mode: str = "mock"
     cors_origins: str = "http://localhost:3000"
+    auth_cookie_name: str = "singnalx_session"
+    auth_cookie_secure: bool = False
+    session_lifetime_seconds: int = 604800
     worker_poll_seconds: float = 1
     heartbeat_timeout_seconds: int = 120
 
