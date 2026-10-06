@@ -25,6 +25,8 @@ successful count is processed_count minus failed_count. Screened-out analyses
 have null signals/score/intent, decision ignore. Failed analyses have decision
 null. All output has provider_mode=mock. Usage has null real token counts and zero
 cost_usd with cost_status=mock. This is not real provider telemetry.
+Prompt and scoring versions are nullable when their corresponding Agent stage
+did not run; Backend does not invent versions for screened-out messages.
 
 Context is offline, limited to the same batch/conversation, up to three preceding
 and two following messages (parent prioritized), maximum five messages and 8000

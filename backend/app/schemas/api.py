@@ -114,8 +114,8 @@ class AnalysisOut(ORM):
     evidence: list[Evidence]
     context_message_ids: list[UUID]
     limitations: list[str]
-    scoring_version: str
-    prompt_version: str
+    scoring_version: str | None
+    prompt_version: str | None
     provider_mode: Literal["mock"]
 
 

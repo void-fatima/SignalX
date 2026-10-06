@@ -109,6 +109,9 @@ class AgentOutput(AgentModel):
     screening: ScreeningResult
     qualification: QualificationResult | None = None
     scoring: ScoringResult | None = None
+    decision_reason: str | None = None
+    prompt_version: str | None = None
+    scoring_version: str | None = None
     usage: list[UsageInfo] = Field(default_factory=list)
     suggested_reply: str | None = None
 

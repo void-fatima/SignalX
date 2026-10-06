@@ -126,12 +126,14 @@ def persist_agent_output(
         budget_signal="unknown" if qualification else None,
         lead_score=scoring.score if scoring else None,
         decision=decision,
-        decision_reason=None,
+        decision_reason=output.decision_reason,
         reason=qualification.need if qualification else output.screening.reason,
         evidence=[item.model_dump(mode="json") for item in qualification.evidence] if qualification else [],
         context_message_ids=[item.id for item in inputs.context_messages],
         limitations=qualification.limitations if qualification else [],
         agent_output=output.model_dump(mode="json"),
+        scoring_version=output.scoring_version,
+        prompt_version=output.prompt_version,
         provider_mode=inputs.metadata.provider_mode,
     )
     session.add(analysis)

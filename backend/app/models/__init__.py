@@ -139,8 +139,8 @@ class Analysis(Record, Base):
     # Preserve the complete Agent contract output (including suggested_reply and
     # all evidence/usage fields) independently from the API's read projection.
     agent_output: Mapped[dict | None] = mapped_column(json_type, nullable=True)
-    scoring_version: Mapped[str] = mapped_column(String(50), default="score_v1")
-    prompt_version: Mapped[str] = mapped_column(String(50), default="qualify_v1")
+    scoring_version: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    prompt_version: Mapped[str | None] = mapped_column(String(50), nullable=True)
     provider_mode: Mapped[str] = mapped_column(String(20), default="mock")
 
 
