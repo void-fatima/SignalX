@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from decimal import Decimal
+from pathlib import Path
 import pytest
 from pydantic import ValidationError
 from app.agents.contracts import (
@@ -74,3 +75,12 @@ def test_mock_maps_all_signals_and_usage_without_changing_deterministic_score():
     assert usage.price_version == "mock_v1" and usage.outcome == "success"
     noise = inputs.model_copy(update={"message": inputs.message.model_copy(update={"content": "Coffee today?"})})
     assert provider.analyze(noise).usage == []
+
+
+def test_shared_agent_contract_fixtures_validate():
+    examples = Path(__file__).resolve().parents[2] / "contracts" / "examples"
+    agent_input = AgentInput.model_validate_json((examples / "agent-input.json").read_text(encoding="utf-8"))
+    agent_output = AgentOutput.model_validate_json((examples / "agent-output.json").read_text(encoding="utf-8"))
+    assert agent_input.message.reply_to_message_id == agent_input.context_messages[0].id
+    assert agent_output.qualification is not None and agent_output.scoring is not None
+    assert agent_output.usage[0].estimated_cost is None

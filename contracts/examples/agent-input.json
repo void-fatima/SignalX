@@ -1,0 +1,28 @@
+{
+  "product": {
+    "id": "prod_1",
+    "name": "Python Starter Course",
+    "description": "Beginner Python course with projects",
+    "target_customer": "Python beginners"
+  },
+  "message": {
+    "id": "msg_20",
+    "content": "I'm looking for a Python course for beginners.",
+    "author": "user123",
+    "timestamp": "2026-10-05T12:00:00Z",
+    "conversation_id": "conv_5",
+    "reply_to_message_id": "msg_19"
+  },
+  "context_messages": [
+    {
+      "id": "msg_19",
+      "content": "Our Python Starter Course is designed for beginners.",
+      "author": "course_admin",
+      "timestamp": "2026-10-05T11:59:00Z"
+    }
+  ],
+  "metadata": {
+    "run_id": "run_1",
+    "provider_mode": "real"
+  }
+}

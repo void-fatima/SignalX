@@ -1,0 +1,44 @@
+{
+  "screening": {
+    "is_candidate": true,
+    "reason": "direct_signal"
+  },
+  "qualification": {
+    "intent": "searching_for_course",
+    "need": "Looking for a beginner Python course",
+    "purchase_intent": 0.9,
+    "product_fit": 0.85,
+    "need_strength": 0.8,
+    "urgency": 0.0,
+    "confidence": 0.9,
+    "response_opportunity": 0.8,
+    "evidence": [
+      {
+        "message_id": "msg_20",
+        "quote": "I'm looking for a Python course for beginners.",
+        "reason": "Explicit course search"
+      }
+    ],
+    "limitations": ["Budget is unknown"]
+  },
+  "scoring": {
+    "score": 78,
+    "decision": "RESPOND"
+  },
+  "usage": [
+    {
+      "stage": "qualification",
+      "attempt_no": 1,
+      "provider_mode": "real",
+      "model": "configured-model",
+      "input_tokens": null,
+      "output_tokens": null,
+      "estimated_cost": null,
+      "cost_status": "unknown",
+      "price_version": null,
+      "latency_ms": 0,
+      "outcome": "success"
+    }
+  ],
+  "suggested_reply": null
+}
