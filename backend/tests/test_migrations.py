@@ -38,3 +38,24 @@ def test_auth_migration_can_downgrade_sqlite_without_leftover_temp_tables(tmp_pa
     assert not indexes.intersection({
         "ix_analysis_runs_user_id", "ix_import_batches_user_id", "ix_products_user_id",
     })
+
+
+def test_agent_output_migration_is_reversible_on_sqlite(tmp_path):
+    database = tmp_path / "agent-output-migration.db"
+    env = {**os.environ, "DATABASE_URL": f"sqlite:///{database.as_posix()}"}
+    for operation in (("upgrade", "head"), ("downgrade", "0002")):
+        result = subprocess.run(
+            [sys.executable, "-m", "alembic", *operation],
+            cwd=BACKEND_ROOT,
+            env=env,
+            text=True,
+            capture_output=True,
+        )
+        assert result.returncode == 0, result.stdout + result.stderr
+    with sqlite3.connect(database) as connection:
+        analysis_columns = {row[1] for row in connection.execute("PRAGMA table_info(analyses)")}
+        usage_columns = {row[1]: row[3] for row in connection.execute("PRAGMA table_info(llm_usage)")}
+    assert "agent_output" not in analysis_columns
+    assert usage_columns["model"] == 1
+    assert usage_columns["price_version"] == 1
+    assert usage_columns["latency_ms"] == 1

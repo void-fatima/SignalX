@@ -8,6 +8,15 @@ from app.core.config import settings
 from app.agents.contracts import ProductSnapshot, RunConfig, AnalysisResult
 from app.agents.pipeline import analyze, get_provider
 from app.services.context_service import load_messages
+from app.services.agent_contract_service import build_agent_input, persist_agent_output
+
+
+def _usage_row(run_id: str, message_id: str, analysis_id: str, event) -> Usage:
+    values = event.model_dump() if hasattr(event, "model_dump") else dict(event)
+    if "estimated_cost" in values:
+        values["cost_usd"] = values.pop("estimated_cost")
+    values.pop("request_id", None)
+    return Usage(run_id=run_id, message_id=message_id, analysis_id=analysis_id, **values)
 
 
 def create_run(session, payload, key: str, user_id: str):
@@ -44,7 +53,7 @@ def recover_interrupted(factory):
         session.commit()
 
 
-def process_one(factory, provider_override=None) -> bool:
+def process_one(factory, provider_override=None, agent_orchestrator=None) -> bool:
     with factory() as session:
         run = session.scalar(select(AnalysisRun).where(AnalysisRun.status == "queued").order_by(AnalysisRun.created_at).with_for_update(skip_locked=True).limit(1))
         if run is None:
@@ -53,9 +62,10 @@ def process_one(factory, provider_override=None) -> bool:
         run.started_at = run.heartbeat_at = utcnow()
         session.commit()
         run_id, batch_id = run.id, run.batch_id
+        product_id, product_snapshot = run.product_id, dict(run.product_snapshot)
         product, config = ProductSnapshot.model_validate(run.product_snapshot), RunConfig.model_validate(run.config_snapshot)
     try:
-        provider = provider_override or get_provider(config.provider_mode)
+        provider = provider_override or (None if agent_orchestrator else get_provider(config.provider_mode))
         with factory() as session:
             messages = load_messages(session, batch_id)
         for target in messages:
@@ -64,6 +74,29 @@ def process_one(factory, provider_override=None) -> bool:
                 session.commit()
             # All database sessions/transactions are closed before provider invocation.
             try:
+                if agent_orchestrator is not None:
+                    agent_input = build_agent_input(
+                        product_snapshot={**product_snapshot, "id": product_id},
+                        run_id=run_id,
+                        provider_mode=config.provider_mode,
+                        target=target,
+                        messages=messages,
+                        config=config,
+                    )
+                    agent_output = agent_orchestrator(agent_input)
+                    with factory() as session:
+                        persist_agent_output(
+                            session,
+                            run_id=run_id,
+                            target_message_id=target.id,
+                            inputs=agent_input,
+                            raw_output=agent_output,
+                        )
+                        current = session.get(AnalysisRun, run_id)
+                        current.processed_count += 1
+                        current.heartbeat_at = utcnow()
+                        session.commit()
+                    continue
                 result, usage = analyze(product, target, messages, config, provider)
             except Exception as exc:
                 usage = getattr(exc, "usage", [])
@@ -74,7 +107,7 @@ def process_one(factory, provider_override=None) -> bool:
                 session.add(analysis)
                 session.flush()
                 for event in usage:
-                    session.add(Usage(run_id=run_id, message_id=target.id, analysis_id=analysis.id, **event.model_dump()))
+                    session.add(_usage_row(run_id, target.id, analysis.id, event))
                 current = session.get(AnalysisRun, run_id)
                 current.processed_count += 1
                 current.failed_count += int(result.status == "failed")
