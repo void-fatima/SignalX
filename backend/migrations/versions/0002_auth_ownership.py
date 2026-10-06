@@ -88,6 +88,14 @@ def downgrade():
     if is_sqlite:
         with op.get_context().autocommit_block():
             bind.exec_driver_sql("PRAGMA foreign_keys=OFF")
+    # Drop ownership indexes before either dropping user_id (Postgres) or
+    # rebuilding tables (SQLite), where batch mode would otherwise recreate
+    # the indexes on temporary tables that no longer have user_id.
+    op.drop_index("ix_analysis_runs_user_id", table_name="analysis_runs")
+    op.drop_index("ix_import_batches_user_id", table_name="import_batches")
+    op.drop_index("ix_products_user_id", table_name="products")
+
+    if is_sqlite:
         naming = {"uq": "uq_%(table_name)s_%(column_0_name)s"}
         with op.batch_alter_table("analysis_runs", naming_convention=naming) as batch:
             batch.drop_constraint("uq_runs_user_idempotency_key", type_="unique")
@@ -108,16 +116,12 @@ def downgrade():
         op.drop_column("import_batches", "user_id")
         op.create_unique_constraint("uq_import_batches_community_name", "import_batches", ["community_name", "checksum"])
 
-    op.drop_index("ix_analysis_runs_user_id", table_name="analysis_runs")
-    op.drop_index("ix_import_batches_user_id", table_name="import_batches")
     if is_sqlite:
-        op.drop_index("ix_products_user_id", table_name="products")
         with op.batch_alter_table("products") as batch:
             batch.drop_constraint("fk_products_user_id_users", type_="foreignkey")
             batch.drop_column("user_id")
     else:
         op.drop_constraint("fk_products_user_id_users", "products", type_="foreignkey")
-        op.drop_index("ix_products_user_id", table_name="products")
         op.drop_column("products", "user_id")
     op.drop_index("ix_user_sessions_user_id", table_name="user_sessions")
     op.drop_table("user_sessions")
