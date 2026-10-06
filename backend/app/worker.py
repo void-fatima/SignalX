@@ -2,6 +2,7 @@ import logging
 import time
 from app.core.config import settings
 from app.db.session import SessionLocal
+from app.agents.orchestrator import analyze_agent
 from app.agents.pipeline import get_provider
 from app.auth.service import cleanup_stale_sessions
 from app.models import utcnow
@@ -26,7 +27,7 @@ def main():
             if removed:
                 logging.info("Removed %s expired or revoked sessions", removed)
             last_session_cleanup = now
-        if not process_one(SessionLocal):
+        if not process_one(SessionLocal, agent_orchestrator=analyze_agent):
             recover_interrupted(SessionLocal)
             time.sleep(settings().worker_poll_seconds)
 

@@ -5,7 +5,7 @@ from app.agents.contracts import (
     AgentInput, AgentOutput, EvidenceItem, QualificationResult, RunConfig,
     ScoringResult, ScreeningResult,
 )
-from app.agents.providers.mock import MockProvider
+from app.agents.orchestrator import analyze_agent
 from app.models import Analysis, AnalysisRun, Usage
 from app.services.agent_contract_service import build_agent_input, validate_agent_output
 from app.services.analysis_service import process_one
@@ -42,8 +42,7 @@ def test_backend_builds_agent_input_with_internal_parent_and_scoped_context(clie
 
 def test_worker_contract_path_persists_complete_agent_output(client, factory):
     _payload, run = setup_run(client, key="agent-contract-worker")
-    provider = MockProvider()
-    assert process_one(factory, agent_orchestrator=provider.analyze)
+    assert process_one(factory, agent_orchestrator=analyze_agent)
 
     with factory() as session:
         analyses = session.scalars(select(Analysis).where(Analysis.run_id == run["id"])).all()
