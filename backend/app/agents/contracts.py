@@ -106,6 +106,8 @@ class ScreeningResult(AgentModel):
 
 
 class AgentOutput(AgentModel):
+    model_config = ConfigDict(frozen=True)
+
     screening: ScreeningResult
     qualification: QualificationResult | None = None
     scoring: ScoringResult | None = None
@@ -114,6 +116,9 @@ class AgentOutput(AgentModel):
     scoring_version: str | None = None
     usage: list[UsageInfo] = Field(default_factory=list)
     suggested_reply: str | None = None
+    decision_reason: str | None = None
+    prompt_version: str | None = None
+    scoring_version: str | None = None
 
 
 # Existing pipeline contracts are retained for compatibility. The new public

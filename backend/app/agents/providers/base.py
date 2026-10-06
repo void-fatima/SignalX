@@ -1,6 +1,6 @@
 from typing import Protocol
 from abc import ABC, abstractmethod
-from app.agents.contracts import AgentInput, AgentOutput, ProductSnapshot, TargetMessage, Qualification, QualificationResult, UsageEvent, UsageInfo
+from app.agents.contracts import AgentInput, AgentOutput, Decision, ProductSnapshot, TargetMessage, Qualification, QualificationResult, UsageEvent, UsageInfo
 
 
 class BaseProvider(ABC):
@@ -22,6 +22,9 @@ class StructuredProvider(Provider, Protocol):
 
     def qualify_structured(self, product: ProductSnapshot, target: TargetMessage,
                           context: list[TargetMessage]) -> tuple[QualificationResult, list[UsageInfo]]: ...
+
+    def generate_reply_structured(self, inputs: AgentInput, qualification: QualificationResult,
+                                  decision: Decision) -> tuple[str, list[UsageInfo]]: ...
 
 
 class ProviderError(Exception):

@@ -1,8 +1,16 @@
 # Evaluation foundation
 
-No real-provider evaluation has run. The 20-message demo is a synthetic
-development fixture; it is not an independent test set and is not evidence of
-precision/recall. Unit-test numbers below are deliberately artificial.
+The current Step 8 framework and reports are documented in
+[Agent offline evaluation](../backend/app/agents/EVALUATION.md). It contains
+64 provisional labeled cases (40 development, 24 conversation-held-out test),
+offline heuristic baselines and one recorded real AvalAI context replay. No full
+independent real-provider dataset evaluation has run, and heuristic metrics are
+not real-model performance claims. Successful live smoke calls establish
+functionality rather than population accuracy.
+
+The legacy CLI and integration notes below remain supported. The older
+20-message demo is a synthetic development fixture, not an independent test set
+or evidence of precision/recall. Unit-test numbers are deliberately artificial.
 
 Setayesh owns labels, datasets, tuning and reports. Build ~50–60 development
 messages and at least 100 held-out test messages by Day 4. Store labels separately
@@ -35,7 +43,8 @@ evaluate() rejects missing/extra predictions and duplicate IDs. `respond` is
 predicted positive; `review` is not. Screened-out and failed messages stay in the
 denominator. Failures cannot have a definitive decision; failed positive truths
 count as FN and failed_count is shown. Precision/recall with zero denominators
-are null. Unknown screening prevents reporting screening_recall as complete.
+are null. Unknown screening for a positively labeled message prevents reporting
+screening_recall as complete; unknown negative screening is counted separately.
 validate_split() rejects development/test conversation overlap when --dev-labels
 is supplied; always supply it for the final held-out report.
 

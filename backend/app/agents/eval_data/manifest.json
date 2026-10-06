@@ -1,0 +1,11 @@
+{
+  "dataset_version": "lead_discovery_synthetic_v1",
+  "label_policy_version": "review_worthy_lead_v1",
+  "source": "authored_examples_with_observed_dev_reference",
+  "test_policy": "conversation_holdout_no_threshold_tuning",
+  "case_count": 64,
+  "dev_count": 40,
+  "test_count": 24,
+  "cases_sha256": "46fb0082c0f99ca42f0078b6c3cd56082298a77b17165d59875979aa533cf98d",
+  "labels_sha256": "d3fcd923262bea06511b3494c54a84911da62cfbc3abfcee293e0391d3791b2c"
+}

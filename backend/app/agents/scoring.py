@@ -1,5 +1,5 @@
 """Pure, provider-independent deterministic scoring for SignalX."""
-from app.agents.contracts import Decision, QualificationResult, ScoringResult, Signals
+from app.agents.contracts import Decision, QualificationResult, ScoringResult, ScreeningResult, Signals
 
 SCORING_VERSION = "score_v1"
 WEIGHTS = {"purchase_intent": 30, "product_fit": 30, "need_strength": 15,
@@ -48,8 +48,43 @@ def calculate_score(
     Evidence presence alone does not establish validity. Missing/invalid evidence
     can only downgrade RESPOND; it does not change the score or upgrade IGNORE.
     """
-    value, decision, _ = _score(signals, valid_purchase_evidence, needs_human_review)
-    return ScoringResult(score=value, decision=decision)
+    result, _ = calculate_score_with_reason(signals, valid_purchase_evidence, needs_human_review)
+    return result
+
+
+def calculate_score_with_reason(
+    signals: Signals | QualificationResult,
+    valid_purchase_evidence: bool | None = None,
+    needs_human_review: bool = False,
+) -> tuple[ScoringResult, str]:
+    """Return the score and explanation from one execution of the existing rules.
+
+    The first applicable RESPOND guard wins, matching the legacy reason codes.
+    Invalid source quotes raise before scoring; the evidence guard here concerns
+    unavailable valid target purchase evidence, including context-only evidence.
+    """
+    value, decision, reason = _score(signals, valid_purchase_evidence, needs_human_review)
+    if reason == "score_threshold_met":
+        explanation = {
+            Decision.IGNORE: "Score is below 40; decision is IGNORE.",
+            Decision.REVIEW: "Score falls in the REVIEW band (40-69).",
+            Decision.RESPOND: "Score qualifies for RESPOND (70-100); no decision guard applied.",
+        }[decision]
+    else:
+        explanation = {
+            "low_confidence": "Confidence guard capped decision to REVIEW (confidence < 0.60).",
+            "low_product_fit": "Product-fit guard capped decision to REVIEW (product_fit < 0.50).",
+            "invalid_purchase_evidence": "Purchase-evidence guard capped decision to REVIEW (valid target purchase evidence unavailable).",
+            "human_review_required": "Human-review guard capped decision to REVIEW.",
+        }[reason]
+    return ScoringResult(score=value, decision=decision), explanation
+
+
+def screening_decision_reason(screening: ScreeningResult) -> str | None:
+    """Explain a deterministic screening rejection without claiming a score."""
+    if screening.is_candidate:
+        return None
+    return f"Screening rejected the message: {screening.reason}"
 
 
 def score(

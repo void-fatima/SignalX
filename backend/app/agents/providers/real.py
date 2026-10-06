@@ -1,4 +1,4 @@
-"""OpenAI Responses qualification adapter. No scoring, persistence or fallback."""
+"""OpenAI Responses qualification and explicit drafts; no persistence or fallback."""
 import json
 import os
 from contextlib import nullcontext
@@ -8,15 +8,18 @@ import httpx
 from pydantic import SecretStr, ValidationError
 
 from app.agents.contracts import (
-    AgentInput, AgentOutput, Evidence, ProductSnapshot, Qualification,
+    AgentInput, AgentOutput, Decision, Evidence, ProductSnapshot, Qualification,
     QualificationResult, Signals, TargetMessage, UsageEvent, UsageInfo,
 )
 from app.agents.cost import calculate_cost
 from app.agents.prompts.qualification import PROMPT_VERSION, build_messages, output_schema
+from app.agents.prompts.reply import build_reply_messages, output_schema as reply_schema
 from app.agents.providers.base import BaseProvider, ProviderError
 from app.agents.providers.config import RealProviderConfig
 from app.agents.qualification import validate_qualification_result
 from app.agents.screening import screen
+from app.agents.scoring import screening_decision_reason
+from app.agents.reply_draft import ReplyDraft, render_draft
 
 
 def _legacy_result(result: QualificationResult) -> Qualification:
@@ -38,6 +41,21 @@ def _tokens(value: object) -> int | None:
     return value if type(value) is int and value >= 0 else None
 
 
+def _http_failure(status_code: int, body: dict) -> str:
+    """Expose status and fixed diagnoses, never untrusted API error messages."""
+    error = body.get("error")
+    code = error.get("code") if isinstance(error, dict) else None
+    if isinstance(code, str) and code in {"model_not_found", "model_not_available", "unsupported_model", "model_not_supported"}:
+        diagnosis = "selected model unavailable or inaccessible"
+    elif isinstance(code, str) and code in {"invalid_json_schema", "unsupported_parameter", "unsupported_value"}:
+        diagnosis = "model/request incompatible with Responses structured output parameters"
+    else:
+        diagnosis = {400: "invalid or unsupported model/request parameters",
+            401: "authentication failed", 403: "access denied", 404: "endpoint or model unavailable",
+            429: "rate limit or account quota exceeded"}.get(status_code, "provider request rejected")
+    return f"Real provider returned an unsuccessful HTTP response (HTTP {status_code}: {diagnosis})"
+
+
 class RealProvider(BaseProvider):
     provider_mode = "real"
     prompt_version = PROMPT_VERSION
@@ -53,7 +71,7 @@ class RealProvider(BaseProvider):
         # Injected clients are caller-owned. Production clients have no transport retries.
         self._client = client
 
-    def _usage(self, body: dict, attempt: int, started: float) -> UsageInfo:
+    def _usage(self, body: dict, attempt: int, started: float, stage: str = "qualification") -> UsageInfo:
         usage = body.get("usage")
         usage = usage if isinstance(usage, dict) else {}
         reported_model = body.get("model")
@@ -67,12 +85,90 @@ class RealProvider(BaseProvider):
         if reported_model != self.config.model or _tokens(cached) != 0:
             rates = None
         cost = calculate_cost("real", input_tokens, output_tokens, rates)
-        return UsageInfo(stage="qualification" if attempt == 1 else "qualification_repair",
+        return UsageInfo(stage=stage if attempt == 1 else stage + "_repair",
             attempt_no=attempt, provider_mode="real", model=model,
             input_tokens=input_tokens, output_tokens=output_tokens,
             estimated_cost=cost.cost_usd, cost_status=cost.cost_status,
             price_version=cost.price_version, latency_ms=max(0, int((perf_counter() - started) * 1000)),
             outcome="unknown")
+
+    def generate_reply_structured(self, inputs: AgentInput, qualification: QualificationResult,
+                                  decision: Decision) -> tuple[str, list[UsageInfo]]:
+        """Explicit drafting only. The public reply entry point owns eligibility."""
+        if inputs.metadata.provider_mode != "real" or decision == Decision.IGNORE:
+            raise ProviderError("Real reply requires real mode and a review/respond lead", [])
+        messages = build_reply_messages(inputs, qualification, decision)
+        records: list[UsageInfo] = []
+        manager = (nullcontext(self._client) if self._client is not None else
+                   httpx.Client(timeout=self.config.timeout_seconds, follow_redirects=False))
+        with manager as client:
+            for attempt in (1, 2):
+                request_messages = list(messages)
+                if attempt == 2:
+                    request_messages.insert(1, {"role": "developer", "content":
+                        "The previous draft failed local schema, language or grounding checks. "
+                        "Regenerate using only exact Product facts and one cautious question. "
+                        "Omit uncertain claims. Never include scores, decisions or approval."})
+                started = perf_counter()
+                try:
+                    response = client.post(self.config.responses_url,
+                        headers={"Authorization": "Bearer " + self._api_key.get_secret_value()},
+                        timeout=self.config.timeout_seconds, follow_redirects=False,
+                        json={"model": self.config.model, "store": False,
+                              "max_output_tokens": self.config.max_output_tokens,
+                              "input": request_messages,
+                              "text": {"format": {"type": "json_schema", "name": "suggested_reply",
+                                                  "strict": True, "schema": reply_schema()}}})
+                except ProviderError:
+                    raise ProviderError("OPENAI_BASE_URL must be a trusted Responses endpoint", records) from None
+                except (httpx.HTTPError, RuntimeError) as exc:
+                    record = self._usage({}, attempt, started, "suggested_reply")
+                    record.outcome = "timeout" if isinstance(exc, httpx.TimeoutException) else "provider_error"
+                    records.append(record)
+                    raise ProviderError("Real reply request timed out" if record.outcome == "timeout"
+                                        else "Real reply request failed", records) from None
+                try:
+                    body = response.json()
+                    body = body if isinstance(body, dict) else {}
+                except (ValueError, RecursionError):
+                    body = {}
+                record = self._usage(body, attempt, started, "suggested_reply")
+                records.append(record)
+                if not response.is_success:
+                    record.outcome = "provider_error"
+                    raise ProviderError(_http_failure(response.status_code, body), records) from None
+                if body.get("status") in ("failed", "cancelled", "incomplete"):
+                    record.outcome = "incomplete"
+                    raise ProviderError("Real provider did not complete reply generation", records) from None
+                try:
+                    texts = []
+                    for item in body.get("output", []):
+                        if item.get("type") == "reasoning":
+                            continue
+                        if item.get("type") != "message":
+                            # No tools are requested or executed. Unexpected tool output is invalid.
+                            raise ValueError("unexpected reply output")
+                        for part in item.get("content", []):
+                            if part.get("type") == "refusal":
+                                record.outcome = "refused"
+                                raise ProviderError("Real provider refused reply generation", records)
+                            if part.get("type") != "output_text":
+                                raise ValueError("unexpected reply content")
+                            texts.append(part["text"])
+                    if body.get("status") != "completed" or len(texts) != 1:
+                        raise ValueError("missing or ambiguous structured reply")
+                    draft = ReplyDraft.model_validate(json.loads(texts[0]), strict=True)
+                    text = render_draft(draft, inputs.product, inputs.message.content)
+                    if self._api_key.get_secret_value() in text:
+                        raise ValueError("secret in reply output")
+                except (ValidationError, ValueError, TypeError, KeyError, AttributeError, RecursionError, ProviderError):
+                    if record.outcome == "refused":
+                        raise ProviderError("Real provider refused reply generation", records) from None
+                    record.outcome = "invalid_output"
+                    continue
+                record.outcome = "success"
+                return text, records
+        raise ProviderError("Real reply failed validation after one repair", records) from None
 
     def qualify_structured(self, product: ProductSnapshot, target: TargetMessage,
                            context: list[TargetMessage]) -> tuple[QualificationResult, list[UsageInfo]]:
@@ -96,7 +192,7 @@ class RealProvider(BaseProvider):
                         "Use exact source quotes and IDs; never include score or decision."})
                 started = perf_counter()
                 try:
-                    response = client.post("https://api.openai.com/v1/responses",
+                    response = client.post(self.config.responses_url,
                         headers={"Authorization": "Bearer " + self._api_key.get_secret_value()},
                         timeout=self.config.timeout_seconds, follow_redirects=False,
                         json={"model": self.config.model, "store": False,
@@ -104,6 +200,8 @@ class RealProvider(BaseProvider):
                               "input": request_messages,
                               "text": {"format": {"type": "json_schema", "name": "qualification",
                                                   "strict": True, "schema": output_schema()}}})
+                except ProviderError:
+                    raise ProviderError("OPENAI_BASE_URL must be a trusted Responses endpoint", records) from None
                 except (httpx.HTTPError, RuntimeError) as exc:
                     record = self._usage({}, attempt, started)
                     record.outcome = "timeout" if isinstance(exc, httpx.TimeoutException) else "provider_error"
@@ -119,7 +217,7 @@ class RealProvider(BaseProvider):
                 records.append(record)
                 if not response.is_success:
                     record.outcome = "provider_error"
-                    raise ProviderError("Real provider returned an unsuccessful HTTP response", records) from None
+                    raise ProviderError(_http_failure(response.status_code, body), records) from None
                 if body.get("status") in ("failed", "cancelled", "incomplete"):
                     record.outcome = "incomplete"
                     raise ProviderError("Real provider did not complete qualification", records) from None
@@ -177,6 +275,6 @@ class RealProvider(BaseProvider):
             raise ProviderError("Provider context must have unique IDs and exclude the target", [])
         screening = screen(product, target, context)
         if not screening.is_candidate:
-            return AgentOutput(screening=screening)
+            return AgentOutput(screening=screening, decision_reason=screening_decision_reason(screening))
         result, usage = self.qualify_structured(product, target, context)
-        return AgentOutput(screening=screening, qualification=result, usage=usage)
+        return AgentOutput(screening=screening, qualification=result, usage=usage, prompt_version=self.prompt_version)

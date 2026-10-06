@@ -1,0 +1,223 @@
+{
+  "fixture_version": "agent_alignment_v1",
+  "provenance": "Authored synthetic integration fixture with real-shaped telemetry, not a recorded API result or evidence of model accuracy.",
+  "examples": [
+    {
+      "case_id": "qualified_unknown_cost",
+      "agent_input": {
+        "product": {
+          "id": "11111111-1111-4111-8111-111111111111",
+          "name": "Python Starter Course",
+          "description": "Beginner Python course with practical exercises.",
+          "target_customer": "Beginners"
+        },
+        "message": {
+          "id": "22222222-2222-4222-8222-222222222222",
+          "content": "I'm looking for a Python course for beginners. How much does it cost?",
+          "author": "prospective-learner",
+          "timestamp": "2026-10-06T12:01:00Z",
+          "conversation_id": "conversation-python",
+          "reply_to_message_id": "33333333-3333-4333-8333-333333333333"
+        },
+        "context_messages": [
+          {
+            "id": "33333333-3333-4333-8333-333333333333",
+            "content": "Has anyone tried the Python Starter Course?",
+            "author": "community-member",
+            "timestamp": "2026-10-06T12:00:00Z"
+          }
+        ],
+        "metadata": {
+          "run_id": "44444444-4444-4444-8444-444444444444",
+          "provider_mode": "real"
+        }
+      },
+      "analysis": {
+        "screening": {
+          "is_candidate": true,
+          "reason": "product_or_problem_reference"
+        },
+        "qualification": {
+          "intent": "searching_for_course",
+          "need": "Wants beginner Python training and asks about its cost.",
+          "purchase_intent": 0.9,
+          "product_fit": 0.9,
+          "need_strength": 0.8,
+          "urgency": 0.0,
+          "confidence": 0.9,
+          "response_opportunity": 0.9,
+          "evidence": [
+            {
+              "message_id": "22222222-2222-4222-8222-222222222222",
+              "quote": "I'm looking for a Python course for beginners. How much does it cost?",
+              "reason": "The target explicitly seeks beginner Python training and asks about cost."
+            }
+          ],
+          "limitations": [
+            "Product price and the author's budget are unknown.",
+            "No explicit urgency is supplied."
+          ]
+        },
+        "scoring": {
+          "score": 80,
+          "decision": "RESPOND"
+        },
+        "usage": [
+          {
+            "stage": "qualification",
+            "attempt_no": 1,
+            "provider_mode": "real",
+            "model": "gpt-5.6-luna",
+            "input_tokens": 1090,
+            "output_tokens": 266,
+            "estimated_cost": null,
+            "cost_status": "unknown",
+            "price_version": null,
+            "latency_ms": 25,
+            "outcome": "success"
+          }
+        ],
+        "suggested_reply": null,
+        "decision_reason": "Score qualifies for RESPOND (70-100); no decision guard applied.",
+        "prompt_version": "qualify_real_v1",
+        "scoring_version": "score_v1"
+      },
+      "provider_usage_inputs": [
+        {
+          "input_tokens": 1090,
+          "output_tokens": 266,
+          "input_tokens_details": {
+            "cached_tokens": null
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "confidence_guard_unknown_cost",
+      "agent_input": {
+        "product": {
+          "id": "11111111-1111-4111-8111-111111111111",
+          "name": "Python Starter Course",
+          "description": "Beginner Python course with practical exercises.",
+          "target_customer": "Beginners"
+        },
+        "message": {
+          "id": "22222222-2222-4222-8222-222222222222",
+          "content": "I'm looking for a Python course for beginners. How much does it cost?",
+          "author": "prospective-learner",
+          "timestamp": "2026-10-06T12:01:00Z",
+          "conversation_id": "conversation-python",
+          "reply_to_message_id": "33333333-3333-4333-8333-333333333333"
+        },
+        "context_messages": [
+          {
+            "id": "33333333-3333-4333-8333-333333333333",
+            "content": "Has anyone tried the Python Starter Course?",
+            "author": "community-member",
+            "timestamp": "2026-10-06T12:00:00Z"
+          }
+        ],
+        "metadata": {
+          "run_id": "55555555-5555-4555-8555-555555555555",
+          "provider_mode": "real"
+        }
+      },
+      "analysis": {
+        "screening": {
+          "is_candidate": true,
+          "reason": "product_or_problem_reference"
+        },
+        "qualification": {
+          "intent": "searching_for_course",
+          "need": "Wants beginner Python training and asks about its cost.",
+          "purchase_intent": 0.9,
+          "product_fit": 0.9,
+          "need_strength": 0.8,
+          "urgency": 0.0,
+          "confidence": 0.55,
+          "response_opportunity": 0.9,
+          "evidence": [
+            {
+              "message_id": "22222222-2222-4222-8222-222222222222",
+              "quote": "I'm looking for a Python course for beginners. How much does it cost?",
+              "reason": "The target explicitly seeks beginner Python training and asks about cost."
+            }
+          ],
+          "limitations": [
+            "Product price and the author's budget are unknown.",
+            "No explicit urgency is supplied.",
+            "The author's experience level needs clarification."
+          ]
+        },
+        "scoring": {
+          "score": 76,
+          "decision": "REVIEW"
+        },
+        "usage": [
+          {
+            "stage": "qualification",
+            "attempt_no": 1,
+            "provider_mode": "real",
+            "model": "gpt-5.6-luna",
+            "input_tokens": 1090,
+            "output_tokens": 266,
+            "estimated_cost": null,
+            "cost_status": "unknown",
+            "price_version": null,
+            "latency_ms": 25,
+            "outcome": "success"
+          }
+        ],
+        "suggested_reply": null,
+        "decision_reason": "Confidence guard capped decision to REVIEW (confidence < 0.60).",
+        "prompt_version": "qualify_real_v1",
+        "scoring_version": "score_v1"
+      },
+      "provider_usage_inputs": [
+        {
+          "input_tokens": 1090,
+          "output_tokens": 266,
+          "input_tokens_details": {}
+        }
+      ]
+    },
+    {
+      "case_id": "screening_only",
+      "agent_input": {
+        "product": {
+          "id": "11111111-1111-4111-8111-111111111111",
+          "name": "Python Starter Course",
+          "description": "Beginner Python course with practical exercises.",
+          "target_customer": "Beginners"
+        },
+        "message": {
+          "id": "66666666-6666-4666-8666-666666666666",
+          "content": "Hello!",
+          "author": "community-member",
+          "timestamp": "2026-10-06T12:02:00Z",
+          "conversation_id": "conversation-noise",
+          "reply_to_message_id": null
+        },
+        "context_messages": [],
+        "metadata": {
+          "run_id": "77777777-7777-4777-8777-777777777777",
+          "provider_mode": "real"
+        }
+      },
+      "analysis": {
+        "screening": {
+          "is_candidate": false,
+          "reason": "greeting_or_social_noise"
+        },
+        "qualification": null,
+        "scoring": null,
+        "usage": [],
+        "suggested_reply": null,
+        "decision_reason": "Screening rejected the message: greeting_or_social_noise",
+        "prompt_version": null,
+        "scoring_version": null
+      },
+      "provider_usage_inputs": []
+    }
+  ]
+}

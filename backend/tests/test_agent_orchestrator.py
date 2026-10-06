@@ -20,12 +20,12 @@ from app.agents.providers.base import ProviderError
 from app.agents.providers.config import RealProviderConfig
 from app.agents.providers.mock import MockProvider
 from app.agents.providers.real import RealProvider
-from app.agents.scoring import calculate_score
+from app.agents.scoring import calculate_score, calculate_score_with_reason
 
 
 @pytest.fixture(autouse=True)
 def no_real_credentials(monkeypatch):
-    for name in ("OPENAI_API_KEY", "OPENAI_MODEL", "OPENAI_PRICE_VERSION",
+    for name in ("OPENAI_API_KEY", "OPENAI_MODEL", "OPENAI_BASE_URL", "OPENAI_PRICE_VERSION",
                  "OPENAI_INPUT_USD_PER_MILLION", "OPENAI_OUTPUT_USD_PER_MILLION"):
         monkeypatch.delenv(name, raising=False)
 
@@ -130,13 +130,13 @@ def test_mock_selection_scores_once_and_keeps_mock_labels(inputs, monkeypatch):
 
     def score_once(*args, **kwargs):
         scores.append((args, kwargs))
-        return calculate_score(*args, **kwargs)
+        return calculate_score_with_reason(*args, **kwargs)
 
     def forbidden(*args, **kwargs):
         pytest.fail("The qualification-only flow must not call provider.analyze or construct RealProvider")
 
     monkeypatch.setattr(orchestrator, "get_provider", select)
-    monkeypatch.setattr(orchestrator, "calculate_score", score_once)
+    monkeypatch.setattr(orchestrator, "calculate_score_with_reason", score_once)
     monkeypatch.setattr(MockProvider, "analyze", forbidden)
     monkeypatch.setattr(factory, "RealProvider", forbidden)
     output = orchestrator.analyze_agent(inputs)
@@ -215,7 +215,7 @@ def test_orchestrator_revalidates_evidence_even_after_provider_validation(kind, 
         return result.model_copy(update={"evidence": [source.model_copy(update=changes)]}), usage
 
     monkeypatch.setattr(provider, "qualify_structured", corrupt)
-    monkeypatch.setattr(orchestrator, "calculate_score", lambda *args, **kwargs: pytest.fail("Invalid evidence must not be scored"))
+    monkeypatch.setattr(orchestrator, "calculate_score_with_reason", lambda *args, **kwargs: pytest.fail("Invalid evidence must not be scored"))
     with pytest.raises(ProviderError, match="not grounded") as exc:
         orchestrator.analyze_agent(inputs)
     assert len(exc.value.usage) == 1 and exc.value.usage[0].input_tokens == 101
@@ -365,7 +365,8 @@ def test_frozen_schema_and_output_fields_are_preserved(inputs, qualification, re
     input_schema = AgentInput.model_json_schema()
     output_schema = AgentOutput.model_json_schema()
     assert set(input_schema["properties"]) == {"product", "message", "context_messages", "metadata"}
-    assert set(output_schema["properties"]) == {"screening", "qualification", "scoring", "usage", "suggested_reply"}
+    assert set(output_schema["properties"]) == {"screening", "qualification", "scoring", "usage", "suggested_reply",
+                                               "decision_reason", "prompt_version", "scoring_version"}
     assert input_schema["properties"]["context_messages"]["maxItems"] == 5
     assert output_schema["properties"]["usage"]["type"] == "array"
     assert all(schema.get("additionalProperties") is False for schema in [
