@@ -80,13 +80,17 @@ fixtures were added.
 
 Checks run on the local Windows environment:
 
-- Backend suite: **207 passed**.
+- Backend suite after Auth/migration hardening: **211 passed**.
 - Alembic upgrade to 0002 on SQLite: passed; `alembic check`: no schema drift.
+- SQLite downgrade from 0002 to 0001 passed; no temporary batch tables remain.
 - A populated 0001→0002 SQLite migration preserved legacy product, batch, and run
   rows and left their owner IDs null.
 - OpenAPI export, including the session-cookie security scheme on protected
   routes, and TypeScript generation: passed.
 - Frontend typecheck and production build: passed.
 
-The PostgreSQL/Compose migration and live browser login flow have not yet been
-verified. Fatima still owns frontend auth UI and credentialed API client wiring.
+An earlier Compose-backed PostgreSQL Mock HTTP smoke passed with 20 messages and
+4 RESPOND results; it predates these Auth hardening changes. The current Auth
+changes passed the SQLite-backed suite and Compose configuration check. Live
+browser login after the cookie configuration changes remains unverified. Fatima
+still owns frontend auth UI and credentialed API client wiring.

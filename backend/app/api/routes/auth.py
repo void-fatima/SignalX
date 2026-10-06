@@ -20,7 +20,7 @@ def _set_session_cookie(response: Response, grant: SessionGrant) -> None:
         max_age=settings().session_lifetime_seconds,
         httponly=True,
         secure=settings().auth_cookie_secure,
-        samesite="lax",
+        samesite=settings().auth_cookie_samesite,
         path="/api/v1",
     )
 
@@ -47,7 +47,7 @@ def logout(request: Request, response: Response, session: DB):
         path="/api/v1",
         secure=settings().auth_cookie_secure,
         httponly=True,
-        samesite="lax",
+        samesite=settings().auth_cookie_samesite,
     )
     response.status_code = 204
     return response

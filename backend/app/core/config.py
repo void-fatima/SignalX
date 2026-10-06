@@ -1,5 +1,7 @@
 from functools import lru_cache
+from typing import Literal
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import model_validator
 
 
 class Settings(BaseSettings):
@@ -9,9 +11,16 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:3000"
     auth_cookie_name: str = "singnalx_session"
     auth_cookie_secure: bool = False
+    auth_cookie_samesite: Literal["lax", "strict", "none"] = "lax"
     session_lifetime_seconds: int = 604800
     worker_poll_seconds: float = 1
     heartbeat_timeout_seconds: int = 120
+
+    @model_validator(mode="after")
+    def validate_cookie_security(self):
+        if self.auth_cookie_samesite == "none" and not self.auth_cookie_secure:
+            raise ValueError("AUTH_COOKIE_SECURE must be true when AUTH_COOKIE_SAMESITE=none")
+        return self
 
 
 @lru_cache

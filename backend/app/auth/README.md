@@ -6,11 +6,15 @@ The backend exposes `POST /api/v1/auth/register`, `POST /api/v1/auth/login`,
 - Emails are trimmed, case-folded, and unique.
 - Passwords are stored as salted `scrypt` hashes; plaintext passwords are never
   persisted or logged.
-- Login issues an opaque random session token in an HttpOnly, SameSite=Lax
-  cookie. The database stores only its SHA-256 digest. Logout revokes the
-  server-side session. Session lifetime defaults to seven days.
-- Configure `AUTH_COOKIE_SECURE=true` behind HTTPS. Local HTTP development uses
-  the default `false`. Keep `CORS_ORIGINS` limited to trusted frontend origins.
+- Login issues an opaque random session token in an HttpOnly cookie. The
+  database stores only its SHA-256 digest. Logout revokes the server-side
+  session. Expired or revoked session rows are pruned at login and hourly by the
+  worker. Session lifetime defaults to seven days.
+- `AUTH_COOKIE_SAMESITE=lax` is suitable for local development and same-site
+  deployments. For a cross-site frontend/API deployment, set
+  `AUTH_COOKIE_SAMESITE=none` and `AUTH_COOKIE_SECURE=true` behind HTTPS. The
+  settings reject `none` without Secure. Keep `CORS_ORIGINS` limited to trusted
+  frontend origins and enable credentialed requests in the frontend client.
 - Mutating auth and product/import/run requests reject an unconfigured browser
   `Origin`. Requests without an `Origin` remain available for non-browser API
   clients.

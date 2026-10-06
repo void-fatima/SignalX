@@ -12,6 +12,12 @@ session settings; origin/CORS configuration; server-only secrets; explicit
 provider mode; health/readiness checks; known model rates and bounded paid usage;
 and restart smoke tests. Build the frontend with the reachable API URL, not localhost.
 
+For same-site frontend/API hosts, `AUTH_COOKIE_SAMESITE=lax` is sufficient. If
+the frontend and API use different sites, configure `AUTH_COOKIE_SAMESITE=none`
+and `AUTH_COOKIE_SECURE=true` over HTTPS, and set `CORS_ORIGINS` to the exact
+frontend origin. Browsers may restrict third-party cookies; prefer same-site
+custom domains or a same-origin proxy when that restriction applies.
+
 Confirm the URL lifetime and competition requirements from the actual rules.
 The revised plan targets first online Mock slice at end of Day 2. This file is a
 handoff plan, not a deployable host configuration or a deployed URL.
