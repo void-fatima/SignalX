@@ -8,7 +8,7 @@ import httpx
 import pytest
 
 from app.agents.contracts import (
-    AgentInput, AgentMetadata, ContextMessage, MessageInput, ProductInput,
+    AgentInput, AgentMetadata, ContextMessage, Decision, MessageInput, ProductInput,
     ProductSnapshot, QualificationResult, RunConfig, Signals, TargetMessage,
 )
 from app.agents.cost import PriceRates
@@ -24,7 +24,7 @@ from app.agents.scoring import score
 
 @pytest.fixture(autouse=True)
 def isolated_environment(monkeypatch):
-    for key in ("OPENAI_API_KEY", "OPENAI_MODEL", "OPENAI_TIMEOUT_SECONDS",
+    for key in ("OPENAI_API_KEY", "OPENAI_MODEL", "OPENAI_BASE_URL", "OPENAI_TIMEOUT_SECONDS",
                 "OPENAI_MAX_OUTPUT_TOKENS", "OPENAI_PRICE_VERSION",
                 "OPENAI_INPUT_USD_PER_MILLION", "OPENAI_OUTPUT_USD_PER_MILLION"):
         monkeypatch.delenv(key, raising=False)
@@ -70,7 +70,7 @@ def envelope(value, *, usage=True, **changes):
 def make_provider(monkeypatch):
     clients = []
 
-    def create(responses, *, rates=None):
+    def create(responses, *, rates=None, config=None):
         requests = []
         pending = iter(responses)
 
@@ -84,7 +84,7 @@ def make_provider(monkeypatch):
         client = httpx.Client(transport=httpx.MockTransport(handle))
         clients.append(client)
         monkeypatch.setenv("OPENAI_API_KEY", "fake-secret-key")
-        config = RealProviderConfig(model="test-model", rates=rates)
+        config = config if config is not None else RealProviderConfig(model="test-model", rates=rates)
         return RealProvider(config, client=client), requests
 
     yield create
@@ -472,3 +472,134 @@ def test_screened_noise_does_not_call_real_provider(make_provider, sources):
     output = provider.analyze(inputs)
     assert not output.screening.is_candidate and output.usage == []
     assert requests == []
+
+
+@pytest.mark.parametrize("base_url,expected", [
+    (None, "https://api.openai.com/v1/responses"),
+    ("https://api.openai.com/v1", "https://api.openai.com/v1/responses"),
+    ("https://api.openai.com/v1/", "https://api.openai.com/v1/responses"),
+    ("https://api.avalai.ir/v1", "https://api.avalai.ir/v1/responses"),
+    ("  https://api.avalai.ir/v1/  ", "https://api.avalai.ir/v1/responses"),
+])
+def test_environment_endpoint_model_and_exact_bearer_header(base_url, expected, monkeypatch,
+                                                          make_provider, sources, result):
+    monkeypatch.setenv("OPENAI_MODEL", "gpt-5.4-mini")
+    if base_url is not None:
+        monkeypatch.setenv("OPENAI_BASE_URL", base_url)
+    config = RealProviderConfig.from_env()
+    provider, requests = make_provider([envelope(result, model="gpt-5.4-mini")], config=config)
+    output, usage = provider.qualify_structured(*sources)
+    assert output == QualificationResult(**result)
+    assert len(requests) == 1 and str(requests[0].url) == expected
+    assert requests[0].headers["Authorization"] == "Bearer fake-secret-key"
+    payload = json.loads(requests[0].content)
+    assert payload["model"] == "gpt-5.4-mini"
+    assert payload["text"]["format"]["strict"] is True
+    assert payload["text"]["format"]["schema"] == output_schema()
+    assert usage[0].provider_mode == "real" and usage[0].model == "gpt-5.4-mini"
+    assert usage[0].input_tokens == 100 and usage[0].output_tokens == 50
+    assert usage[0].estimated_cost is None and usage[0].cost_status == "unknown"
+
+
+@pytest.mark.parametrize("base_url", [
+    "", "   ", "http://api.avalai.ir/v1", "https://api.avalai.ir", "https://api.avalai.ir/v1/responses",
+    "https://api.avalai.ir/v1//", "https://api.avalai.ir:443/v1", "https://api.avalai.ir/v1?key=fake-secret-value",
+    "https://api.avalai.ir/v1#fake-secret-value", "https://fake-secret-value@api.avalai.ir/v1",
+    "https://api.avalai.ir.attacker.example/v1", "https://api.openai.com.attacker.example/v1",
+    "https://127.0.0.1/v1", "https://api.avalai.ir/v1/../responses", "https://api.avalai.ir%2fattacker.example/v1",
+    "https://api.avalai.ir/v1\nX-Api-Key: fake-secret-value",
+])
+def test_untrusted_environment_endpoint_fails_closed_and_sanitized(base_url, monkeypatch):
+    monkeypatch.setenv("OPENAI_API_KEY", "aa-fake-offline-key")
+    monkeypatch.setenv("OPENAI_MODEL", "gpt-5.4-mini")
+    monkeypatch.setenv("OPENAI_BASE_URL", base_url)
+    with pytest.raises(ProviderError, match="OPENAI_BASE_URL") as exc:
+        get_provider("real")
+    rendered = "".join(traceback.format_exception(exc.value))
+    assert "aa-fake-offline-key" not in rendered and "fake-secret-value" not in rendered
+    assert exc.value.usage == []
+
+
+def test_injected_config_trusted_endpoint_validation_and_avalai_key(monkeypatch, make_provider, sources, result):
+    from pydantic import ValidationError
+    with pytest.raises(ValidationError) as exc:
+        RealProviderConfig(model="gpt-5.4-mini", base_url="https://fake-secret-value@attacker.example/v1")
+    assert "fake-secret-value" not in str(exc.value)
+    config = RealProviderConfig(model="gpt-5.4-mini", base_url="https://api.avalai.ir/v1/")
+    provider, requests = make_provider([envelope(result, model="gpt-5.4-mini")], config=config)
+    monkeypatch.setenv("OPENAI_API_KEY", "aa-fake-offline-key")
+    provider = RealProvider(config, client=provider._client)
+    provider.qualify_structured(*sources)
+    assert requests[0].headers["Authorization"] == "Bearer aa-fake-offline-key"
+    assert str(requests[0].url) == "https://api.avalai.ir/v1/responses"
+
+
+def test_mutated_untrusted_base_url_rejected_before_http(make_provider, sources):
+    provider, requests = make_provider([])
+    provider.config.base_url = "https://attacker.example/v1"
+    with pytest.raises(ProviderError, match="OPENAI_BASE_URL") as exc:
+        provider.qualify_structured(*sources)
+    assert requests == [] and exc.value.usage == []
+
+
+def test_model_construct_cannot_bypass_trusted_endpoint(monkeypatch):
+    monkeypatch.setenv("OPENAI_API_KEY", "aa-fake-offline-key")
+    config = RealProviderConfig.model_construct(model="gpt-5.4-mini", base_url="https://attacker.example/v1")
+    with pytest.raises(ProviderError, match="OPENAI_BASE_URL"):
+        RealProvider(config)
+
+
+def test_avalai_repair_remains_on_configured_endpoint_and_scores_separately(make_provider, sources, result):
+    config = RealProviderConfig(model="gpt-5.4-mini", base_url="https://api.avalai.ir/v1")
+    invalid = dict(result, evidence=[dict(message_id="unavailable", quote="invented", reason="fake")])
+    provider, requests = make_provider([envelope(invalid, model="gpt-5.4-mini"),
+                                        envelope(result, model="gpt-5.4-mini")], config=config)
+    product, target, context = sources
+    output, usage = analyze(product, target, [*context, target], RunConfig(provider_mode="real"), provider)
+    assert output.lead_score == 84 and output.decision == "respond"
+    assert len(requests) == 2
+    assert all(str(request.url) == "https://api.avalai.ir/v1/responses" for request in requests)
+    assert all(request.headers["Authorization"] == "Bearer fake-secret-key" for request in requests)
+    assert [record.outcome for record in usage] == ["invalid_output", "success"]
+    assert all(record.cost_usd is None and record.cost_status == "unknown" for record in usage)
+
+
+def test_avalai_redirect_fails_without_following_or_switching_endpoint(make_provider, sources):
+    config = RealProviderConfig(model="gpt-5.4-mini", base_url="https://api.avalai.ir/v1")
+    provider, requests = make_provider([httpx.Response(302, headers={"location": "https://api.openai.com/v1/responses"})], config=config)
+    with pytest.raises(ProviderError) as exc:
+        provider.qualify_structured(*sources)
+    assert len(requests) == 1 and str(requests[0].url) == "https://api.avalai.ir/v1/responses"
+    assert exc.value.usage[0].outcome == "provider_error"
+
+
+def test_avalai_key_alias_is_not_used_as_a_fallback(monkeypatch):
+    monkeypatch.setenv("AVALAI_API_KEY", "aa-fake-offline-key")
+    monkeypatch.setenv("OPENAI_BASE_URL", "https://api.avalai.ir/v1")
+    monkeypatch.setenv("OPENAI_MODEL", "gpt-5.4-mini")
+    with pytest.raises(ProviderError, match="OPENAI_API_KEY"):
+        get_provider("real")
+
+
+@pytest.mark.parametrize("stage", ["qualification", "suggested_reply"])
+def test_endpoint_change_during_repair_preserves_paid_attempt_usage(stage, monkeypatch, sources, result):
+    monkeypatch.setenv("OPENAI_API_KEY", "aa-fake-offline-key")
+    requests = []
+
+    def handler(request):
+        requests.append(request)
+        provider.config.base_url = "https://attacker.example/v1"
+        return httpx.Response(200, json=envelope({}))
+
+    with httpx.Client(transport=httpx.MockTransport(handler)) as client:
+        config = RealProviderConfig(model="gpt-5.4-mini", base_url="https://api.avalai.ir/v1")
+        provider = RealProvider(config, client=client)
+        with pytest.raises(ProviderError, match="OPENAI_BASE_URL") as exc:
+            if stage == "qualification":
+                provider.qualify_structured(*sources)
+            else:
+                provider.generate_reply_structured(public_input(sources), QualificationResult(**result), Decision.RESPOND)
+    assert len(requests) == len(exc.value.usage) == 1
+    assert str(requests[0].url) == "https://api.avalai.ir/v1/responses"
+    assert exc.value.usage[0].stage == stage and exc.value.usage[0].outcome == "invalid_output"
+    assert exc.value.usage[0].input_tokens == 100

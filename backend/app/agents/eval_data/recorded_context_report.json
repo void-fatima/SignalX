@@ -1,0 +1,420 @@
+{
+  "mode": "recorded_real_provider",
+  "split": "dev",
+  "paid_requests_this_evaluation": 0,
+  "live_llm_evaluation_performed": false,
+  "split_population": 40,
+  "evaluated_count": 1,
+  "coverage": 0.025,
+  "score_verification_version": "score_v1",
+  "thresholds_tuned": false,
+  "metric_meaning": "lead discovery counts REVIEW or RESPOND; RESPOND-only is also reported",
+  "limitations": [
+    "Synthetic provisional labels; no independent human adjudication",
+    "Conversation-held-out test is a synthetic holdout, not a representative production sample",
+    "Recorded subset is observational and selected; historical prompt/score versions may be unknown; no population accuracy claim"
+  ],
+  "discovery": {
+    "n": 1,
+    "tp": 0,
+    "fp": 0,
+    "fn": 1,
+    "tn": 0,
+    "precision": null,
+    "recall": 0.0,
+    "screening_recall": 1.0,
+    "failed_count": 0,
+    "unknown_screening_count": 0,
+    "positive_decisions": [
+      "review",
+      "respond"
+    ],
+    "confusion_matrix": {
+      "tp": 0,
+      "fp": 0,
+      "fn": 1,
+      "tn": 0
+    },
+    "false_positive_ids": [],
+    "false_negative_ids": [
+      "dev-context-real-fa"
+    ],
+    "screening_false_negative_ids": [],
+    "unknown_positive_screening_count": 0,
+    "decision_breakdown": {
+      "ignore": 1,
+      "review": 0,
+      "respond": 0,
+      "failed": 0
+    },
+    "review_coverage": 0.0,
+    "positive_review_coverage": 0.0
+  },
+  "respond_only": {
+    "n": 1,
+    "tp": 0,
+    "fp": 0,
+    "fn": 1,
+    "tn": 0,
+    "precision": null,
+    "recall": 0.0,
+    "screening_recall": 1.0,
+    "failed_count": 0,
+    "unknown_screening_count": 0,
+    "positive_decisions": [
+      "respond"
+    ],
+    "confusion_matrix": {
+      "tp": 0,
+      "fp": 0,
+      "fn": 1,
+      "tn": 0
+    },
+    "false_positive_ids": [],
+    "false_negative_ids": [
+      "dev-context-real-fa"
+    ],
+    "screening_false_negative_ids": [],
+    "unknown_positive_screening_count": 0,
+    "decision_breakdown": {
+      "ignore": 1,
+      "review": 0,
+      "respond": 0,
+      "failed": 0
+    },
+    "review_coverage": 0.0,
+    "positive_review_coverage": 0.0
+  },
+  "acceptable_decision_mismatch_ids": [
+    "dev-context-real-fa"
+  ],
+  "acceptable_decision_coverage": 0.0,
+  "predictions": [
+    {
+      "case_id": "dev-context-real-fa",
+      "prediction": {
+        "external_id": "dev-context-real-fa",
+        "decision": "ignore",
+        "is_candidate": true,
+        "status": "completed"
+      },
+      "analysis": {
+        "screening": {
+          "is_candidate": true,
+          "reason": "conversation_dependency"
+        },
+        "qualification": {
+          "intent": "بیان نگرانی درباره گران بودن محصول؛ قصد خرید صریحی بیان نشده است.",
+          "need": "نیاز شخصی به یادگیری پایتون یا نیاز مشخص به این دوره احراز نشده است.",
+          "purchase_intent": 0.25,
+          "product_fit": 0.2,
+          "need_strength": 0.2,
+          "urgency": 0.05,
+          "confidence": 0.86,
+          "response_opportunity": 0.7,
+          "evidence": [
+            {
+              "message_id": "smoke-context-target",
+              "quote": "آره ولی خیلی گرونه.",
+              "reason": "نشان‌دهنده نگرانی درباره قیمت است، اما به‌تنهایی نیاز شخصی یا قصد خرید قطعی را ثابت نمی‌کند."
+            }
+          ],
+          "limitations": [
+            "قیمت محصول در اطلاعات ارائه‌شده مشخص نیست، بنابراین نمی‌توان ادعای گران بودن را نسبت به قیمت واقعی ارزیابی کرد.",
+            "پیام زمینه‌ای از نویسنده دیگری است و نمی‌توان نیاز یا قصد او را به نویسنده هدف نسبت داد.",
+            "هیچ فوریت، بودجه، سطح مهارت یا نیاز آموزشی مشخصی برای نویسنده هدف ارائه نشده است."
+          ]
+        },
+        "scoring": {
+          "score": 29,
+          "decision": "IGNORE"
+        },
+        "usage": [
+          {
+            "stage": "qualification",
+            "attempt_no": 1,
+            "provider_mode": "real",
+            "model": "gpt-5.6-luna",
+            "input_tokens": 1170,
+            "output_tokens": 390,
+            "estimated_cost": "0.000702",
+            "cost_status": "known",
+            "price_version": "avalai-gpt-5.6-luna-verified-2026-10-06",
+            "latency_ms": 69030,
+            "outcome": "success"
+          }
+        ],
+        "suggested_reply": null
+      },
+      "error_category": null,
+      "failed_usage": [],
+      "input_surface": "public_contract"
+    }
+  ],
+  "code_fingerprints": {
+    "screening.py": "5de92b83193c2348d73ed4826441c4ab8afbe4eebc3d12e05475d99a4ed1244d",
+    "qualification.py": "87f5be4410c49cec56f1b3f76ecae60b9d2cde1eb05d8dd76cfaa34cc8b5f5ca",
+    "scoring.py": "d7c694c4ec2116e5c2ab1c478c3baeb15a3043a52be5ebdd9ce6bb0b04d794c0"
+  },
+  "breakdowns": {
+    "language": {
+      "fa": {
+        "discovery": {
+          "n": 1,
+          "tp": 0,
+          "fp": 0,
+          "fn": 1,
+          "tn": 0,
+          "precision": null,
+          "recall": 0.0,
+          "screening_recall": 1.0,
+          "failed_count": 0,
+          "unknown_screening_count": 0,
+          "positive_decisions": [
+            "review",
+            "respond"
+          ],
+          "confusion_matrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 1,
+            "tn": 0
+          },
+          "false_positive_ids": [],
+          "false_negative_ids": [
+            "dev-context-real-fa"
+          ],
+          "screening_false_negative_ids": [],
+          "unknown_positive_screening_count": 0,
+          "decision_breakdown": {
+            "ignore": 1,
+            "review": 0,
+            "respond": 0,
+            "failed": 0
+          },
+          "review_coverage": 0.0,
+          "positive_review_coverage": 0.0
+        },
+        "respond_only": {
+          "n": 1,
+          "tp": 0,
+          "fp": 0,
+          "fn": 1,
+          "tn": 0,
+          "precision": null,
+          "recall": 0.0,
+          "screening_recall": 1.0,
+          "failed_count": 0,
+          "unknown_screening_count": 0,
+          "positive_decisions": [
+            "respond"
+          ],
+          "confusion_matrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 1,
+            "tn": 0
+          },
+          "false_positive_ids": [],
+          "false_negative_ids": [
+            "dev-context-real-fa"
+          ],
+          "screening_false_negative_ids": [],
+          "unknown_positive_screening_count": 0,
+          "decision_breakdown": {
+            "ignore": 1,
+            "review": 0,
+            "respond": 0,
+            "failed": 0
+          },
+          "review_coverage": 0.0,
+          "positive_review_coverage": 0.0
+        },
+        "acceptable_decision_mismatch_ids": [
+          "dev-context-real-fa"
+        ],
+        "acceptable_decision_coverage": 0.0
+      }
+    },
+    "category": {
+      "context_price_objection": {
+        "discovery": {
+          "n": 1,
+          "tp": 0,
+          "fp": 0,
+          "fn": 1,
+          "tn": 0,
+          "precision": null,
+          "recall": 0.0,
+          "screening_recall": 1.0,
+          "failed_count": 0,
+          "unknown_screening_count": 0,
+          "positive_decisions": [
+            "review",
+            "respond"
+          ],
+          "confusion_matrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 1,
+            "tn": 0
+          },
+          "false_positive_ids": [],
+          "false_negative_ids": [
+            "dev-context-real-fa"
+          ],
+          "screening_false_negative_ids": [],
+          "unknown_positive_screening_count": 0,
+          "decision_breakdown": {
+            "ignore": 1,
+            "review": 0,
+            "respond": 0,
+            "failed": 0
+          },
+          "review_coverage": 0.0,
+          "positive_review_coverage": 0.0
+        },
+        "respond_only": {
+          "n": 1,
+          "tp": 0,
+          "fp": 0,
+          "fn": 1,
+          "tn": 0,
+          "precision": null,
+          "recall": 0.0,
+          "screening_recall": 1.0,
+          "failed_count": 0,
+          "unknown_screening_count": 0,
+          "positive_decisions": [
+            "respond"
+          ],
+          "confusion_matrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 1,
+            "tn": 0
+          },
+          "false_positive_ids": [],
+          "false_negative_ids": [
+            "dev-context-real-fa"
+          ],
+          "screening_false_negative_ids": [],
+          "unknown_positive_screening_count": 0,
+          "decision_breakdown": {
+            "ignore": 1,
+            "review": 0,
+            "respond": 0,
+            "failed": 0
+          },
+          "review_coverage": 0.0,
+          "positive_review_coverage": 0.0
+        },
+        "acceptable_decision_mismatch_ids": [
+          "dev-context-real-fa"
+        ],
+        "acceptable_decision_coverage": 0.0
+      }
+    },
+    "input_surface": {
+      "public_contract": {
+        "discovery": {
+          "n": 1,
+          "tp": 0,
+          "fp": 0,
+          "fn": 1,
+          "tn": 0,
+          "precision": null,
+          "recall": 0.0,
+          "screening_recall": 1.0,
+          "failed_count": 0,
+          "unknown_screening_count": 0,
+          "positive_decisions": [
+            "review",
+            "respond"
+          ],
+          "confusion_matrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 1,
+            "tn": 0
+          },
+          "false_positive_ids": [],
+          "false_negative_ids": [
+            "dev-context-real-fa"
+          ],
+          "screening_false_negative_ids": [],
+          "unknown_positive_screening_count": 0,
+          "decision_breakdown": {
+            "ignore": 1,
+            "review": 0,
+            "respond": 0,
+            "failed": 0
+          },
+          "review_coverage": 0.0,
+          "positive_review_coverage": 0.0
+        },
+        "respond_only": {
+          "n": 1,
+          "tp": 0,
+          "fp": 0,
+          "fn": 1,
+          "tn": 0,
+          "precision": null,
+          "recall": 0.0,
+          "screening_recall": 1.0,
+          "failed_count": 0,
+          "unknown_screening_count": 0,
+          "positive_decisions": [
+            "respond"
+          ],
+          "confusion_matrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 1,
+            "tn": 0
+          },
+          "false_positive_ids": [],
+          "false_negative_ids": [
+            "dev-context-real-fa"
+          ],
+          "screening_false_negative_ids": [],
+          "unknown_positive_screening_count": 0,
+          "decision_breakdown": {
+            "ignore": 1,
+            "review": 0,
+            "respond": 0,
+            "failed": 0
+          },
+          "review_coverage": 0.0,
+          "positive_review_coverage": 0.0
+        },
+        "acceptable_decision_mismatch_ids": [
+          "dev-context-real-fa"
+        ],
+        "acceptable_decision_coverage": 0.0
+      }
+    }
+  },
+  "record_provenance": [
+    {
+      "case_id": "dev-context-real-fa",
+      "source": "user_run_recorded_real",
+      "origin": "User-run AvalAI gpt-5.6-luna Context acceptance snapshot; observed development case",
+      "original_snapshot_sha256": "efab70c52aacb2d3aaf29a6c037f83f1e0bd4c4b81d1b248eaecb04f698b677f",
+      "status": "completed",
+      "recorded_prompt_version": null,
+      "recorded_score_version": null
+    }
+  ],
+  "dataset": {
+    "dataset_version": "lead_discovery_synthetic_v1",
+    "label_policy_version": "review_worthy_lead_v1",
+    "source": "authored_examples_with_observed_dev_reference",
+    "test_policy": "conversation_holdout_no_threshold_tuning",
+    "case_count": 64,
+    "dev_count": 40,
+    "test_count": 24,
+    "cases_sha256": "46fb0082c0f99ca42f0078b6c3cd56082298a77b17165d59875979aa533cf98d",
+    "labels_sha256": "d3fcd923262bea06511b3494c54a84911da62cfbc3abfcee293e0391d3791b2c"
+  }
+}

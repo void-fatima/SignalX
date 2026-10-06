@@ -3,19 +3,13 @@ from app.agents.contracts import AgentInput, AgentOutput, ProductSnapshot, Targe
 from app.agents.providers.base import ProviderError
 from app.agents.providers.factory import get_provider
 from app.agents.qualification import validate_qualification_result
-from app.agents.scoring import calculate_score
+from app.agents.scoring import SCORING_VERSION, calculate_score_with_reason, screening_decision_reason
 from app.agents.screening import screen
 from pydantic import ValidationError
 
 
-def analyze_agent(inputs: AgentInput) -> AgentOutput:
-    """Validate, screen, qualify, ground evidence and score using score_v1.
-
-    Backend supplies selected context from the target conversation. ContextMessage
-    has no conversation_id, so this function cannot independently verify its scope.
-    Validation failures raise ValidationError/ValueError; provider failures raise
-    ProviderError with their attempt history. No replies are generated or sent.
-    """
+def _prepare_input(inputs: AgentInput) -> tuple[AgentInput, ProductSnapshot, TargetMessage, list[TargetMessage]]:
+    """Shared input validation for analysis and explicitly requested drafts."""
     # Revalidate nested models as mutation/model_copy can bypass frozen field rules.
     inputs = AgentInput.model_validate(inputs.model_dump() if isinstance(inputs, AgentInput) else inputs)
     context_ids = [message.id for message in inputs.context_messages]
@@ -33,10 +27,22 @@ def analyze_agent(inputs: AgentInput) -> AgentOutput:
     context = [TargetMessage(id=m.id, external_id=m.id, content=m.content,
         author=m.author, timestamp=m.timestamp, conversation_id=target.conversation_id)
         for m in inputs.context_messages]
+    return inputs, product, target, context
+
+
+def analyze_agent(inputs: AgentInput) -> AgentOutput:
+    """Screen, qualify, ground and score; never generate or send replies.
+
+    Backend supplies selected context from the target conversation. ContextMessage
+    has no conversation_id, so this function cannot independently verify its scope.
+    Validation failures raise ValidationError/ValueError; provider failures raise
+    ProviderError with their attempt history.
+    """
+    inputs, product, target, context = _prepare_input(inputs)
 
     screening = screen(product, target, context)
     if not screening.is_candidate:
-        return AgentOutput(screening=screening)
+        return AgentOutput(screening=screening, decision_reason=screening_decision_reason(screening))
 
     mode = inputs.metadata.provider_mode
     provider = get_provider(mode)
@@ -50,5 +56,8 @@ def analyze_agent(inputs: AgentInput) -> AgentOutput:
     if any(record.provider_mode != mode for record in usage):
         raise ProviderError("Provider usage mode does not match the configured mode", usage)
     qualification, target_evidence = validate_qualification_result(qualification, target, context, usage)
-    scoring = calculate_score(qualification, valid_purchase_evidence=target_evidence)
-    return AgentOutput(screening=screening, qualification=qualification, scoring=scoring, usage=usage)
+    scoring, decision_reason = calculate_score_with_reason(qualification, valid_purchase_evidence=target_evidence)
+    # Only the real qualification provider can attest to its executed prompt.
+    prompt_version = getattr(provider, "prompt_version", None) if mode == "real" else None
+    return AgentOutput(screening=screening, qualification=qualification, scoring=scoring, usage=usage,
+        decision_reason=decision_reason, scoring_version=SCORING_VERSION, prompt_version=prompt_version)

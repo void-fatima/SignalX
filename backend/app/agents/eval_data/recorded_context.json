@@ -1,0 +1,88 @@
+[
+  {
+    "case_id": "dev-context-real-fa",
+    "source": "user_run_recorded_real",
+    "origin": "User-run AvalAI gpt-5.6-luna Context acceptance snapshot; observed development case",
+    "original_snapshot_sha256": "efab70c52aacb2d3aaf29a6c037f83f1e0bd4c4b81d1b248eaecb04f698b677f",
+    "snapshot": {
+      "agent_input": {
+        "product": {
+          "id": "smoke-product",
+          "name": "Python Starter Course",
+          "description": "Beginner Python course with practical exercises.",
+          "target_customer": "Beginners"
+        },
+        "message": {
+          "id": "smoke-context-target",
+          "content": "آره ولی خیلی گرونه.",
+          "author": "smoke-test-user",
+          "timestamp": "2026-10-06T18:02:45.698714Z",
+          "conversation_id": "smoke-conversation",
+          "reply_to_message_id": null
+        },
+        "context_messages": [
+          {
+            "id": "smoke-context",
+            "content": "کسی دوره Python Starter رو امتحان کرده؟ برای مبتدی‌ها مناسبه؟",
+            "author": "another-community-user",
+            "timestamp": "2026-10-06T18:01:45.698714Z"
+          }
+        ],
+        "metadata": {
+          "run_id": "b6401231-bb65-40a5-aa58-830e74960f8a",
+          "provider_mode": "real"
+        }
+      },
+      "analysis": {
+        "screening": {
+          "is_candidate": true,
+          "reason": "conversation_dependency"
+        },
+        "qualification": {
+          "intent": "بیان نگرانی درباره گران بودن محصول؛ قصد خرید صریحی بیان نشده است.",
+          "need": "نیاز شخصی به یادگیری پایتون یا نیاز مشخص به این دوره احراز نشده است.",
+          "purchase_intent": 0.25,
+          "product_fit": 0.2,
+          "need_strength": 0.2,
+          "urgency": 0.05,
+          "confidence": 0.86,
+          "response_opportunity": 0.7,
+          "evidence": [
+            {
+              "message_id": "smoke-context-target",
+              "quote": "آره ولی خیلی گرونه.",
+              "reason": "نشان‌دهنده نگرانی درباره قیمت است، اما به‌تنهایی نیاز شخصی یا قصد خرید قطعی را ثابت نمی‌کند."
+            }
+          ],
+          "limitations": [
+            "قیمت محصول در اطلاعات ارائه‌شده مشخص نیست، بنابراین نمی‌توان ادعای گران بودن را نسبت به قیمت واقعی ارزیابی کرد.",
+            "پیام زمینه‌ای از نویسنده دیگری است و نمی‌توان نیاز یا قصد او را به نویسنده هدف نسبت داد.",
+            "هیچ فوریت، بودجه، سطح مهارت یا نیاز آموزشی مشخصی برای نویسنده هدف ارائه نشده است."
+          ]
+        },
+        "scoring": {
+          "score": 29,
+          "decision": "IGNORE"
+        },
+        "usage": [
+          {
+            "stage": "qualification",
+            "attempt_no": 1,
+            "provider_mode": "real",
+            "model": "gpt-5.6-luna",
+            "input_tokens": 1170,
+            "output_tokens": 390,
+            "estimated_cost": "0.000702",
+            "cost_status": "known",
+            "price_version": "avalai-gpt-5.6-luna-verified-2026-10-06",
+            "latency_ms": 69030,
+            "outcome": "success"
+          }
+        ],
+        "suggested_reply": null
+      }
+    },
+    "recorded_prompt_version": null,
+    "recorded_score_version": null
+  }
+]

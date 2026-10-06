@@ -1,0 +1,855 @@
+[
+  {
+    "case_id": "dev-buy-en",
+    "conversation_id": "dev-buy-en-conversation",
+    "group_id": "dev-buy-en-family",
+    "split": "dev",
+    "relevant": true,
+    "acceptable_decisions": [
+      "RESPOND"
+    ],
+    "rationale": "Explicit personal purchase for beginner Python training",
+    "certainty": "clear",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "dev-buy-fa",
+    "conversation_id": "dev-buy-fa-conversation",
+    "group_id": "dev-buy-fa-family",
+    "split": "dev",
+    "relevant": true,
+    "acceptable_decisions": [
+      "REVIEW",
+      "RESPOND"
+    ],
+    "rationale": "Explicit Persian purchase; public product is in English",
+    "certainty": "clear",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "dev-recommend-en",
+    "conversation_id": "dev-recommend-en-conversation",
+    "group_id": "dev-recommend-en-family",
+    "split": "dev",
+    "relevant": true,
+    "acceptable_decisions": [
+      "REVIEW",
+      "RESPOND"
+    ],
+    "rationale": "Recommendation request for novice programming",
+    "certainty": "clear",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "dev-recommend-fa",
+    "conversation_id": "dev-recommend-fa-conversation",
+    "group_id": "dev-recommend-fa-family",
+    "split": "dev",
+    "relevant": true,
+    "acceptable_decisions": [
+      "REVIEW",
+      "RESPOND"
+    ],
+    "rationale": "Personal beginner-course recommendation request",
+    "certainty": "clear",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "dev-context-real-fa",
+    "conversation_id": "smoke-conversation",
+    "group_id": "dev-context-real-fa-family",
+    "split": "dev",
+    "relevant": true,
+    "acceptable_decisions": [
+      "REVIEW"
+    ],
+    "rationale": "Policy-sensitive: relevant course price concern deserves human clarification, not assumed purchase",
+    "certainty": "policy_sensitive",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "dev-context-en",
+    "conversation_id": "dev-budget-en",
+    "group_id": "dev-budget-en",
+    "split": "dev",
+    "relevant": true,
+    "acceptable_decisions": [
+      "REVIEW"
+    ],
+    "rationale": "Context supplies beginner course referent; budget concern can be clarified",
+    "certainty": "policy_sensitive",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "dev-ambiguous-en",
+    "conversation_id": "dev-ambiguous-en-conversation",
+    "group_id": "dev-ambiguous-en-family",
+    "split": "dev",
+    "relevant": true,
+    "acceptable_decisions": [
+      "REVIEW"
+    ],
+    "rationale": "Short reply to relevant course discussion is uncertain but review-worthy",
+    "certainty": "policy_sensitive",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "dev-ambiguous-fa",
+    "conversation_id": "dev-ambiguous-fa-conversation",
+    "group_id": "dev-ambiguous-fa-family",
+    "split": "dev",
+    "relevant": true,
+    "acceptable_decisions": [
+      "REVIEW"
+    ],
+    "rationale": "Relevant course context supports review, not confirmed intent",
+    "certainty": "policy_sensitive",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "dev-ambiguous-alone-en",
+    "conversation_id": "dev-ambiguous-alone-en-conversation",
+    "group_id": "dev-ambiguous-alone-en-family",
+    "split": "dev",
+    "relevant": false,
+    "acceptable_decisions": [
+      "IGNORE"
+    ],
+    "rationale": "No product/problem context or personal need",
+    "certainty": "policy_sensitive",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "dev-ambiguous-alone-fa",
+    "conversation_id": "dev-ambiguous-alone-fa-conversation",
+    "group_id": "dev-ambiguous-alone-fa-family",
+    "split": "dev",
+    "relevant": false,
+    "acceptable_decisions": [
+      "IGNORE"
+    ],
+    "rationale": "Standalone acknowledgement is not a lead",
+    "certainty": "policy_sensitive",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "dev-technical-en",
+    "conversation_id": "dev-technical-en-conversation",
+    "group_id": "dev-technical-en-family",
+    "split": "dev",
+    "relevant": false,
+    "acceptable_decisions": [
+      "IGNORE"
+    ],
+    "rationale": "Debugging alone does not establish purchase or course search",
+    "certainty": "clear",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "dev-technical-fa",
+    "conversation_id": "dev-technical-fa-conversation",
+    "group_id": "dev-technical-fa-family",
+    "split": "dev",
+    "relevant": false,
+    "acceptable_decisions": [
+      "IGNORE"
+    ],
+    "rationale": "Technical support request without product need",
+    "certainty": "clear",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "dev-noise-en",
+    "conversation_id": "dev-noise-en-conversation",
+    "group_id": "dev-noise-en-family",
+    "split": "dev",
+    "relevant": false,
+    "acceptable_decisions": [
+      "IGNORE"
+    ],
+    "rationale": "Clearly unrelated sports conversation",
+    "certainty": "clear",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "dev-noise-fa",
+    "conversation_id": "dev-noise-fa-conversation",
+    "group_id": "dev-noise-fa-family",
+    "split": "dev",
+    "relevant": false,
+    "acceptable_decisions": [
+      "IGNORE"
+    ],
+    "rationale": "Clearly unrelated Persian sports chatter",
+    "certainty": "clear",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "dev-greeting-en",
+    "conversation_id": "dev-greeting-en-conversation",
+    "group_id": "dev-greeting-en-family",
+    "split": "dev",
+    "relevant": false,
+    "acceptable_decisions": [
+      "IGNORE"
+    ],
+    "rationale": "Greeting without relevant context",
+    "certainty": "clear",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "dev-greeting-fa",
+    "conversation_id": "dev-greeting-fa-conversation",
+    "group_id": "dev-greeting-fa-family",
+    "split": "dev",
+    "relevant": false,
+    "acceptable_decisions": [
+      "IGNORE"
+    ],
+    "rationale": "Greeting without relevant context",
+    "certainty": "clear",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "dev-third-en",
+    "conversation_id": "dev-third-en-conversation",
+    "group_id": "dev-third-en-family",
+    "split": "dev",
+    "relevant": false,
+    "acceptable_decisions": [
+      "IGNORE"
+    ],
+    "rationale": "Another person's need plus explicit personal disinterest",
+    "certainty": "clear",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "dev-third-fa",
+    "conversation_id": "dev-third-fa-conversation",
+    "group_id": "dev-third-fa-family",
+    "split": "dev",
+    "relevant": false,
+    "acceptable_decisions": [
+      "IGNORE"
+    ],
+    "rationale": "Friend's need must not become the author's purchase intent",
+    "certainty": "clear",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "dev-injection-en",
+    "conversation_id": "dev-injection-en-conversation",
+    "group_id": "dev-injection-en-family",
+    "split": "dev",
+    "relevant": false,
+    "acceptable_decisions": [
+      "IGNORE"
+    ],
+    "rationale": "Instructions alone contain no legitimate lead need",
+    "certainty": "clear",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "dev-injection-fa",
+    "conversation_id": "dev-injection-fa-conversation",
+    "group_id": "dev-injection-fa-family",
+    "split": "dev",
+    "relevant": false,
+    "acceptable_decisions": [
+      "IGNORE"
+    ],
+    "rationale": "Untrusted instructions do not establish relevance",
+    "certainty": "clear",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "dev-fit-en",
+    "conversation_id": "dev-fit-en-conversation",
+    "group_id": "dev-fit-en-family",
+    "split": "dev",
+    "relevant": true,
+    "acceptable_decisions": [
+      "REVIEW",
+      "RESPOND"
+    ],
+    "rationale": "Explicit beginner need aligns with product facts",
+    "certainty": "clear",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "dev-fit-fa",
+    "conversation_id": "dev-fit-fa-conversation",
+    "group_id": "dev-fit-fa-family",
+    "split": "dev",
+    "relevant": true,
+    "acceptable_decisions": [
+      "REVIEW",
+      "RESPOND"
+    ],
+    "rationale": "Practical beginner learning need matches the course",
+    "certainty": "clear",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "dev-not-fit-en",
+    "conversation_id": "dev-not-fit-en-conversation",
+    "group_id": "dev-not-fit-en-family",
+    "split": "dev",
+    "relevant": false,
+    "acceptable_decisions": [
+      "IGNORE"
+    ],
+    "rationale": "Explicit advanced production requirements outside beginner profile",
+    "certainty": "clear",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "dev-not-fit-fa",
+    "conversation_id": "dev-not-fit-fa-conversation",
+    "group_id": "dev-not-fit-fa-family",
+    "split": "dev",
+    "relevant": false,
+    "acceptable_decisions": [
+      "IGNORE"
+    ],
+    "rationale": "Advanced needs are outside explicit legacy not_fit profile",
+    "certainty": "clear",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "dev-price-en",
+    "conversation_id": "dev-price-en-conversation",
+    "group_id": "dev-price-en-family",
+    "split": "dev",
+    "relevant": true,
+    "acceptable_decisions": [
+      "REVIEW",
+      "RESPOND"
+    ],
+    "rationale": "Relevant price information request",
+    "certainty": "clear",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "dev-price-fa",
+    "conversation_id": "dev-price-fa-conversation",
+    "group_id": "dev-price-fa-family",
+    "split": "dev",
+    "relevant": true,
+    "acceptable_decisions": [
+      "REVIEW",
+      "RESPOND"
+    ],
+    "rationale": "Relevant Persian price question",
+    "certainty": "clear",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "dev-availability-en",
+    "conversation_id": "dev-availability-en-conversation",
+    "group_id": "dev-availability-en-family",
+    "split": "dev",
+    "relevant": true,
+    "acceptable_decisions": [
+      "REVIEW",
+      "RESPOND"
+    ],
+    "rationale": "Relevant availability/registration request",
+    "certainty": "clear",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "dev-availability-fa",
+    "conversation_id": "dev-availability-fa-conversation",
+    "group_id": "dev-availability-fa-family",
+    "split": "dev",
+    "relevant": true,
+    "acceptable_decisions": [
+      "REVIEW",
+      "RESPOND"
+    ],
+    "rationale": "Relevant Persian registration/availability request",
+    "certainty": "clear",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "dev-reject-en",
+    "conversation_id": "dev-budget-en",
+    "group_id": "dev-budget-en",
+    "split": "dev",
+    "relevant": false,
+    "acceptable_decisions": [
+      "IGNORE"
+    ],
+    "rationale": "Price objection with explicit rejection must not be forced to REVIEW",
+    "certainty": "clear",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "dev-reject-fa",
+    "conversation_id": "dev-reject-fa-conversation",
+    "group_id": "dev-reject-fa-family",
+    "split": "dev",
+    "relevant": false,
+    "acceptable_decisions": [
+      "IGNORE"
+    ],
+    "rationale": "Explicit personal rejection outweighs a price mention",
+    "certainty": "clear",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "dev-unrelated-price-en",
+    "conversation_id": "dev-unrelated-price-en-conversation",
+    "group_id": "dev-unrelated-price-en-family",
+    "split": "dev",
+    "relevant": false,
+    "acceptable_decisions": [
+      "IGNORE"
+    ],
+    "rationale": "Sports-ticket referent is unrelated to Python product",
+    "certainty": "clear",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "dev-unrelated-price-fa",
+    "conversation_id": "dev-unrelated-price-fa-conversation",
+    "group_id": "dev-unrelated-price-fa-family",
+    "split": "dev",
+    "relevant": false,
+    "acceptable_decisions": [
+      "IGNORE"
+    ],
+    "rationale": "Car-price context is unrelated to the course",
+    "certainty": "clear",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "dev-injection-lead-en",
+    "conversation_id": "dev-injection-lead-en-conversation",
+    "group_id": "dev-injection-lead-en-family",
+    "split": "dev",
+    "relevant": true,
+    "acceptable_decisions": [
+      "REVIEW",
+      "RESPOND"
+    ],
+    "rationale": "Discard instructions, retain independently supported legitimate need",
+    "certainty": "clear",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "dev-injection-lead-fa",
+    "conversation_id": "dev-injection-lead-fa-conversation",
+    "group_id": "dev-injection-lead-fa-family",
+    "split": "dev",
+    "relevant": true,
+    "acceptable_decisions": [
+      "REVIEW",
+      "RESPOND"
+    ],
+    "rationale": "Embedded attack must not discard an otherwise real course search",
+    "certainty": "clear",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "dev-quote-en",
+    "conversation_id": "dev-quote-en-conversation",
+    "group_id": "dev-quote-en-family",
+    "split": "dev",
+    "relevant": false,
+    "acceptable_decisions": [
+      "IGNORE"
+    ],
+    "rationale": "Quoted purchase/search text is not the author's own need",
+    "certainty": "clear",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "dev-quote-fa",
+    "conversation_id": "dev-quote-fa-conversation",
+    "group_id": "dev-quote-fa-family",
+    "split": "dev",
+    "relevant": false,
+    "acceptable_decisions": [
+      "IGNORE"
+    ],
+    "rationale": "Quote must not be attributed to the author",
+    "certainty": "clear",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "dev-compare-en",
+    "conversation_id": "dev-compare-en-conversation",
+    "group_id": "dev-compare-en-family",
+    "split": "dev",
+    "relevant": true,
+    "acceptable_decisions": [
+      "REVIEW",
+      "RESPOND"
+    ],
+    "rationale": "Personal beginner learning-option comparison",
+    "certainty": "clear",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "dev-compare-fa",
+    "conversation_id": "dev-compare-fa-conversation",
+    "group_id": "dev-compare-fa-family",
+    "split": "dev",
+    "relevant": true,
+    "acceptable_decisions": [
+      "REVIEW",
+      "RESPOND"
+    ],
+    "rationale": "Beginner option comparison warrants useful help",
+    "certainty": "clear",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "dev-name-en",
+    "conversation_id": "dev-name-en-conversation",
+    "group_id": "dev-name-en-family",
+    "split": "dev",
+    "relevant": false,
+    "acceptable_decisions": [
+      "IGNORE"
+    ],
+    "rationale": "Product name alone is not personal purchase need",
+    "certainty": "clear",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "dev-name-fa",
+    "conversation_id": "dev-name-fa-conversation",
+    "group_id": "dev-name-fa-family",
+    "split": "dev",
+    "relevant": false,
+    "acceptable_decisions": [
+      "IGNORE"
+    ],
+    "rationale": "Casual mention alone is not a lead",
+    "certainty": "clear",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "test-enroll-en",
+    "conversation_id": "test-enroll-en-conversation",
+    "group_id": "test-enroll-en-family",
+    "split": "test",
+    "relevant": true,
+    "acceptable_decisions": [
+      "REVIEW",
+      "RESPOND"
+    ],
+    "rationale": "Explicit novice registration/search intent",
+    "certainty": "clear",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "test-enroll-fa",
+    "conversation_id": "test-enroll-fa-conversation",
+    "group_id": "test-enroll-fa-family",
+    "split": "test",
+    "relevant": true,
+    "acceptable_decisions": [
+      "REVIEW",
+      "RESPOND"
+    ],
+    "rationale": "Explicit first-person Persian registration intent",
+    "certainty": "clear",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "test-recommend-en",
+    "conversation_id": "test-recommend-en-conversation",
+    "group_id": "test-recommend-en-family",
+    "split": "test",
+    "relevant": true,
+    "acceptable_decisions": [
+      "REVIEW",
+      "RESPOND"
+    ],
+    "rationale": "Personal beginner training recommendation request",
+    "certainty": "clear",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "test-recommend-fa",
+    "conversation_id": "test-recommend-fa-conversation",
+    "group_id": "test-recommend-fa-family",
+    "split": "test",
+    "relevant": true,
+    "acceptable_decisions": [
+      "REVIEW",
+      "RESPOND"
+    ],
+    "rationale": "No-experience author requests suitable course",
+    "certainty": "clear",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "test-budget-en",
+    "conversation_id": "test-budget-en",
+    "group_id": "test-budget-en",
+    "split": "test",
+    "relevant": true,
+    "acceptable_decisions": [
+      "REVIEW"
+    ],
+    "rationale": "Relevant course referent and budget concern invite clarification",
+    "certainty": "policy_sensitive",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "test-budget-fa",
+    "conversation_id": "test-budget-fa-conversation",
+    "group_id": "test-budget-fa-family",
+    "split": "test",
+    "relevant": true,
+    "acceptable_decisions": [
+      "REVIEW"
+    ],
+    "rationale": "Course context plus personal cost concern is review-worthy",
+    "certainty": "policy_sensitive",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "test-suitability-en",
+    "conversation_id": "test-suitability-en-conversation",
+    "group_id": "test-suitability-en-family",
+    "split": "test",
+    "relevant": true,
+    "acceptable_decisions": [
+      "REVIEW",
+      "RESPOND"
+    ],
+    "rationale": "Context resolves a beginner suitability question",
+    "certainty": "policy_sensitive",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "test-suitability-fa",
+    "conversation_id": "test-suitability-fa-conversation",
+    "group_id": "test-suitability-fa-family",
+    "split": "test",
+    "relevant": true,
+    "acceptable_decisions": [
+      "REVIEW"
+    ],
+    "rationale": "Context resolves an uncertain beginner suitability reply",
+    "certainty": "policy_sensitive",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "test-debug-en",
+    "conversation_id": "test-debug-en-conversation",
+    "group_id": "test-debug-en-family",
+    "split": "test",
+    "relevant": false,
+    "acceptable_decisions": [
+      "IGNORE"
+    ],
+    "rationale": "Technical explanation without learning-product search",
+    "certainty": "clear",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "test-debug-fa",
+    "conversation_id": "test-debug-fa-conversation",
+    "group_id": "test-debug-fa-family",
+    "split": "test",
+    "relevant": false,
+    "acceptable_decisions": [
+      "IGNORE"
+    ],
+    "rationale": "Debugging request does not establish product purchase",
+    "certainty": "clear",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "test-weather-en",
+    "conversation_id": "test-weather-en-conversation",
+    "group_id": "test-weather-en-family",
+    "split": "test",
+    "relevant": false,
+    "acceptable_decisions": [
+      "IGNORE"
+    ],
+    "rationale": "Unrelated social/weather conversation",
+    "certainty": "clear",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "test-hello-fa",
+    "conversation_id": "test-hello-fa-conversation",
+    "group_id": "test-hello-fa-family",
+    "split": "test",
+    "relevant": false,
+    "acceptable_decisions": [
+      "IGNORE"
+    ],
+    "rationale": "Greeting without context",
+    "certainty": "clear",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "test-colleague-en",
+    "conversation_id": "test-colleague-en-conversation",
+    "group_id": "test-colleague-en-family",
+    "split": "test",
+    "relevant": false,
+    "acceptable_decisions": [
+      "IGNORE"
+    ],
+    "rationale": "Third-party need without an author's buying action",
+    "certainty": "clear",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "test-friend-fa",
+    "conversation_id": "test-friend-fa-conversation",
+    "group_id": "test-friend-fa-family",
+    "split": "test",
+    "relevant": false,
+    "acceptable_decisions": [
+      "IGNORE"
+    ],
+    "rationale": "Another person's need must not be attributed to the author",
+    "certainty": "clear",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "test-attack-en",
+    "conversation_id": "test-attack-en-conversation",
+    "group_id": "test-attack-en-family",
+    "split": "test",
+    "relevant": false,
+    "acceptable_decisions": [
+      "IGNORE"
+    ],
+    "rationale": "Injected scoring instructions are not buying evidence",
+    "certainty": "clear",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "test-attack-fa",
+    "conversation_id": "test-attack-fa-conversation",
+    "group_id": "test-attack-fa-family",
+    "split": "test",
+    "relevant": false,
+    "acceptable_decisions": [
+      "IGNORE"
+    ],
+    "rationale": "Scoring instructions alone do not create need",
+    "certainty": "clear",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "test-exercises-en",
+    "conversation_id": "test-exercises-en-conversation",
+    "group_id": "test-exercises-en-family",
+    "split": "test",
+    "relevant": true,
+    "acceptable_decisions": [
+      "REVIEW",
+      "RESPOND"
+    ],
+    "rationale": "Structured practical beginner training problem matches facts",
+    "certainty": "clear",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "test-exercises-fa",
+    "conversation_id": "test-exercises-fa-conversation",
+    "group_id": "test-exercises-fa-family",
+    "split": "test",
+    "relevant": true,
+    "acceptable_decisions": [
+      "REVIEW",
+      "RESPOND"
+    ],
+    "rationale": "First-time practical Python learning need",
+    "certainty": "clear",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "test-advanced-en",
+    "conversation_id": "test-advanced-en-conversation",
+    "group_id": "test-advanced-en-family",
+    "split": "test",
+    "relevant": false,
+    "acceptable_decisions": [
+      "IGNORE"
+    ],
+    "rationale": "Advanced requirements conflict with beginner profile",
+    "certainty": "clear",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "test-advanced-fa",
+    "conversation_id": "test-advanced-fa-conversation",
+    "group_id": "test-advanced-fa-family",
+    "split": "test",
+    "relevant": false,
+    "acceptable_decisions": [
+      "IGNORE"
+    ],
+    "rationale": "Advanced professional needs conflict with the not_fit profile",
+    "certainty": "clear",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "test-budget-reject-en",
+    "conversation_id": "test-budget-en",
+    "group_id": "test-budget-en",
+    "split": "test",
+    "relevant": false,
+    "acceptable_decisions": [
+      "IGNORE"
+    ],
+    "rationale": "Explicit disinterest must not be upgraded just for mentioning expense",
+    "certainty": "clear",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "test-fare-fa",
+    "conversation_id": "test-fare-fa-conversation",
+    "group_id": "test-fare-fa-family",
+    "split": "test",
+    "relevant": false,
+    "acceptable_decisions": [
+      "IGNORE"
+    ],
+    "rationale": "Unrelated travel price concern, not course interest",
+    "certainty": "clear",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "test-availability-en",
+    "conversation_id": "test-availability-en-conversation",
+    "group_id": "test-availability-en-family",
+    "split": "test",
+    "relevant": true,
+    "acceptable_decisions": [
+      "REVIEW",
+      "RESPOND"
+    ],
+    "rationale": "Course availability and enrollment inquiry",
+    "certainty": "clear",
+    "authoring": "assistant_authored_provisional"
+  },
+  {
+    "case_id": "test-hypothetical-fa",
+    "conversation_id": "test-hypothetical-fa-conversation",
+    "group_id": "test-hypothetical-fa-family",
+    "split": "test",
+    "relevant": false,
+    "acceptable_decisions": [
+      "IGNORE"
+    ],
+    "rationale": "Hypothetical interest plus explicit current rejection",
+    "certainty": "policy_sensitive",
+    "authoring": "assistant_authored_provisional"
+  }
+]
