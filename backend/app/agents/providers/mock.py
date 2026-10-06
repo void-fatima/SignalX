@@ -9,6 +9,27 @@ from app.agents.scoring import score
 
 class MockProvider(BaseProvider):
     """Deterministic demo heuristics, never presented as real AI predictions."""
+    provider_mode = "mock"
+
+    def qualify_structured(self, product: ProductSnapshot, target: TargetMessage,
+                           context: list[TargetMessage]) -> tuple[QualificationResult, list[UsageInfo]]:
+        """Adapt existing Mock qualification and usage without running the scorer."""
+        qualified, events = self.qualify(product, target, context)
+        result = QualificationResult(intent=qualified.intent, need=qualified.need,
+            **qualified.signals.model_dump(),
+            evidence=[EvidenceItem(message_id=e.message_id, quote=e.quote, reason=qualified.reason)
+                      for e in qualified.evidence], limitations=qualified.limitations)
+        return result, self._public_usage(events)
+
+    @staticmethod
+    def _public_usage(events: list[UsageEvent]) -> list[UsageInfo]:
+        return [UsageInfo(stage=event.stage, attempt_no=event.attempt_no,
+            provider_mode=event.provider_mode, model=event.model,
+            input_tokens=event.input_tokens, output_tokens=event.output_tokens,
+            estimated_cost=event.cost_usd, cost_status=event.cost_status,
+            price_version=event.price_version, latency_ms=event.latency_ms,
+            outcome=event.outcome) for event in events]
+
     def analyze(self, inputs: AgentInput) -> AgentOutput:
         if inputs.metadata.provider_mode != "mock":
             raise ValueError("MockProvider requires explicit provider_mode='mock'")
@@ -29,12 +50,7 @@ class MockProvider(BaseProvider):
         if not screening.is_candidate:
             return AgentOutput(screening=screening)
         qualified, events = self.qualify(product, target, context)
-        usage = [UsageInfo(stage=event.stage, attempt_no=event.attempt_no,
-            provider_mode=event.provider_mode, model=event.model,
-            input_tokens=event.input_tokens, output_tokens=event.output_tokens,
-            estimated_cost=event.cost_usd, cost_status=event.cost_status,
-            price_version=event.price_version, latency_ms=event.latency_ms,
-            outcome=event.outcome) for event in events]
+        usage = self._public_usage(events)
         value, decision, _ = score(qualified.signals,
             valid_purchase_evidence=any(e.message_id == target.id for e in qualified.evidence),
             needs_human_review=qualified.needs_human_review)
