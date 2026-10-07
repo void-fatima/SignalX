@@ -1,4 +1,4 @@
-"""Additive Telegram tables. Roham must integrate their migration/ownership FKs."""
+"""Telegram tables frozen in migration 0002; Product ownership guards access."""
 from sqlalchemy import BigInteger, Boolean, ForeignKey, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 

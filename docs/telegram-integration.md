@@ -1,3 +1,12 @@
+# Business Setup follow-up
+
+The `feat/business-setup` branch adds shared database-backed authentication and
+Product ownership, integrates the existing Telegram auth bridges, and assigns
+Alembic 0002 to the Telegram schema handoff before ownership revision 0003.
+See [Business Setup migration notes](business-setup.md) before deploying or
+adopting manually created Telegram tables. Earlier handoff/pending statements
+below describe the Telegram integration commit before this follow-up.
+
 # Telegram integration MVP
 
 Branch: `feat/telegram-integration`, starting at

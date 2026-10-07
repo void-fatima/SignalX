@@ -1,5 +1,6 @@
--- Additive PostgreSQL DDL handoff ONLY. Not applied or assigned an Alembic revision.
--- Roham must integrate owner/member FKs and migration ordering before deployment.
+-- Historical PostgreSQL DDL handoff. Now frozen in Alembic revision 0002.
+-- Prefer alembic upgrade head; do not apply this as well as migration 0002.
+-- For an existing manual installation see docs/business-setup.md before stamping.
 BEGIN;
 
 CREATE TABLE telegram_chat_mappings (

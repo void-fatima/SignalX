@@ -8,6 +8,7 @@ from app.core.config import settings
 from app.core.errors import AppError
 from app.agents.pipeline import get_provider
 from app.api.routes.main import router
+from app.api.routes.auth import router as auth_router
 from app.schemas.api import ErrorOut
 from app.integrations.telegram.routes import router as telegram_router, webhook_router
 
@@ -19,8 +20,8 @@ async def lifespan(app):
 
 
 app = FastAPI(title="singnalX API", version="0.1.0", lifespan=lifespan,
-    responses={404: {"model": ErrorOut}, 409: {"model": ErrorOut}, 422: {"model": ErrorOut}})
-app.add_middleware(CORSMiddleware, allow_origins=settings().cors_origins.split(","), allow_methods=["GET", "POST", "PATCH"], allow_headers=["Content-Type", "Idempotency-Key", "Authorization"])
+    responses={401: {"model": ErrorOut}, 403: {"model": ErrorOut}, 404: {"model": ErrorOut}, 409: {"model": ErrorOut}, 422: {"model": ErrorOut}})
+app.add_middleware(CORSMiddleware, allow_origins=[o.strip() for o in settings().cors_origins.split(",")], allow_credentials=True, allow_methods=["GET", "POST", "PATCH"], allow_headers=["Content-Type", "Idempotency-Key", "Authorization"])
 
 
 @app.exception_handler(Exception)
@@ -41,5 +42,6 @@ async def validation_error(request: Request, exc: RequestValidationError):
 
 
 app.include_router(router, prefix="/api/v1")
+app.include_router(auth_router, prefix="/api/v1")
 app.include_router(telegram_router, prefix="/api/v1")
 app.include_router(webhook_router)

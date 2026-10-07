@@ -40,8 +40,23 @@ class Record:
     created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
 
 
+class User(Record, Base):
+    __tablename__ = "users"
+    email: Mapped[str] = mapped_column(String(254), unique=True)
+    password_hash: Mapped[str] = mapped_column(String(255))
+
+
+class AuthSession(Record, Base):
+    __tablename__ = "auth_sessions"
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    expires_at: Mapped[datetime] = mapped_column(UTCDateTime(), index=True)
+
+
 class Product(Record, Base):
     __tablename__ = "products"
+    # Historical profiles remain unassigned until an administrator verifies ownership.
+    owner_user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id"), nullable=True, index=True)
     name: Mapped[str] = mapped_column(String(200))
     description: Mapped[str] = mapped_column(Text)
     target_customer: Mapped[str] = mapped_column(Text)
@@ -54,7 +69,8 @@ class Product(Record, Base):
 
 class ImportBatch(Record, Base):
     __tablename__ = "import_batches"
-    __table_args__ = (UniqueConstraint("community_name", "checksum"),)
+    __table_args__ = (UniqueConstraint("owner_user_id", "community_name", "checksum", name="uq_import_batches_owner_content"),)
+    owner_user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id"), nullable=True, index=True)
     community_name: Mapped[str] = mapped_column(String(200))
     filename: Mapped[str] = mapped_column(String(255))
     checksum: Mapped[str] = mapped_column(String(64))

@@ -1,7 +1,7 @@
 # Mock demo
 
-1. Open http://localhost:3000 and choose Start with a product.
-2. Save the prefilled backend course product.
+1. Open http://localhost:3000, create an account or log in, and choose Business setup.
+2. Enter a demo backend-course profile explicitly; the form has no demo defaults.
 3. Select it, upload data/demo_messages.csv with a community name.
 4. Start Mock analysis; observe queue/running/processed counts from the worker.
 5. Open results, inspect the explicit Persian course request (score 84), then

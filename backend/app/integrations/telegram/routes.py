@@ -19,7 +19,7 @@ from app.integrations.telegram.normalization import normalize_update
 from app.integrations.telegram.schemas import (
     ApprovedReply, ChatMappingInput, ChatMappingOut, DraftRequest, TelegramLeadOut, TelegramLeadPage, WebhookOut,
 )
-from app.models import Analysis, Product
+from app.models import Analysis, AnalysisRun, Product
 
 webhook_router = APIRouter(tags=["Telegram webhook"])
 router = APIRouter(tags=["Telegram user actions"])
@@ -49,7 +49,7 @@ async def webhook(request: Request, session: DB,
 
 @router.post("/integrations/telegram/chats", response_model=ChatMappingOut, status_code=201)
 def map_chat(payload: ChatMappingInput, request: Request, session: DB, user: User):
-    dependencies.product_access(request, user, payload.product_id)
+    dependencies.product_access(request, user, payload.product_id, session)
     if session.get(Product, str(payload.product_id)) is None:
         raise AppError("not_found", "Product does not exist", 404)
     existing = session.scalar(select(TelegramChatMapping).where(TelegramChatMapping.telegram_chat_id == payload.telegram_chat_id))
@@ -71,8 +71,10 @@ def map_chat(payload: ChatMappingInput, request: Request, session: DB, user: Use
 def leads(session: DB, user: User, limit: Annotated[int, Query(ge=1, le=100)] = 20,
           offset: Annotated[int, Query(ge=0)] = 0):
     statement = select(Analysis.id).join(TelegramReceipt, (TelegramReceipt.run_id == Analysis.run_id)
-        & (TelegramReceipt.message_id == Analysis.message_id)).join(TelegramChatMapping, TelegramChatMapping.id == TelegramReceipt.mapping_id).where(
+        & (TelegramReceipt.message_id == Analysis.message_id)).join(TelegramChatMapping, TelegramChatMapping.id == TelegramReceipt.mapping_id).join(
+        AnalysisRun, AnalysisRun.id == Analysis.run_id).join(Product, Product.id == AnalysisRun.product_id).where(
         TelegramChatMapping.owner_user_id == str(user.id), TelegramChatMapping.enabled.is_(True),
+        Product.owner_user_id == str(user.id), TelegramChatMapping.product_id == Product.id,
         Analysis.status == "completed", Analysis.decision.in_(["review", "respond"]))
     total = session.scalar(select(func.count()).select_from(statement.subquery()))
     ids = session.scalars(statement.order_by(Analysis.lead_score.desc(), Analysis.id).limit(limit).offset(offset)).all()

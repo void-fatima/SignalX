@@ -5,6 +5,7 @@ x-backend: &backend
     DATABASE_URL: postgresql+psycopg://signalx:signalx@database:5432/signalx
     PROVIDER_MODE: mock
     CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+    AUTH_COOKIE_SECURE: ${AUTH_COOKIE_SECURE:-true}
     WORKER_POLL_SECONDS: ${WORKER_POLL_SECONDS:-1}
     HEARTBEAT_TIMEOUT_SECONDS: ${HEARTBEAT_TIMEOUT_SECONDS:-120}
 services:

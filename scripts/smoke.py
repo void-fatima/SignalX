@@ -4,14 +4,29 @@ import os
 import time
 import uuid
 from pathlib import Path
-from urllib.request import Request, urlopen
+from urllib.request import Request, build_opener, HTTPRedirectHandler
+from urllib.parse import urlsplit
+from urllib.error import HTTPError
 
 root = Path(__file__).resolve().parents[1]
 base = os.environ.get("SMOKE_API_URL", "http://127.0.0.1:8000/api/v1")
 
 
+class NoRedirect(HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        # Never forward a session credential to an unexpected destination.
+        return None
+
+
+opener = build_opener(NoRedirect())
+
+
 def request(path, data=None, headers=None):
-    with urlopen(Request(base + path, data=data, headers=headers or {}), timeout=10) as response:
+    token = os.environ.get("SMOKE_SESSION_TOKEN", "").strip()
+    if len(token) > 512 or any(ord(c) < 33 or ord(c) > 126 for c in token):
+        raise SystemExit("SMOKE_SESSION_TOKEN has an invalid format; no request was sent.")
+    values = {**({"Authorization": "Bearer " + token} if token else {}), **(headers or {})}
+    with opener.open(Request(base + path, data=data, headers=values), timeout=10) as response:
         return response.status, json.load(response)
 
 
@@ -20,6 +35,14 @@ def post(path, body, headers=None):
 
 
 def main():
+    if not os.environ.get("SMOKE_SESSION_TOKEN", "").strip():
+        raise SystemExit("Set SMOKE_SESSION_TOKEN to a valid session for your existing demo account; no credential is printed.")
+    url = urlsplit(base)
+    if (url.scheme not in {"http", "https"} or url.username or url.password or url.query or url.fragment
+            or (url.scheme == "http" and url.hostname not in {"localhost", "127.0.0.1", "::1"})):
+        raise SystemExit("SMOKE_API_URL must use HTTPS or local loopback HTTP, without embedded credentials.")
+    if request("/health")[1].get("provider_mode") != "mock":
+        raise SystemExit("This synthetic CSV smoke helper requires mock mode; no analysis was queued.")
     assert request("/ready")[0] == 200
     status, product = post("/products", {"name": "Backend Course", "description": "دوره بک‌اند پروژه‌محور", "target_customer": "Developers"})
     assert status == 201
@@ -53,4 +76,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except HTTPError as error:
+        raise SystemExit(f"HTTP smoke failed (status {error.code}); check authentication and API configuration.") from None

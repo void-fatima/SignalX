@@ -13,10 +13,17 @@ GET leads/{id}. Same idempotency key with a different payload returns 409.
 The import endpoint accepts multipart file + community_name. Import belongs to a
 community; the selected product is bound when creating the run.
 
+Business Setup adds POST `/auth/register`, `/auth/login`, `/auth/logout` and
+GET `/auth/me`. All product/import/message/run/lead operations require a session
+and are scoped to the owner. BrowserSession is an HttpOnly cookie; BackendSession
+supports trusted bearer clients. HTTP keys and import deduplication are per-user.
+See [migration and authentication details](business-setup.md). Frozen Agent
+contracts remain unchanged; generated API types are synchronized with this branch.
+
 Runs snapshot the product and config. processed_count includes failed messages;
 successful count is processed_count minus failed_count. Screened-out analyses
 have null signals/score/intent, decision ignore. Failed analyses have decision
-null. All output has provider_mode=mock. Usage has null real token counts and zero
+null. Mock output has provider_mode=mock. Mock usage has null real token counts and zero
 cost_usd with cost_status=mock. This is not real provider telemetry.
 
 Context is offline, limited to the same batch/conversation, up to three preceding
@@ -26,12 +33,9 @@ characters. Product edits never change old run snapshots.
 Reply, feedback and analytics endpoints in the architecture are later-stage
 work, outside the bootstrap scope. Do not show a generated reply as a real AI result.
 
-Revised five-day plan: POST /auth/register, POST /auth/login, POST /auth/logout
-and GET /me are P0 but **not implemented**. Roham must add auth and ownership
-scopes for all products/imports/messages/runs/leads/usage before online release.
-Do not use the current global import checksum or Idempotency-Key scope across
-multiple users. Fatima owns auth UI/guards. Setayesh owns Agent logic only.
-The current Agent improvements do not change the public API schema.
+Auth and ownership are implemented by the Business Setup follow-up. Roham owns
+their final integration and deployment; Fatima owns frontend review. Existing
+historical rows require verified ownership backfill before they become visible.
 
 Regenerate from the repository root:
 

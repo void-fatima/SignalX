@@ -10,7 +10,7 @@ from app.core.config import settings
 from app.core.errors import AppError
 from app.integrations.telegram.models import TelegramChatMapping, TelegramReceipt
 from app.integrations.telegram.normalization import TelegramMessage
-from app.models import ImportBatch, Message
+from app.models import ImportBatch, Message, Product
 from app.schemas.api import RunInput
 from app.services.analysis_service import create_run
 
@@ -31,15 +31,20 @@ def ingest(session, source: TelegramMessage) -> str:
             TelegramChatMapping.telegram_chat_id == source.chat_id, TelegramChatMapping.enabled.is_(True)).with_for_update())
         if mapping is None:
             return "unmapped"
+        product = session.get(Product, mapping.product_id)
+        if product is None or product.owner_user_id != mapping.owner_user_id:
+            raise AppError("telegram_ownership_unavailable", "Mapped product ownership must be verified before ingestion", 503)
         if settings().provider_mode != "real":
             raise AppError("real_provider_required", "Telegram analysis requires explicitly configured real provider mode", 503)
         namespace = "telegram:" + mapping.id + ":" + source.conversation_id
         checksum = hashlib.sha256(namespace.encode()).hexdigest()
         batch = session.scalar(select(ImportBatch).where(ImportBatch.community_name == namespace, ImportBatch.checksum == checksum))
         if batch is None:
-            batch = ImportBatch(community_name=namespace, filename="telegram", checksum=checksum, row_count=0)
+            batch = ImportBatch(owner_user_id=mapping.owner_user_id, community_name=namespace, filename="telegram", checksum=checksum, row_count=0)
             session.add(batch)
             session.flush()
+        elif batch.owner_user_id != mapping.owner_user_id:
+            raise AppError("telegram_ownership_unavailable", "Mapped conversation ownership must be verified before ingestion", 503)
         message = Message(batch_id=batch.id, external_id=source.external_id, conversation_id=source.conversation_id,
             author=(source.sender_username or source.sender_display_name)[:200], content=source.text,
             normalized_content=normalize(source.text), timestamp=source.timestamp,

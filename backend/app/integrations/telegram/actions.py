@@ -12,7 +12,7 @@ from app.integrations.telegram.client import TelegramError
 from app.integrations.telegram.models import TelegramChatMapping, TelegramDelivery, TelegramReceipt
 from app.integrations.telegram.normalization import TelegramMessage
 from app.integrations.telegram.schemas import DeliveryOut, TelegramLeadOut
-from app.models import Analysis, AnalysisRun, Message, Usage
+from app.models import Analysis, AnalysisRun, Message, Usage, Product
 
 
 def owned(session, user_id: str, analysis_id: str):
@@ -26,6 +26,9 @@ def owned(session, user_id: str, analysis_id: str):
     mapping = session.get(TelegramChatMapping, receipt.mapping_id)
     run = session.get(AnalysisRun, analysis.run_id)
     if mapping is None or mapping.owner_user_id != user_id:
+        raise AppError("not_found", "Lead does not exist", 404)
+    product = session.get(Product, run.product_id)
+    if product is None or product.owner_user_id != user_id:
         raise AppError("not_found", "Lead does not exist", 404)
     if not mapping.enabled or mapping.product_id != run.product_id:
         raise AppError("telegram_mapping_disabled", "Telegram mapping is unavailable", 409)

@@ -1,14 +1,23 @@
 from datetime import timedelta
 from pathlib import Path
+import pytest
 from sqlalchemy import select, func
 from app.models import Message, AnalysisRun, Analysis, Usage, utcnow
 from app.services.analysis_service import process_one, recover_interrupted
 from app.agents.providers.mock import MockProvider
 from app.agents.providers.base import ProviderError
 from app.agents.contracts import UsageEvent
+from app.core.config import settings
 
 DATA = Path(__file__).resolve().parents[2] / "data" / "demo_messages.csv"
 PRODUCT = {"name": "Backend course", "description": "دوره بک‌اند پروژه‌محور", "target_customer": "Developers"}
+
+
+@pytest.fixture(autouse=True)
+def authenticated_user(client, monkeypatch):
+    monkeypatch.setattr(settings(), "auth_cookie_secure", False)
+    monkeypatch.setattr(settings(), "provider_mode", "mock")
+    assert client.post("/api/v1/auth/register", json={"email": "flow@example.test", "password": "offline-test-password"}).status_code == 201
 
 
 def setup_run(client, key="test-run"):

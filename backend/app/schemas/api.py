@@ -10,6 +10,7 @@ class ORM(BaseModel):
 
 
 class ProductInput(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
     name: str = Field(min_length=1, max_length=200)
     description: str = Field(min_length=1, max_length=4000)
     target_customer: str = Field(min_length=1, max_length=2000)
@@ -26,6 +27,7 @@ class ProductOut(ProductInput, ORM):
 
 
 class ProductPatch(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
     name: str | None = Field(default=None, min_length=1, max_length=200)
     description: str | None = Field(default=None, min_length=1, max_length=4000)
     target_customer: str | None = Field(default=None, min_length=1, max_length=2000)
@@ -116,7 +118,7 @@ class AnalysisOut(ORM):
     limitations: list[str]
     scoring_version: str
     prompt_version: str
-    provider_mode: Literal["mock"]
+    provider_mode: Literal["mock", "real"]
 
 
 class LeadDetail(BaseModel):

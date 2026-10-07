@@ -14,7 +14,7 @@ from app.integrations.telegram.client import TelegramClient
 from app.integrations.telegram.config import TelegramSettings
 from app.integrations.telegram.models import TelegramChatMapping, TelegramDelivery, TelegramReceipt
 from app.main import app
-from app.models import Analysis, AnalysisRun, ImportBatch, Message, Product, Usage
+from app.models import Analysis, AnalysisRun, ImportBatch, Message, Product, Usage, User
 from app.agents.providers.factory import real_provider_client
 from app.services.analysis_service import process_one
 
@@ -57,7 +57,9 @@ def environment(monkeypatch):
 @pytest.fixture
 def business(factory):
     with factory() as session:
-        product = Product(name="Python Starter Course", description="Beginner Python course.", target_customer="Beginners",
+        session.add(User(id=OWNER, email="user@example.test", password_hash="external-test-auth"))
+        session.flush()
+        product = Product(owner_user_id=OWNER, name="Python Starter Course", description="Beginner Python course.", target_customer="Beginners",
             problems_solved=[], best_fit=[], not_fit=[], currency="USD")
         session.add(product)
         session.flush()
@@ -230,7 +232,7 @@ def test_auth_and_cross_user_ownership_enforced(client, factory, business, llm_h
 
 
 def test_missing_auth_adapter_fails_closed(client, business, monkeypatch, telegram_http):
-    monkeypatch.delattr(app.state, "telegram_auth_service")
+    monkeypatch.setattr(app.state, "telegram_auth_service", None)
     assert client.post(f"/api/v1/leads/{uuid4()}/telegram/reply", headers=HEADERS, json=dict(text="Human reply")).status_code == 503
     assert not telegram_http
 
@@ -239,7 +241,14 @@ def test_mapping_requires_real_backend_product_ownership(client, factory, busine
     path = "/api/v1/integrations/telegram/chats"
     payload = dict(product_id=business, telegram_chat_id=-100456)
     monkeypatch.delattr(app.state, "telegram_product_access")
-    assert client.post(path, json=payload, headers=HEADERS).status_code == 503
+    # The real database ownership adapter now replaces the previously missing bridge.
+    with factory() as session:
+        session.get(Product, business).owner_user_id = None
+        session.commit()
+    assert client.post(path, json=payload, headers=HEADERS).status_code == 404
+    with factory() as session:
+        session.get(Product, business).owner_user_id = OWNER
+        session.commit()
     monkeypatch.setattr(app.state, "telegram_product_access", lambda *a: False, raising=False)
     assert client.post(path, json=payload, headers=HEADERS).status_code == 404
     monkeypatch.setattr(app.state, "telegram_product_access", lambda *a: True)
@@ -308,7 +317,7 @@ def test_non_telegram_lead_rejected_without_sending(client, factory, business, l
 
 def test_different_chats_select_different_businesses(client, factory, business, llm_http):
     with factory() as session:
-        product = Product(name="Vet clinic", description="Care for pets", target_customer="Pet owners",
+        product = Product(owner_user_id=OWNER, name="Vet clinic", description="Care for pets", target_customer="Pet owners",
             problems_solved=[], best_fit=[], not_fit=[], currency="USD")
         session.add(product)
         session.flush()

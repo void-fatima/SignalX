@@ -1,9 +1,10 @@
 # singnalX
 
-The file skeleton now includes auth/service contracts, real-provider and reply
-integration slots, prompt builders, login/register/dashboard UI shells and data/
-deployment handoffs. See [file readiness](docs/file-skeleton.md). These shells do
-not implement authentication, real AI, response persistence or online deployment.
+Business Setup reuses Product profiles with authenticated create/view/list/edit,
+owner isolation, an empty generic form and runtime selected-product snapshots.
+See [Business Setup](docs/business-setup.md) for migration ordering, historical
+ownership backfill and team integration. The Agent and Telegram implementations
+are preserved; older foundation documents describe their original bootstrap state.
 
 Runnable Mock foundation aligned with the revised SignalX five-day architecture, created directly in
 the cloned SignalX repository. English UI supports Persian/English messages.
@@ -16,6 +17,7 @@ Start Docker Desktop with Linux containers, then from the repository root:
 
 ```powershell
 Copy-Item .env.example .env
+$env:AUTH_COOKIE_SECURE = 'false' # Local HTTP only; production HTTPS keeps true.
 docker compose up --build
 ```
 
@@ -23,7 +25,8 @@ Open http://localhost:3000. API documentation: http://localhost:8000/docs.
 Migration runs automatically before API/worker start. PostgreSQL data survives
 `docker compose down`; use `docker compose stop` to pause services. Exactly one
 worker is supported. Compose binds ports to localhost for this local MVP.
-No API key is needed; PROVIDER_MODE is explicitly mock. Real mode fails clearly.
+No API key is needed for this Compose CSV demo; PROVIDER_MODE is explicitly mock.
+Create an account before creating a product. Production HTTPS must retain Secure cookies.
 
 ## Local Windows / PowerShell
 
@@ -37,6 +40,7 @@ python -m venv backend/.venv
 .\backend\.venv\Scripts\python.exe -m pip install -r backend/requirements.lock
 $env:DATABASE_URL = 'sqlite:///./singnalx.db'
 $env:PROVIDER_MODE = 'mock'
+$env:AUTH_COOKIE_SECURE = 'false' # Local HTTP only.
 Set-Location backend
 .\.venv\Scripts\alembic.exe upgrade head
 .\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000
@@ -67,14 +71,14 @@ Never place provider secrets in NEXT_PUBLIC variables.
 
 ## Demo
 
-Save the prefilled product → import data/demo_messages.csv → Start Mock analysis
+Create an account → create a product profile → import data/demo_messages.csv → Start Mock analysis
 → watch worker progress → open Results and a result detail. The Persian explicit
 course request scores 84. Price objections retain conversation context. See
 [the demo walkthrough](docs/demo-script.md).
 
 CSV is UTF-8/BOM, maximum 5 MB / 500 rows; content limit is 4000 characters.
 All rows validate before any insert. Timestamps require a timezone. Same file
-bytes/community reuse the batch. Idempotency-Key reuses a run; changed payload
+bytes/community reuse the batch for the same user. Idempotency-Key reuses a run within that user's namespace; changed payload
 with the same key is a conflict. Product/config snapshots are immutable per run.
 Failures are isolated per message; stale running jobs become interrupted on
 worker restart and are not retried automatically. Offline context includes up to
@@ -96,7 +100,10 @@ npm run typecheck
 npm run build
 ```
 
-With the API and worker running, verify the actual HTTP flow from the root:
+With a mock API and worker running, the CSV HTTP smoke helper accepts an existing
+account session in the private `SMOKE_SESSION_TOKEN` environment variable (for
+example the HttpOnly cookie from a local login). Never paste this token into
+tracked files or shared output. From the root:
 
 ```powershell
 .\backend\.venv\Scripts\python.exe scripts/smoke.py
@@ -122,15 +129,14 @@ types must change together; [ownership](docs/team-plan.md),
 Mock output is synthetic demonstration data, not real LLM analysis or measured
 accuracy. Recorded Mock usage has no real tokens, cost zero and cost_status=mock.
 Screened-out messages have null scores; failed messages have null decisions.
-No authentication or automatic message sending. Real provider/embedding, paid
-usage/budget control, response generation, feedback, advanced analytics,
-evaluation datasets, deployment and presentation media are next-stage work.
-Authentication and per-user data isolation are **P0 for the online MVP** under
-the revised plan; they are not implemented in this local foundation. Auth alone
-must not leave imports/runs/leads shared between users.
+Authentication and per-user product/import/run/lead isolation are implemented on
+this branch. AvalAI/Gemini providers, grounded on-demand replies, offline evaluation
+and Telegram human-approved sending are implemented separately. No automatic
+outreach is added. Migration/backfill and hosting readiness remain release gates;
+see [Business Setup](docs/business-setup.md) and [Telegram integration](docs/telegram-integration.md).
 
-Pure cost utilities and an offline evaluation CLI are now implemented; real
-provider accounting, budget enforcement and measured evaluation remain pending.
+Cost utilities, actual provider usage recording and offline evaluation are
+implemented. Unknown costs remain null; budget enforcement remains outside this flow.
 [Architecture comparison](docs/architecture-comparison.md) explains what was
 kept and improved. [Setayesh's five-day tasks](docs/setayesh-plan.md) track the
 current AI work; Roham owns backend/auth/deploy and Fatima owns all UI.

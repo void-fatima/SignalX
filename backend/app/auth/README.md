@@ -1,22 +1,16 @@
-# Auth implementation boundary — Roham
+# Shared authentication - Roham
 
-contracts.py/security.py define interfaces only. No working login, hashing,
-sessions or route protection exists yet. Credentials.email is a draft string
-contract; add proper email validation and normalization with the chosen dependency.
+The original AuthService interface now has a database-backed implementation in
+`service.py` and shared session dependencies in `dependencies.py`. Login and
+registration use HttpOnly cookies; tokens are stored hashed, expire after 24 hours
+and are revoked on logout. The existing Telegram AuthService bridge remains
+compatible, and product access always verifies database ownership.
 
-Next steps, in one coordinated backend/frontend contract change:
+See [Business Setup](../../../docs/business-setup.md) for endpoints, cookie/CORS
+settings, migration ordering, historical ownership backfill and team handoff.
+Roham should reconcile this implementation with any separate auth branch before
+merging. Hosting must apply login/register rate limiting and HTTPS cookie settings.
 
-1. Add users and sessions ORM models + a new migration. Preserve existing runs.
-2. Add user ownership to products/import_batches/analysis_runs and scope all
-   messages/analyses/usage/drafts/feedback through their owning records.
-3. Scope import checksum and Idempotency-Key uniqueness per user. Test two users.
-4. Implement PasswordHasher using an audited password-hashing library and
-   AuthService/SessionStore with expiry and logout revocation.
-5. Add api/routes/auth.py with POST /auth/register, /login, /logout and GET /me.
-   Mount only when implemented. Choose secure HttpOnly cookie/session or JWT;
-   define CSRF/CORS, error codes and credentials behavior consistently.
-6. Coordinate Fatima's login/register UI and guards; export OpenAPI/types/examples.
-
-SessionGrant deliberately excludes the token from automatic serialization.
-Never log plaintext credentials or substitute a fake logged-in user. The current
-API remains the local, unauthenticated Mock foundation.
+Credentials and SessionGrant preserve the original protocol shape; passwords are
+excluded from repr and tokens from automatic JSON serialization. Never log raw
+credentials or substitute a simulated authenticated user.

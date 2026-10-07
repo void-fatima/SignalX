@@ -1,6 +1,6 @@
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
 from app.models import Base
 from app.db.session import get_session
@@ -10,6 +10,9 @@ from app.main import app
 @pytest.fixture
 def factory(tmp_path):
     engine = create_engine(f"sqlite:///{tmp_path / 'test.db'}", connect_args={"check_same_thread": False})
+    @event.listens_for(engine, "connect")
+    def foreign_keys(connection, _):
+        connection.execute("PRAGMA foreign_keys=ON")
     Base.metadata.create_all(engine)
     yield sessionmaker(engine, expire_on_commit=False)
     engine.dispose()
