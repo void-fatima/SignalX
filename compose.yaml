@@ -1,24 +1,31 @@
 name: singnalx
+x-backend-environment: &backend-environment
+  DATABASE_URL: postgresql+psycopg://signalx:signalx@database:5432/signalx
+  PROVIDER_MODE: ${PROVIDER_MODE:-mock}
+  LLM_PROVIDER: ${LLM_PROVIDER:-avalai}
+  OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+  OPENAI_MODEL: ${OPENAI_MODEL:-}
+  OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
+  OPENAI_TIMEOUT_SECONDS: ${OPENAI_TIMEOUT_SECONDS:-30}
+  OPENAI_MAX_OUTPUT_TOKENS: ${OPENAI_MAX_OUTPUT_TOKENS:-2000}
+  OPENAI_PRICE_VERSION: ${OPENAI_PRICE_VERSION:-}
+  OPENAI_INPUT_USD_PER_MILLION: ${OPENAI_INPUT_USD_PER_MILLION:-}
+  OPENAI_OUTPUT_USD_PER_MILLION: ${OPENAI_OUTPUT_USD_PER_MILLION:-}
+  GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+  GEMINI_MODEL: ${GEMINI_MODEL:-}
+  GEMINI_BASE_URL: ${GEMINI_BASE_URL:-https://generativelanguage.googleapis.com/v1beta/openai/}
+  GEMINI_TIMEOUT_SECONDS: ${GEMINI_TIMEOUT_SECONDS:-30}
+  GEMINI_MAX_OUTPUT_TOKENS: ${GEMINI_MAX_OUTPUT_TOKENS:-2000}
+  CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+  AUTH_COOKIE_NAME: ${AUTH_COOKIE_NAME:-singnalx_session}
+  AUTH_COOKIE_SECURE: ${AUTH_COOKIE_SECURE:-false}
+  AUTH_COOKIE_SAMESITE: ${AUTH_COOKIE_SAMESITE:-lax}
+  SESSION_LIFETIME_SECONDS: ${SESSION_LIFETIME_SECONDS:-604800}
+  WORKER_POLL_SECONDS: ${WORKER_POLL_SECONDS:-1}
+  HEARTBEAT_TIMEOUT_SECONDS: ${HEARTBEAT_TIMEOUT_SECONDS:-120}
 x-backend: &backend
   build: ./backend
-  environment:
-    DATABASE_URL: postgresql+psycopg://signalx:signalx@database:5432/signalx
-    PROVIDER_MODE: ${PROVIDER_MODE:-mock}
-    OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-    OPENAI_MODEL: ${OPENAI_MODEL:-}
-    OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
-    OPENAI_TIMEOUT_SECONDS: ${OPENAI_TIMEOUT_SECONDS:-30}
-    OPENAI_MAX_OUTPUT_TOKENS: ${OPENAI_MAX_OUTPUT_TOKENS:-2000}
-    OPENAI_PRICE_VERSION: ${OPENAI_PRICE_VERSION:-}
-    OPENAI_INPUT_USD_PER_MILLION: ${OPENAI_INPUT_USD_PER_MILLION:-}
-    OPENAI_OUTPUT_USD_PER_MILLION: ${OPENAI_OUTPUT_USD_PER_MILLION:-}
-    CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
-    AUTH_COOKIE_NAME: ${AUTH_COOKIE_NAME:-singnalx_session}
-    AUTH_COOKIE_SECURE: ${AUTH_COOKIE_SECURE:-false}
-    AUTH_COOKIE_SAMESITE: ${AUTH_COOKIE_SAMESITE:-lax}
-    SESSION_LIFETIME_SECONDS: ${SESSION_LIFETIME_SECONDS:-604800}
-    WORKER_POLL_SECONDS: ${WORKER_POLL_SECONDS:-1}
-    HEARTBEAT_TIMEOUT_SECONDS: ${HEARTBEAT_TIMEOUT_SECONDS:-120}
+  environment: *backend-environment
 services:
   database:
     image: postgres:16-alpine
@@ -35,6 +42,10 @@ services:
       retries: 20
   migration:
     <<: *backend
+    environment:
+      <<: *backend-environment
+      OPENAI_API_KEY: ""
+      GEMINI_API_KEY: ""
     command: ["alembic", "upgrade", "head"]
     depends_on:
       database: {condition: service_healthy}

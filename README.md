@@ -1,9 +1,10 @@
 # singnalX
 
-The backend now includes account/session endpoints and user-scoped data access.
-The login/register pages remain UI shells until Fatima connects them to the API.
-Real provider, response persistence and online deployment remain pending. See
-[file readiness](docs/file-skeleton.md).
+The backend includes account/session endpoints, user-scoped data access, Agent
+provider adapters (AvalAI and Gemini), response/feedback persistence and run
+analytics. The login/register pages remain UI shells until Fatima connects them
+to the API. Gemini hosting configuration and deployed live verification remain
+pending. See [file readiness](docs/file-skeleton.md).
 
 Runnable Mock foundation aligned with the revised SignalX five-day architecture, created directly in
 the cloned SignalX repository. English UI supports Persian/English messages.
@@ -23,7 +24,8 @@ Open http://localhost:3000. API documentation: http://localhost:8000/docs.
 Migration runs automatically before API/worker start. PostgreSQL data survives
 `docker compose down`; use `docker compose stop` to pause services. Exactly one
 worker is supported. Compose binds ports to localhost for this local MVP.
-No API key is needed; PROVIDER_MODE is explicitly mock. Real mode fails clearly.
+No API key is needed for the local Compose default; PROVIDER_MODE is explicitly
+mock. Real mode requires provider configuration and fails clearly when it is absent.
 
 ## Local Windows / PowerShell
 
@@ -123,11 +125,12 @@ types must change together; [ownership](docs/team-plan.md),
 Mock output is synthetic demonstration data, not real LLM analysis or measured
 accuracy. Recorded Mock usage has no real tokens, cost zero and cost_status=mock.
 Screened-out messages have null scores; failed messages have null decisions.
-No automatic message sending. Real provider/embedding, paid usage/budget control,
-response generation, feedback, advanced analytics, evaluation datasets,
-deployment and presentation media are next-stage work. Backend authentication and
-user isolation are implemented locally. The auth UI, browser credential handling,
-PostgreSQL/Compose verification and online deployment remain pending.
+No automatic message sending. Real provider adapters, response drafts, feedback
+and run analytics are implemented locally; live Gemini Worker persistence on the
+selected host is still pending. Paid usage/budget control, evaluation datasets,
+deployment and presentation media remain outstanding. Backend authentication and
+user isolation are implemented locally. The auth UI and browser credential
+handling remain with Fatima.
 Pre-authentication records are unowned and inaccessible through authenticated APIs.
 
 Pure cost utilities and an offline evaluation CLI are now implemented; real
@@ -137,4 +140,4 @@ kept and improved. [Setayesh's five-day tasks](docs/setayesh-plan.md) track the
 current AI work; Roham owns backend/auth/deploy and Fatima owns all UI.
 
 See docs/verification.md for checks actually run in the bootstrap environment and
-remaining limits. No cloud deployment or git push was performed.
+remaining limits. No cloud deployment has been performed.
