@@ -10,7 +10,7 @@ from app.agents.pipeline import analyze, get_provider
 from app.services.context_service import load_messages
 
 
-def create_run(session, payload, key: str):
+def create_run(session, payload, key: str, *, commit: bool = True):
     if not key.strip() or len(key) > 200:
         raise AppError("invalid_idempotency_key", "Idempotency-Key must contain 1–200 characters")
     existing = session.scalar(select(AnalysisRun).where(AnalysisRun.idempotency_key == key))
@@ -28,9 +28,11 @@ def create_run(session, payload, key: str):
         config_snapshot=RunConfig(provider_mode=settings().provider_mode).model_dump(), idempotency_key=key, total_count=batch.row_count)
     try:
         session.add(run)
-        session.commit()
+        session.commit() if commit else session.flush()
     except IntegrityError:
         session.rollback()
+        if not commit:
+            raise
         return create_run(session, payload, key)
     return run
 
@@ -55,24 +57,42 @@ def process_one(factory, provider_override=None) -> bool:
         run_id, batch_id = run.id, run.batch_id
         product, config = ProductSnapshot.model_validate(run.product_snapshot), RunConfig.model_validate(run.config_snapshot)
     try:
-        provider = provider_override or get_provider(config.provider_mode)
+        telegram_run = run.idempotency_key.startswith("telegram:v1:")
+        provider = None if telegram_run else provider_override or get_provider(config.provider_mode)
         with factory() as session:
             messages = load_messages(session, batch_id)
-        for target in messages:
+            if telegram_run:
+                from app.integrations.telegram.worker_adapter import prepare_work
+                telegram_input, telegram_target = prepare_work(session, run, messages, config)
+                session.commit()
+        for target in ([telegram_target] if telegram_run else messages):
             with factory() as session:
                 session.get(AnalysisRun, run_id).heartbeat_at = utcnow()
                 session.commit()
             # All database sessions/transactions are closed before provider invocation.
             try:
-                result, usage = analyze(product, target, messages, config, provider)
+                agent_output = None
+                if telegram_run:
+                    from app.integrations.telegram.worker_adapter import analyze_work
+                    result, usage, agent_output = analyze_work(telegram_input)
+                else:
+                    result, usage = analyze(product, target, messages, config, provider)
             except Exception as exc:
                 usage = getattr(exc, "usage", [])
+                if telegram_run:
+                    from app.agents.providers.real import _legacy_usage
+                    usage = _legacy_usage(usage)
                 result = AnalysisResult(status="failed", is_candidate=True, screening_reason="processing_error",
-                    decision=None, reason=str(exc)[:1000])
+                    decision=None, reason="Telegram Agent analysis failed" if telegram_run else str(exc)[:1000],
+                    provider_mode=config.provider_mode)
             with factory() as session:
                 analysis = Analysis(run_id=run_id, message_id=target.id, **result.model_dump(mode="json"))
                 session.add(analysis)
                 session.flush()
+                if telegram_run and agent_output is not None:
+                    from app.integrations.telegram.models import TelegramReceipt
+                    receipt = session.scalar(select(TelegramReceipt).where(TelegramReceipt.run_id == run_id))
+                    receipt.agent_output = agent_output.model_dump(mode="json")
                 for event in usage:
                     session.add(Usage(run_id=run_id, message_id=target.id, analysis_id=analysis.id, **event.model_dump()))
                 current = session.get(AnalysisRun, run_id)
