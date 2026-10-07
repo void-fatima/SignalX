@@ -58,14 +58,13 @@ rounding زبان‌ها در مرزها ایجاد نشود. Confidence<0.60، 
 Rate با واحد **USD به ازای یک میلیون توکن** به تابع داده می‌شود؛ تقسیم بر 1,000,000
 ضروری است. نرخ واقعی اختراع نمی‌شود. usage/rate نامعلوم cost=null؛ Mock صفر با badge
 و cost_status=mock است. هزینه/پیام یا Lead با مخرج صفر یا هزینهٔ ناقص null می‌شود.
-منطق Agent cost و ذخیره Usage آماده‌اند؛ endpoint تجمیع Analytics در شاخهٔ جداگانهٔ
-بعدی توسعه می‌یابد. Budget enforcement و تنظیم معتبر نرخ‌ها هنوز انجام نشده‌اند.
+منطق Agent cost و ذخیره Usage آماده‌اند؛ Backend analytics هزینهٔ ثبت‌شده را تجمیع می‌کند.
+Budget enforcement و تنظیم معتبر نرخ‌ها هنوز انجام نشده‌اند.
 
 ## کارهای باقی‌مانده برای نسخه آنلاین
 
 Routeهای Auth، password hashing، نشست قابل ابطال و scope محصول، import، پیام، run،
-lead، draft پاسخ و feedback در Backend پیاده شده‌اند. Analytics در این شاخه هنوز
-پیاده نشده است. Migration 0002 داده‌های قبل از Auth
+lead، draft پاسخ و feedback در Backend پیاده شده‌اند. Migration 0002 داده‌های قبل از Auth
 را بدون مالک می‌گذارد تا API احراز‌شده آن‌ها را نشان ندهد. فاطیما باید UI احراز هویت
 را به API وصل کند و درخواست‌ها را با credentials بفرستد. بررسی PostgreSQL/Compose
 و deployment آنلاین باقی است.
@@ -80,8 +79,8 @@ Worker در Docker فعلی اجرا نشده و Docker در حال حاضر ر�
 ساختار تفصیلی فعلی را حفظ می‌کنیم؛ schema، models، migrations، contracts/generated types
 و tests واقعی از درخت خلاصهٔ PDF حذف نمی‌شوند. بخش Agent اکنون qualification validation،
 provider factory، cost، evaluation و تولید draft پاسخ on-demand دارد. Backend draft و
-feedback را ذخیره می‌کند؛ پاسخ اجتماعی به‌صورت خودکار ارسال نمی‌شود. Analytics در
-شاخهٔ جداگانه می‌آید. UI همچنان مالکیت فاطیماست.
+feedback را ذخیره می‌کند و analytics را از Usage ذخیره‌شده می‌سازد؛ پاسخ اجتماعی
+به‌صورت خودکار ارسال نمی‌شود. UI همچنان مالکیت فاطیماست.
 [راهنمای فایل‌ها](file-skeleton.md) وضعیت هر بخش را مشخص می‌کند.
 
 [مقایسه و تصمیم‌ها](architecture-comparison.md) · [برنامه تیم](team-plan.md) ·

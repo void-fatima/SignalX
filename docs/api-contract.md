@@ -10,9 +10,9 @@ Implemented endpoints: health/ready; POST/GET/PATCH products; POST imports;
 GET messages; POST analysis/runs (202, required Idempotency-Key);
 GET analysis/runs/{id}; GET leads (run_id required, decision/min_score filters);
 GET leads/{id}; POST/PATCH leads/{id}/response; PUT leads/{id}/feedback;
-POST /auth/register; POST /auth/login;
+GET analytics/overview (run_id required); POST /auth/register; POST /auth/login;
 POST /auth/logout; GET /auth/me. Authenticated product, import, message, run,
-lead, response, and feedback operations are scoped to the current user.
+lead, response, feedback, and analytics operations are scoped to the current user.
 Same-user reuse of an idempotency key with a
 different payload returns 409. Import accepts multipart file + community_name.
 Import checksum and idempotency uniqueness are scoped per user.
@@ -41,8 +41,10 @@ human changes their status. Approval only persists status; the Backend never sen
 community messages. Existing drafts are reused unless `?regenerate=true` is
 requested. Reply attempts are persisted in `llm_usage`; the draft and feedback
 remain available from GET leads/{id}. Feedback is one current vote per analysis.
-Never show mock output as a real AI result. Run-level analytics is not part of this
-branch yet.
+Analytics reports `respond` as qualified, `review` separately, and coverage over
+visible respond/review leads. Cost totals are recorded subtotals; unknown attempts
+lower `cost_complete` and make per-message/per-qualified-lead costs null. Never
+show mock output as a real AI result.
 
 Pre-authentication rows remain unowned after migration 0002 and are inaccessible
 through authenticated API routes. Auth endpoints and ownership enforcement are
