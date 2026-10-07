@@ -133,10 +133,10 @@ test("real results use their own signals and unavailable costs", async ({ page }
 
 test("search and score filters select only matching leads", async ({ page }) => {
   await page.goto("/leads?demo=1");
-  await page.getByRole("searchbox").fill("Navid");
+  await page.getByRole("searchbox", { name: "Search conversations on this page" }).fill("Navid");
   await expect(page.locator(".queue-row")).toHaveCount(1);
   await expect(page.getByRole("button", { name: "Open signal analysis for Navid" })).toBeVisible();
-  await page.getByRole("searchbox").fill("");
+  await page.getByRole("searchbox", { name: "Search conversations on this page" }).fill("");
   await page.getByRole("button", { name: "Toggle run and score filters" }).click();
   await page.getByLabel("Minimum score").fill("80");
   await expect(page.locator(".queue-row")).toHaveCount(1);
