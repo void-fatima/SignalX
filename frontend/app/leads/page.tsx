@@ -21,7 +21,7 @@ function Inbox() {
   const [query, setQuery] = useState(""), [filtersOpen, setFiltersOpen] = useState(false), [selected, setSelected] = useState("");
   const [drafts, setDrafts] = useState<Record<string, ReviewDraft>>({});
   const [analysisOpen, setAnalysisOpen] = useState(false);
-  useEffect(() => { setRunId(search.get("run_id") || localStorage.getItem("run_id") || ""); setOffset(0); setSelected(""); }, [search]);
+  useEffect(() => { setRunId(search.get("run_id") || localStorage.getItem("run_id") || ""); setQuery(search.get("q") || ""); setOffset(0); setSelected(""); }, [search]);
   const { page, details, run, error, detailErrors, runError, loading, retry } = useInbox({ runId, demo, decision, minScore, offset });
   const items = filterLeads(page?.items || [], decision, minScore, query, details);
   const selectedId = items.some(item => item.id === selected) ? selected : items[0]?.id || "";
