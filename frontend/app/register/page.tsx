@@ -1,2 +1,3 @@
 import AuthFormShell from "@/components/AuthFormShell";
-export default function RegisterPage() { return <AuthFormShell mode="register"/>; }
+import { Suspense } from "react";
+export default function RegisterPage() { return <Suspense fallback={<p className="loading-state" role="status">Loading account creation…</p>}><AuthFormShell mode="register"/></Suspense>; }
