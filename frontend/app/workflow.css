@@ -1,5 +1,8 @@
 /* Workflow screens reuse the app shell and its design tokens. */
 .workflow-page { display: grid; grid-template-columns: minmax(0, 1fr); min-width: 0; gap: 13px; }
+.overview-page .workflow-meta { justify-content: flex-end; margin-top: -35px; }
+.recent-runs h2 { flex-shrink: 0; }
+@media (max-width: 1250px) { .overview-page .workflow-meta { margin-top: 0; justify-content: flex-start; } }
 .workflow-title { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }.workflow-title > span { color: var(--muted); font-size: 12px; white-space: nowrap; }
 .overview-metrics, .overview-feedback { position: relative; overflow: hidden; }.overview-metrics::after, .overview-feedback::after { content: ""; position: absolute; pointer-events: none; width: 180px; height: 180px; border-radius: 50%; border: 1px solid #8c40d875; box-shadow: 0 0 0 15px #111424, 0 0 0 16px #7138fc50, 0 0 0 31px #111424, 0 0 0 32px #7138fc40; right: -140px; top: 20px; }.overview-feedback::after { width: 100px; height: 100px; right: -75px; top: -30px; }.overview-metrics > *, .overview-feedback > * { position: relative; z-index: 1; }
 .workspace-workflow .page-main { max-width: 1500px; padding: 20px 18px; background: radial-gradient(ellipse at 60% 0, #7138fc16, transparent 32%); }
