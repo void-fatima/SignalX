@@ -1565,10 +1565,609 @@
           }
         ]
       }
+    },
+    "/api/v1/integrations/telegram/chats": {
+      "post": {
+        "tags": [
+          "Telegram user actions"
+        ],
+        "summary": "Map Chat",
+        "operationId": "map_chat_api_v1_integrations_telegram_chats_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatMappingInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatMappingOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Bad Gateway",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BackendSession": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ]
+      }
+    },
+    "/api/v1/integrations/telegram/leads": {
+      "get": {
+        "tags": [
+          "Telegram user actions"
+        ],
+        "summary": "Leads",
+        "operationId": "leads_api_v1_integrations_telegram_leads_get",
+        "security": [
+          {
+            "BackendSession": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelegramLeadPage"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          }
+        }
+      }
+    },
+    "/api/v1/leads/{lead_id}/telegram": {
+      "get": {
+        "tags": [
+          "Telegram user actions"
+        ],
+        "summary": "Lead",
+        "operationId": "lead_api_v1_leads__lead_id__telegram_get",
+        "security": [
+          {
+            "BackendSession": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "lead_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Lead Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelegramLeadOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          }
+        }
+      }
+    },
+    "/api/v1/leads/{lead_id}/telegram/suggested-reply": {
+      "post": {
+        "tags": [
+          "Telegram user actions"
+        ],
+        "summary": "Suggested Reply",
+        "operationId": "suggested_reply_api_v1_leads__lead_id__telegram_suggested_reply_post",
+        "security": [
+          {
+            "BackendSession": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "lead_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Lead Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DraftRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelegramLeadOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          }
+        }
+      }
+    },
+    "/api/v1/leads/{lead_id}/telegram/reply": {
+      "post": {
+        "tags": [
+          "Telegram user actions"
+        ],
+        "summary": "Approved Reply",
+        "operationId": "approved_reply_api_v1_leads__lead_id__telegram_reply_post",
+        "security": [
+          {
+            "BackendSession": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "lead_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Lead Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApprovedReply"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelegramLeadOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          }
+        }
+      }
+    },
+    "/integrations/telegram/webhook": {
+      "post": {
+        "tags": [
+          "Telegram webhook"
+        ],
+        "summary": "Webhook",
+        "operationId": "webhook_integrations_telegram_webhook_post",
+        "parameters": [
+          {
+            "name": "X-Telegram-Bot-Api-Secret-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Telegram-Bot-Api-Secret-Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "AgentOutput": {
+        "properties": {
+          "screening": {
+            "$ref": "#/components/schemas/ScreeningResult"
+          },
+          "qualification": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QualificationResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "scoring": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScoringResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "decision_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decision Reason"
+          },
+          "prompt_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prompt Version"
+          },
+          "scoring_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scoring Version"
+          },
+          "usage": {
+            "items": {
+              "$ref": "#/components/schemas/UsageInfo"
+            },
+            "type": "array",
+            "title": "Usage"
+          },
+          "suggested_reply": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggested Reply"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "screening"
+        ],
+        "title": "AgentOutput"
+      },
       "AnalysisOut": {
         "properties": {
           "id": {
@@ -1892,6 +2491,22 @@
         ],
         "title": "AnalyticsOverview"
       },
+      "ApprovedReply": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Text"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "title": "ApprovedReply"
+      },
       "BatchOut": {
         "properties": {
           "id": {
@@ -1951,6 +2566,94 @@
         ],
         "title": "Body_upload_api_v1_imports_post"
       },
+      "ChatMappingInput": {
+        "properties": {
+          "product_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Product Id"
+          },
+          "telegram_chat_id": {
+            "type": "integer",
+            "exclusiveMaximum": 0.0,
+            "exclusiveMinimum": -9.223372036854776e+18,
+            "title": "Telegram Chat Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "product_id",
+          "telegram_chat_id"
+        ],
+        "title": "ChatMappingInput"
+      },
+      "ChatMappingOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "product_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Product Id"
+          },
+          "telegram_chat_id": {
+            "type": "integer",
+            "title": "Telegram Chat Id"
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "product_id",
+          "telegram_chat_id",
+          "enabled"
+        ],
+        "title": "ChatMappingOut"
+      },
+      "ContextMessage": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Id"
+          },
+          "content": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Content"
+          },
+          "author": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Author"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Timestamp"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "content",
+          "author",
+          "timestamp"
+        ],
+        "title": "ContextMessage",
+        "description": "Caller supplies only messages from the target's batch/conversation."
+      },
       "Credentials": {
         "properties": {
           "email": {
@@ -1997,6 +2700,77 @@
           "created_at"
         ],
         "title": "CurrentUser"
+      },
+      "Decision": {
+        "type": "string",
+        "enum": [
+          "IGNORE",
+          "REVIEW",
+          "RESPOND"
+        ],
+        "title": "Decision"
+      },
+      "DeliveryOut": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "not_sent",
+              "sending",
+              "sent",
+              "failed"
+            ],
+            "title": "Status",
+            "default": "not_sent"
+          },
+          "telegram_message_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Telegram Message Id"
+          },
+          "failure_category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failure Category"
+          },
+          "delivery_uncertain": {
+            "type": "boolean",
+            "title": "Delivery Uncertain",
+            "default": false
+          },
+          "draft_busy": {
+            "type": "boolean",
+            "title": "Draft Busy",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "DeliveryOut"
+      },
+      "DraftRequest": {
+        "properties": {
+          "regenerate": {
+            "type": "boolean",
+            "title": "Regenerate",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "DraftRequest"
       },
       "ErrorBody": {
         "properties": {
@@ -2053,6 +2827,33 @@
           "quote"
         ],
         "title": "Evidence"
+      },
+      "EvidenceItem": {
+        "properties": {
+          "message_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Message Id"
+          },
+          "quote": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Quote"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Reason"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "message_id",
+          "quote",
+          "reason"
+        ],
+        "title": "EvidenceItem"
       },
       "FeedbackInput": {
         "properties": {
@@ -2620,6 +3421,81 @@
         "type": "object",
         "title": "ProductPatch"
       },
+      "QualificationResult": {
+        "properties": {
+          "intent": {
+            "type": "string",
+            "title": "Intent"
+          },
+          "need": {
+            "type": "string",
+            "title": "Need"
+          },
+          "purchase_intent": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Purchase Intent"
+          },
+          "product_fit": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Product Fit"
+          },
+          "need_strength": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Need Strength"
+          },
+          "urgency": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Urgency"
+          },
+          "confidence": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence"
+          },
+          "response_opportunity": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Response Opportunity"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceItem"
+            },
+            "type": "array",
+            "title": "Evidence"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Limitations"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "intent",
+          "need",
+          "purchase_intent",
+          "product_fit",
+          "need_strength",
+          "urgency",
+          "confidence",
+          "response_opportunity"
+        ],
+        "title": "QualificationResult"
+      },
       "ResponseDraft": {
         "properties": {
           "analysis_id": {
@@ -2840,6 +3716,45 @@
         ],
         "title": "RunOut"
       },
+      "ScoringResult": {
+        "properties": {
+          "score": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Score"
+          },
+          "decision": {
+            "$ref": "#/components/schemas/Decision"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "score",
+          "decision"
+        ],
+        "title": "ScoringResult"
+      },
+      "ScreeningResult": {
+        "properties": {
+          "is_candidate": {
+            "type": "boolean",
+            "title": "Is Candidate"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "is_candidate",
+          "reason"
+        ],
+        "title": "ScreeningResult"
+      },
       "SessionGrant": {
         "properties": {
           "user": {
@@ -2907,6 +3822,358 @@
           "response_opportunity"
         ],
         "title": "Signals"
+      },
+      "TelegramLeadOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "run_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Run Id"
+          },
+          "product_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Product Id"
+          },
+          "message_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Message Id"
+          },
+          "source": {
+            "type": "string",
+            "const": "telegram",
+            "title": "Source",
+            "default": "telegram"
+          },
+          "original_message": {
+            "$ref": "#/components/schemas/TelegramMessage"
+          },
+          "context": {
+            "items": {
+              "$ref": "#/components/schemas/ContextMessage"
+            },
+            "type": "array",
+            "title": "Context"
+          },
+          "analysis": {
+            "$ref": "#/components/schemas/AgentOutput"
+          },
+          "delivery": {
+            "$ref": "#/components/schemas/DeliveryOut"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "run_id",
+          "product_id",
+          "message_id",
+          "original_message",
+          "analysis",
+          "delivery"
+        ],
+        "title": "TelegramLeadOut"
+      },
+      "TelegramLeadPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/TelegramLeadOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "TelegramLeadPage"
+      },
+      "TelegramMessage": {
+        "properties": {
+          "source": {
+            "type": "string",
+            "const": "telegram",
+            "title": "Source",
+            "default": "telegram"
+          },
+          "update_id": {
+            "type": "integer",
+            "exclusiveMaximum": 9.223372036854776e+18,
+            "minimum": 0.0,
+            "title": "Update Id"
+          },
+          "chat_id": {
+            "type": "integer",
+            "exclusiveMaximum": 0.0,
+            "exclusiveMinimum": -9.223372036854776e+18,
+            "title": "Chat Id"
+          },
+          "message_id": {
+            "type": "integer",
+            "exclusiveMaximum": 9.223372036854776e+18,
+            "exclusiveMinimum": 0.0,
+            "title": "Message Id"
+          },
+          "chat_type": {
+            "type": "string",
+            "enum": [
+              "group",
+              "supergroup"
+            ],
+            "title": "Chat Type"
+          },
+          "chat_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chat Title"
+          },
+          "sender_id": {
+            "type": "integer",
+            "exclusiveMaximum": 9.223372036854776e+18,
+            "exclusiveMinimum": 0.0,
+            "title": "Sender Id"
+          },
+          "sender_username": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sender Username"
+          },
+          "sender_display_name": {
+            "type": "string",
+            "title": "Sender Display Name"
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Text"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Timestamp"
+          },
+          "reply_to_message_id": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMaximum": 9.223372036854776e+18,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reply To Message Id"
+          },
+          "message_thread_id": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMaximum": 9.223372036854776e+18,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message Thread Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "update_id",
+          "chat_id",
+          "message_id",
+          "chat_type",
+          "sender_id",
+          "sender_display_name",
+          "text",
+          "timestamp"
+        ],
+        "title": "TelegramMessage"
+      },
+      "UsageInfo": {
+        "properties": {
+          "stage": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Stage"
+          },
+          "attempt_no": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Attempt No",
+            "default": 1
+          },
+          "provider_mode": {
+            "type": "string",
+            "enum": [
+              "mock",
+              "real"
+            ],
+            "title": "Provider Mode"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "input_tokens": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Tokens"
+          },
+          "output_tokens": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Tokens"
+          },
+          "estimated_cost": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimated Cost"
+          },
+          "cost_status": {
+            "type": "string",
+            "enum": [
+              "known",
+              "unknown",
+              "mock"
+            ],
+            "title": "Cost Status",
+            "default": "unknown"
+          },
+          "price_version": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price Version"
+          },
+          "latency_ms": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latency Ms"
+          },
+          "outcome": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Outcome",
+            "default": "unknown"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "stage",
+          "provider_mode"
+        ],
+        "title": "UsageInfo",
+        "description": "One provider attempt. Unknown measurements remain null, not assumed zero."
+      },
+      "WebhookOut": {
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "title": "Ok",
+            "default": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ignored",
+              "unmapped",
+              "queued",
+              "duplicate"
+            ],
+            "title": "Status"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "WebhookOut"
       }
     },
     "securitySchemes": {
@@ -2915,6 +4182,10 @@
         "description": "Opaque HttpOnly session cookie issued by POST /auth/login.",
         "in": "cookie",
         "name": "singnalx_session"
+      },
+      "BackendSession": {
+        "type": "http",
+        "scheme": "bearer"
       }
     }
   }
