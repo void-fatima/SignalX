@@ -89,3 +89,27 @@ def test_analysis_versions_allow_null_when_stages_do_not_run(tmp_path):
         assert columns["scoring_version"] == 0
         assert columns["prompt_version"] == 0
         assert saved == (None, None)
+
+
+def test_response_feedback_migration_is_reversible_on_sqlite(tmp_path):
+    database = tmp_path / "response-feedback.db"
+    env = {**os.environ, "DATABASE_URL": f"sqlite:///{database.as_posix()}"}
+    for operation in (("upgrade", "head"), ("downgrade", "0004")):
+        result = subprocess.run(
+            [sys.executable, "-m", "alembic", *operation],
+            cwd=BACKEND_ROOT,
+            env=env,
+            text=True,
+            capture_output=True,
+        )
+        assert result.returncode == 0, result.stdout + result.stderr
+        if operation[0] == "upgrade":
+            with sqlite3.connect(database) as connection:
+                tables = {row[0] for row in connection.execute(
+                    "SELECT name FROM sqlite_master WHERE type='table'")}
+                assert {"suggested_responses", "lead_feedback"} <= tables
+
+    with sqlite3.connect(database) as connection:
+        tables = {row[0] for row in connection.execute(
+            "SELECT name FROM sqlite_master WHERE type='table'")}
+    assert "suggested_responses" not in tables and "lead_feedback" not in tables
