@@ -1,0 +1,69 @@
+"use client";
+import Link from "next/link";
+import { usePathname, useSearchParams, useRouter } from "next/navigation";
+import { useEffect, useState, type FormEvent } from "react";
+import { api, type CurrentUser, type Product } from "@/lib/api";
+import { WorkspaceContext } from "./WorkspaceContext";
+import Brand from "./Brand";
+import Icon, { type IconName } from "./Icon";
+const navigation: { href: string; label: string; icon: IconName }[] = [
+  { href: "/dashboard", label: "Overview", icon: "home" },
+  { href: "/products", label: "Products", icon: "product" },
+  { href: "/imports", label: "Imports", icon: "file" },
+  { href: "/leads", label: "Leads", icon: "leads" },
+];
+export default function WorkspaceShell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const search = useSearchParams(), router = useRouter(), demo = search.get("demo") === "1";
+  const [open, setOpen] = useState(false);
+  const [user, setUser] = useState<CurrentUser | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [selectedProductId, setSelectedProductId] = useState("");
+  const [selectionLocked, setSelectionLocked] = useState(false);
+  const [query, setQuery] = useState("");
+  const [accountError, setAccountError] = useState("");
+  const current = navigation.find(item => pathname.startsWith(item.href));
+  const auth = pathname === "/login" || pathname === "/register";
+  useEffect(() => {
+    let cancelled = false;
+    setAccountError("");
+    if (demo || auth) { setUser(null); return; }
+    api.me().then(value => { if (!cancelled && typeof value.id === "string" && typeof value.email === "string") setUser(value); }).catch(() => { if (!cancelled) setUser(null); });
+    return () => { cancelled = true; };
+  }, [demo, auth, pathname]);
+  useEffect(() => { setQuery(search.get("q") || ""); setOpen(false); }, [search]);
+  function searchConversations(event: FormEvent) {
+    event.preventDefault();
+    const params = new URLSearchParams({ q: query });
+    if (demo) params.set("demo", "1");
+    router.push(`/leads?${params}`);
+  }
+  async function signOut() {
+    try { await api.logout(); setUser(null); setProducts([]); setSelectedProductId(""); localStorage.removeItem("product_id"); localStorage.removeItem("run_id"); router.push("/login"); }
+    catch { setAccountError("Sign out failed. Please try again."); }
+  }
+  if (auth) return <main id="main-content" className="auth-main">{children}</main>;
+  const name = demo ? "Fatima" : user?.email.split("@")[0] || "Guest";
+  const initials = demo ? "FO" : name.slice(0, 1).toUpperCase();
+  const modeLink = `${pathname}${demo ? "" : "?demo=1"}`;
+  return <WorkspaceContext.Provider value={{ demo, user, products, setProducts, selectedProductId, setSelectedProductId, selectionLocked, setSelectionLocked }}><div className={`workspace ${pathname === "/products" ? "workspace-products" : ""} ${open ? "navigation-open" : ""}`}>
+    <a className="skip-link" href="#main-content">Skip to content</a>
+    <aside className="sidebar" aria-label="Workspace sidebar">
+      <Brand />
+      <div className="workspace-label">Workspace</div>
+      <details className="workspace-picker"><summary><span className="avatar avatar-small">{name.slice(0, 1).toUpperCase()}</span><span>{demo ? "Fatima" : "Local workspace"}</span><Icon name="chevron" size={15} style={{ transform: "rotate(90deg)" }}/></summary><div className="workspace-picker-menu"><span>{demo ? "Synthetic demo workspace" : user ? "Connected account workspace" : "Sign in to access your products"}</span><Link href={modeLink}>{demo ? "Use connected workspace" : "Explore demo workspace"}</Link></div></details>
+      <nav aria-label="Main navigation">{navigation.map(item => <Link key={item.href} href={demo && ["/products", "/leads"].includes(item.href) ? `${item.href}?demo=1` : item.href} aria-current={current?.href === item.href ? "page" : undefined} onClick={() => setOpen(false)}><Icon name={item.icon}/>{item.label}{current?.href === item.href && <Icon name="chevron" size={16}/>}</Link>)}</nav>
+      <div className="sidebar-footer"><details className="sidebar-utility"><summary><Icon name="settings"/>Settings</summary><p>Workspace preferences are not available yet. <Link href="/login">Account access</Link></p></details><details className="sidebar-utility"><summary><Icon name="help"/>Help &amp; support</summary><p>Define a product, import a CSV, then review the signals. <Link href="/imports">Open Imports</Link></p></details><div className="workspace-profile"><span className="avatar avatar-small">{initials}</span><div><strong><bdi>{name}</bdi></strong><span>{demo ? "Demo profile" : user?.email || "Not signed in"}</span></div>{user ? <button className="account-action" onClick={signOut} type="button">Sign out</button> : <Link className="account-action" href={demo ? "/login?demo=1" : "/login"}>Account</Link>}</div>{accountError && <p role="alert">{accountError}</p>}</div>
+    </aside>
+    <div className="workspace-body">
+      <header className="topbar">
+        <button className="icon-button mobile-menu" type="button" aria-label="Toggle workspace navigation" aria-expanded={open} onClick={() => setOpen(!open)}><Icon name="menu"/></button>
+        <div className="breadcrumb"><span>Workspace</span><span>/</span><strong>{current?.label || (auth ? "Account" : "Welcome")}</strong></div>
+        <form className="topbar-search" onSubmit={searchConversations} role="search"><Icon name="search" size={17}/><input type="search" aria-label="Search workspace conversations" placeholder="Search conversations…" value={query} onChange={event => setQuery(event.target.value)}/><kbd>↵</kbd></form>
+        <select className="topbar-product" aria-label="Selected product" value={selectedProductId} onChange={event => setSelectedProductId(event.target.value)} disabled={selectionLocked || !products.length} title={selectionLocked ? "Save or cancel your changes before switching products." : undefined}><option value="">{products.length ? "New product" : "Choose a product"}</option>{products.map(product => <option key={product.id} value={product.id}>{product.name}</option>)}</select>
+        <span className="avatar avatar-small topbar-avatar" aria-label={demo ? "Demo profile" : name}>{initials}</span>
+      </header>
+      <main id="main-content" className={pathname === "/leads" ? "inbox-main" : pathname === "/products" ? "product-main" : "page-main"}>{children}</main>
+    </div>
+  </div></WorkspaceContext.Provider>;
+}

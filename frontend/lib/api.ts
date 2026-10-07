@@ -5,18 +5,26 @@ export type ImportResult = components["schemas"]["ImportOut"];
 export type Run = components["schemas"]["RunOut"];
 export type Analysis = components["schemas"]["AnalysisOut"];
 export type LeadDetail = components["schemas"]["LeadDetail"];
+export type Credentials = components["schemas"]["Credentials"];
+export type CurrentUser = components["schemas"]["CurrentUser"];
+export type SessionGrant = components["schemas"]["SessionGrant"];
 export type Page<T> = { items: T[]; total: number; limit: number; offset: number };
 export class ApiError extends Error {
   constructor(message: string, public details: { row?: number; field?: string; message?: string }[] = []) { super(message); }
 }
 const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const response = await fetch(`${base}${path}`, { ...options, cache: "no-store" });
-  const body = await response.json();
+  const response = await fetch(`${base}${path}`, { ...options, credentials: "include", cache: "no-store" });
+  if (response.status === 204) return undefined as T;
+  const body = await response.json().catch(() => { throw new ApiError(`The server returned an unreadable response (${response.status}). Please try again.`); });
   if (!response.ok) throw new ApiError(body.error?.message || `Request failed (${response.status})`, body.error?.details || []);
   return body as T;
 }
 export const api = {
+  login: (body: Credentials) => request<SessionGrant>("/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }),
+  register: (body: Credentials) => request<CurrentUser>("/auth/register", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }),
+  me: () => request<CurrentUser>("/auth/me"),
+  logout: () => request<void>("/auth/logout", { method: "POST" }),
   products: () => request<Page<Product>>("/products?limit=100"),
   product: (id: string) => request<Product>(`/products/${id}`),
   saveProduct: (body: ProductInput, id?: string) => request<Product>(id ? `/products/${id}` : "/products", { method: id ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }),
