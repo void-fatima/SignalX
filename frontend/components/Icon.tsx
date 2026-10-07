@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 
-export type IconName = "home" | "product" | "file" | "leads" | "search" | "respond" | "review" | "chat" | "chevron" | "arrow" | "plus" | "close" | "expand" | "edit" | "copy" | "check" | "filter" | "menu";
+export type IconName = "home" | "product" | "file" | "leads" | "search" | "respond" | "review" | "chat" | "chevron" | "arrow" | "plus" | "close" | "expand" | "edit" | "copy" | "check" | "filter" | "menu" | "mail" | "lock" | "eye" | "eye-off" | "settings" | "help" | "info" | "bulb" | "ban";
 const paths: Record<IconName, React.ReactNode> = {
   home: <><path d="m3 10 9-7 9 7v11h-6v-7H9v7H3Z" /></>,
   product: <><path d="m12 2 9 5v10l-9 5-9-5V7Zm0 10 9-5M12 12 3 7m9 5v10" /></>,
@@ -17,6 +17,15 @@ const paths: Record<IconName, React.ReactNode> = {
   copy: <><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M16 8V3H3v13h5"/></>,
   check: <path d="m4 12 5 5L20 6"/>, filter: <path d="M3 3h18l-7 8v9l-4-2v-7Z"/>,
   menu: <path d="M3 5h18M3 12h18M3 19h18"/>,
+  mail: <><rect x="2" y="4" width="20" height="16" rx="1"/><path d="m2 5 10 8L22 5"/></>,
+  lock: <><rect x="5" y="10" width="14" height="12" rx="2"/><path d="M8 10V6a4 4 0 0 1 8 0v4m-4 5v3"/></>,
+  eye: <><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></>,
+  "eye-off": <><path d="m3 3 18 18M9 5a12 12 0 0 1 3 0c6 0 10 7 10 7a17 17 0 0 1-3 4M6 6a19 19 0 0 0-4 6s4 7 10 7a12 12 0 0 0 5-1"/></>,
+  settings: <><path d="m9 3 1-2h4l1 2 3 2 3 1v4l-2 2v2l2 2v4l-3 1-3 2h-6l-3-2-3-1v-4l2-2v-2-2L3 8V5l3-1Z" transform="translate(0 1) scale(.9)"/><circle cx="12" cy="12" r="3"/></>,
+  help: <><circle cx="12" cy="12" r="10"/><path d="M9 8a3 3 0 1 1 4 3c-1 .5-1 1-1 3m0 3h.01"/></>,
+  info: <><circle cx="12" cy="12" r="10"/><path d="M12 11v7m0-12h.01"/></>,
+  bulb: <><path d="M8 17a7 7 0 1 1 8 0l-1 3H9Zm2 6h4M12 1V0M2 4l2 2M22 4l-2 2M0 12h3m18 0h3"/></>,
+  ban: <><circle cx="12" cy="12" r="10"/><path d="m5 5 14 14"/></>,
 };
 export default function Icon({ name, size = 20, style }: { name: IconName; size?: number; style?: CSSProperties }) {
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={style}>{paths[name]}</svg>;

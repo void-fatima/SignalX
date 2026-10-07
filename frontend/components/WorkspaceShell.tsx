@@ -15,6 +15,7 @@ export default function WorkspaceShell({ children }: { children: React.ReactNode
   const [open, setOpen] = useState(false);
   const current = navigation.find(item => pathname.startsWith(item.href));
   const auth = pathname === "/login" || pathname === "/register";
+  if (auth) return <main id="main-content" className="auth-main">{children}</main>;
   return <div className={`workspace ${open ? "navigation-open" : ""}`}>
     <a className="skip-link" href="#main-content">Skip to content</a>
     <aside className="sidebar" aria-label="Workspace sidebar">
