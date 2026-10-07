@@ -32,6 +32,9 @@ test("reference validation blocks analysis until a genuine replacement passes", 
   expect(calls).toBe(0);
   await page.getByRole("button", { name: "Preview analysis", exact: true }).click();
   await expect(page).toHaveURL(/\/runs\/demo-import\?demo=1/);
+  await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "0");
+  await expect(page.locator(".run-details")).toContainText("replacement.csv");
+  expect(calls).toBe(0);
 });
 
 test("replacement reports missing columns empty content timezone and encoding", async ({ page }) => {

@@ -20,6 +20,8 @@
 .panel-heading h2 { font-size: 18px; margin: 0; }.panel-heading > a, .panel-heading > span { font-size: 11px; }
 .panel-description { color: var(--muted); font-size: 12px; margin: 0 0 12px; }
 .workflow-empty { color: var(--muted); font-size: 13px; margin: 0; }
+.text-action { color: #c394ff; font-size: 11px; padding: 0; background: transparent; border: 0; text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; }
+.workflow-warning { display: flex; gap: 20px; align-items: center; border: 1px solid #96662a; background: linear-gradient(100deg, #a6661928, #a6661914); padding: 13px 15px; border-radius: 6px; margin: 0 0 14px; color: var(--amber); font-size: 13px; }.workflow-warning > svg { flex-shrink: 0; }.workflow-warning p { color: #c9c4d6; margin: 2px 0 0; font-size: 12px; line-height: 1.5; }
 .workflow-error { border: 1px solid #8e4c66; border-radius: 8px; padding: 14px; color: #f2a2b9; font-size: 13px; }.workflow-error p { margin-bottom: 8px; }
 .workflow-table-scroll { overflow-x: auto; max-width: 100%; border: 1px solid var(--line); border-radius: 7px; }
 .workflow-table-scroll table { width: 100%; border-collapse: collapse; font-size: 12px; }

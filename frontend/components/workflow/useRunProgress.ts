@@ -12,7 +12,7 @@ export function useRunProgress(id: string, demo: boolean, preview: string | null
     setRun(null); setError(""); setLoading(true); setUpdated(null);
     if (demo) {
       const stored = readRunContext(id);
-      const status: Run["status"] = ["queued", "running", ...terminalStatuses].includes(preview || "") ? preview as Run["status"] : id === "demo-import" ? "queued" : id === "demo-run-023" ? "partial" : id === "demo-run-022" ? "completed" : "running";
+      const status: Run["status"] = id === "demo-import" ? "queued" : ["queued", "running", ...terminalStatuses].includes(preview || "") ? preview as Run["status"] : id === "demo-run-023" ? "partial" : id === "demo-run-022" ? "completed" : "running";
       const total = id === "demo-import" ? stored?.total || 0 : id === "demo-run-022" ? 12 : 20;
       const processed = status === "queued" ? 0 : status === "running" ? Math.floor(total * .7) : status === "completed" || status === "partial" ? total : Math.floor(total * .7);
       setRun({ ...demoRun, id, status, total_count: total, processed_count: processed, failed_count: ["running", "partial", "failed", "interrupted"].includes(status) ? Math.min(2, processed) : 0, started_at: status === "queued" ? null : demoRun.created_at, error: ["failed", "interrupted"].includes(status) ? "Example worker interruption. Successful results remain available." : null });

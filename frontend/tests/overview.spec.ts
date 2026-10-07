@@ -12,6 +12,10 @@ test("overview demo preserves mock mode and does not call the API", async ({ pag
   await expect(page.locator(".review-list li")).toHaveCount(2);
   await page.screenshot({ path: "test-results/overview-desktop.png", fullPage: true });
   expect(requests).toBe(0);
+  await page.locator(".review-list a").first().click();
+  await expect(page.getByRole("button", { name: "Open signal analysis for Navid" })).toBeVisible();
+  await page.goBack();
+  await expect(page.getByRole("heading", { name: "Workspace overview" })).toBeVisible();
   await page.getByRole("link", { name: "New analysis", exact: true }).click();
   await expect(page).toHaveURL(/\/imports\?demo=1/);
 });
