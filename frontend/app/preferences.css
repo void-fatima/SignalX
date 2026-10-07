@@ -11,6 +11,16 @@
 :root[data-theme="light"] .brand img { filter: invert(1) hue-rotate(180deg); }
 :root[data-theme="light"] .brand { mix-blend-mode: multiply; }
 :root[data-theme="light"] .viewport-dialog::backdrop { background: #18132680; }
+:root[data-theme="light"] :is(.workflow-panel, .product-preview, .product-guidance, .product-field input, .product-field textarea, .csv-guidance code, .run-issues, .auth-layout, .auth-brand-panel, .auth-input) { background: var(--surface); color: var(--text); }
+:root[data-theme="light"] :is(.product-editor h2, .product-field label, .product-preview p, .product-preview li, .product-preview footer, .product-preview .eyebrow, .product-guidance p, .field-hint, .auth-brand-content p, .auth-eyebrow, .auth-subtitle, .auth-input > svg, .auth-input input::placeholder, .auth-switch, .auth-footer, .auth-hint, .password-toggle, .review-original h3, .review-context h3, .validation-success p, .feedback-sample p) { color: var(--muted); }
+:root[data-theme="light"] :is(.workflow-error, .error-message, .field-error, .auth-feedback:not(.success), .product-error, .preferences-error) { color: #a12947; }
+:root[data-theme="light"] :is(.settings-section-title > span, .dialog-heading h2 svg, .signal-card-title > svg) { color: var(--violet); }
+:root[data-theme="light"] .feedback-choices button[aria-pressed="true"] { color: var(--mint); }
+:root[data-theme="light"] :is(.fit-check, .analysis-stages .done > span) { color: white; }
+:root[data-theme="light"] .saved-count strong { color: var(--muted); background: var(--surface-raised); }
+:root[data-theme="light"] :is(.preview-corner, .metric-rings, .overview-metrics::after, .overview-feedback::after) { opacity: .15; }
+:root[data-theme="light"] :focus-visible { outline-color: #6f2dd2; }
+:root[data-theme="light"] :is(.theme-choice:focus-within .theme-thumbnail, .density-options label:focus-within span) { outline-color: #6f2dd2; }
 :root[data-density="compact"] .queue-row { padding-block: 9px; }
 :root[data-density="compact"] :is(.workflow-table-scroll td, .workflow-table-scroll th) { padding-block: 6px; }
 :root[data-density="compact"] :is(.conversation-panel, .reply-panel, .workflow-panel) { padding: 12px; }

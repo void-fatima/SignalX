@@ -33,6 +33,18 @@ test("system theme follows device changes", async ({ page }) => {
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
 });
 
+test("light preferences keep existing product and sign-in surfaces readable", async ({ page }) => {
+  await page.goto("/settings?demo=1");
+  await page.locator(".theme-choice").filter({ has: page.getByRole("radio", { name: "Light", exact: true }) }).click();
+  await page.getByRole("button", { name: "Save preferences" }).click();
+  await page.getByRole("link", { name: "Products", exact: true }).click();
+  await expect(page.locator(".product-preview")).toHaveCSS("background-color", "rgb(255, 255, 255)");
+  await expect(page.locator(".product-preview h2")).toHaveCSS("color", "rgb(28, 35, 51)");
+  await page.goto("/login?demo=1");
+  await expect(page.locator(".auth-layout")).toHaveCSS("background-color", "rgb(255, 255, 255)");
+  await expect(page.getByRole("heading", { name: "Welcome back" })).toHaveCSS("color", "rgb(28, 35, 51)");
+});
+
 test("invalid stored data and denied storage never claim success", async ({ page }) => {
   await page.addInitScript(key => {
     localStorage.setItem(key, "broken");
