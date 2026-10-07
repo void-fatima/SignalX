@@ -1,4 +1,4 @@
-"""Manual AvalAI smoke/acceptance scenarios; import and --help never make calls."""
+"""Manual AvalAI/Gemini scenarios; import and --help never make calls."""
 import argparse
 import json
 import os
@@ -19,7 +19,10 @@ from app.agents.contracts import AgentInput, AgentOutput, Signals
 from app.agents.orchestrator import analyze_agent
 from app.agents.providers.base import ProviderError
 from app.agents.providers.config import RealProviderConfig
-from app.agents.providers.factory import real_provider_client
+from app.agents.providers.factory import configured_real_provider, real_provider_client
+from app.agents.providers.gemini_config import (
+    GEMINI_BASE_URL, GEMINI_SMOKE_MODEL, GeminiProviderConfig,
+)
 from app.agents.reply import generate_suggested_reply
 from app.agents.reply_draft import PERSIAN
 
@@ -51,8 +54,9 @@ def build_input(scenario: str = "english") -> AgentInput:
 
 
 def _print_report(report: dict, *, failed: bool = False) -> None:
-    key = os.environ.get("OPENAI_API_KEY", "")
-    secrets = [value for value in (key, key.strip()) if value]
+    secrets = [value for name in ("OPENAI_API_KEY", "GEMINI_API_KEY")
+               for key in (os.environ.get(name, ""),)
+               for value in (key, key.strip()) if value]
 
     def redact(value):
         if isinstance(value, str):
@@ -81,10 +85,12 @@ def _analysis_report(inputs: AgentInput, output: AgentOutput, scenario: str) -> 
         "intent": qualification.intent, "need": qualification.need,
         "signals": {name: getattr(qualification, name) for name in Signals.model_fields},
         "score": output.scoring.score, "decision": output.scoring.decision.value,
+        "decision_reason": output.decision_reason, "prompt_version": output.prompt_version,
+        "scoring_version": output.scoring_version,
         "evidence": [item.model_dump() for item in qualification.evidence],
         "limitations": qualification.limitations, "usage": usage_report(output.usage),
         "checks": checks, "human_review_required": True,
-        "review": "Inspect intent/need against the supplied Persian text and context; semantic correctness is not proven by schema checks."}
+        "review": "Inspect intent/need against the supplied target message and context; semantic correctness is not proven by schema checks."}
 
 
 def _reply_report(inputs: AgentInput, original: AgentOutput, updated: AgentOutput) -> dict:
@@ -109,6 +115,8 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=
         "Run ONE paid smoke scenario or the bounded acceptance sequence. Repairs are paced; no automatic sending.")
     parser.add_argument("--scenario", choices=("english", "persian", "context", "reply", "acceptance"), default="english")
+    parser.add_argument("--provider", choices=("avalai", "gemini"),
+                        help="Must match LLM_PROVIDER for live execution; never overrides the environment")
     parser.add_argument("--save-analysis", type=Path, help="Explicit new local snapshot for a later reply; never overwrites")
     parser.add_argument("--analysis-file", type=Path, help="Saved real input/analysis required for reply-only execution")
     parser.add_argument("--replay-analysis", type=Path, help="Check a paired snapshot offline; no provider request or new usage")
@@ -120,11 +128,16 @@ def main(argv: list[str] | None = None) -> int:
     if args.replay_analysis is not None and (args.scenario in {"reply", "acceptance"}
             or args.analysis_file is not None or args.save_analysis is not None):
         parser.error("--replay-analysis applies only to a single qualification scenario without other snapshot options")
-    summary = {"provider_mode": "real", "requested_model": MODEL, "endpoint": BASE_URL + "/responses",
+    selected = args.provider or os.environ.get("LLM_PROVIDER", "avalai").strip()
+    endpoint = GEMINI_BASE_URL + "chat/completions" if selected == "gemini" else BASE_URL + "/responses"
+    summary = {"provider_mode": "real", "provider": selected if selected in {"avalai", "gemini"} else "invalid",
+        "requested_model": GEMINI_SMOKE_MODEL if selected == "gemini" else MODEL, "endpoint": endpoint,
         "scenario": args.scenario, "toman_per_usd_reporting_only": "270000",
         "exact_account_charge": False, "latency_includes_pacing": True,
+        "cost_note": ("Gemini entitlement/charge cannot be inferred; frozen contract retains null/unknown."
+                      if selected == "gemini" else "Configured USD rates provide estimates, not account charges."),
         "execution_mode": "offline_replay" if args.replay_analysis else "live"}
-    pacer = RequestPacer(budget=6 if args.scenario == "acceptance" else 2)
+    pacer = RequestPacer(budget=6 if args.scenario == "acceptance" else 2, endpoint=endpoint)
     reports = []
     attempt_usage = []
     prior_usage_count = 0
@@ -134,6 +147,14 @@ def main(argv: list[str] | None = None) -> int:
             phase = "snapshot_load"
             snapshot = load_snapshot(args.replay_analysis)
             inputs, output = snapshot.agent_input, snapshot.analysis
+            # The frozen snapshot records an executed prompt and actual models,
+            # but not the original endpoint or requested model. Do not infer
+            # historical transport from the current process configuration.
+            recorded_provider = {"qualify_gemini_v1": "gemini",
+                                 "qualify_real_v1": "responses"}.get(output.prompt_version, "unknown")
+            summary.update(provider=recorded_provider, requested_model=None, endpoint=None,
+                           latency_includes_pacing=None,
+                           cost_note="Recorded usage only; no request was made and no account charge is inferred.")
             attempt_usage = output.usage
             expected = build_input(args.scenario)
             if (inputs.product != expected.product or inputs.message.content != expected.message.content
@@ -143,17 +164,27 @@ def main(argv: list[str] | None = None) -> int:
             report = _analysis_report(inputs, output, args.scenario)
             _print_report({**summary, **report, "paid_api_request_attempts": 0, "usage_from_recording": True})
             return 0
-        config = RealProviderConfig.from_env()
+        if selected != configured_real_provider():
+            raise ProviderError("--provider must match LLM_PROVIDER; no provider override or fallback is allowed", [])
+        if selected == "gemini":
+            if not all(os.environ.get(name, "").strip() for name in
+                       ("LLM_PROVIDER", "GEMINI_API_KEY", "GEMINI_MODEL", "GEMINI_BASE_URL")):
+                raise ProviderError("Gemini live scenarios require explicit LLM_PROVIDER, GEMINI_API_KEY, GEMINI_MODEL and GEMINI_BASE_URL", [])
+            config = GeminiProviderConfig.from_env()
+            if config.base_url != GEMINI_BASE_URL or config.model != GEMINI_SMOKE_MODEL:
+                raise ProviderError("Gemini smoke test requires gemini-3.5-flash-lite and the official Gemini OpenAI-compatible base URL", [])
+        else:
+            config = RealProviderConfig.from_env()
         config.require_valid()
-        if config.base_url != BASE_URL or config.model != MODEL:
+        if selected == "avalai" and (config.base_url != BASE_URL or config.model != MODEL):
             _print_report({**summary, "status": "configuration_error", "paid_api_request_attempts": 0,
                 "error": "Set OPENAI_BASE_URL=https://api.avalai.ir/v1 and OPENAI_MODEL=gpt-5.6-luna. No analysis was run."}, failed=True)
             return 2
-        if not os.environ.get("OPENAI_API_KEY", "").strip():
+        if selected == "avalai" and not os.environ.get("OPENAI_API_KEY", "").strip():
             _print_report({**summary, "status": "configuration_error", "paid_api_request_attempts": 0,
                 "error": "OPENAI_API_KEY must be set in this process environment. No analysis was run."}, failed=True)
             return 2
-        if args.scenario != "english" and (config.rates is None
+        if selected == "avalai" and args.scenario != "english" and (config.rates is None
                 or config.rates.input_usd_per_million != Decimal("0.20")
                 or config.rates.output_usd_per_million != Decimal("1.20")):
             _print_report({**summary, "status": "configuration_error", "paid_api_request_attempts": 0,
@@ -206,7 +237,11 @@ def main(argv: list[str] | None = None) -> int:
                     phase = "analysis_unchanged"
                     reports.append(_reply_report(inputs, original, updated))
     except ProviderError as exc:
+        diagnostic_report = ({"validation_diagnostics": exc.diagnostics,
+            "failed_check": exc.diagnostics[-1]["failed_check"],
+            "failure_category": exc.diagnostics[-1]["failure_category"]} if exc.diagnostics else {})
         _print_report({**summary, "status": "provider_error", "error": str(exc),
+            **diagnostic_report,
             "guidance": "Stop this run on authentication, quota, balance, rate-limit or compatibility failures. No fallback or automatic HTTP 429 retry.",
             "paid_api_request_attempts": pacer.request_count, "completed_scenarios": reports,
             "usage": usage_report(exc.usage[prior_usage_count:])}, failed=True)

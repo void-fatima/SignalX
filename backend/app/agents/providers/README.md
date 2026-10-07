@@ -1,4 +1,10 @@
 The RealProvider is an OpenAI-compatible Responses adapter alongside the deterministic Mock.
+An independent Gemini Chat Completions adapter is configured through the same
+Agent factory. See [Gemini configuration and manual checks](GEMINI.md).
+Set `LLM_PROVIDER=avalai` for the existing Responses provider or
+`LLM_PROVIDER=gemini` for Gemini. An absent selector preserves Responses behavior;
+a blank or unsupported selector fails closed. Mock still requires explicit mock
+mode. There is no automatic fallback between providers.
 It requests strict JSON-schema output and then locally validates the frozen
 QualificationResult, all six signals, exact evidence quotes and source IDs.
 The provider never computes a final lead score or decision.
@@ -15,7 +21,7 @@ Set these **process environment variables** before constructing the provider:
 - `OPENAI_MAX_OUTPUT_TOKENS`: optional, default 2000, range 100..10000.
 
 Configuration reads process environment only; it does not load `.env` itself.
-Credentials are read only from `OPENAI_API_KEY`, including when non-secret
+Responses credentials are read only from `OPENAI_API_KEY`, including when non-secret
 settings or an HTTP client are injected. The settings model accepts no API key.
 Qualification, its repair attempt, and explicitly requested reply generation
 all send to `{OPENAI_BASE_URL}/responses` with `Authorization: Bearer <key>`.
@@ -109,7 +115,8 @@ configured model continue to leave estimated cost null/unknown.
 Only dependency change: promote existing httpx (locked at 0.28.1) from dev to
 runtime. Its existing dev-lock pins were copied into the runtime lock; full
 offline pip-compile regeneration could not resolve existing packages from cache.
-No OpenAI SDK or extra real providers were added. Unit tests use httpx.MockTransport;
+Gemini also uses existing httpx; no OpenAI or Google SDK was added.
+Unit tests use httpx.MockTransport;
 the user's English/Persian/context qualification and reply acceptance calls have
 succeeded. These smoke checks establish functionality, not population model accuracy.
 
@@ -124,6 +131,7 @@ the `$env:` prefix, and does not load `.env` automatically:
 
 ```powershell
 Set-Location 'C:\git\shared\SignalX\backend'
+$env:LLM_PROVIDER = 'avalai'
 $env:OPENAI_BASE_URL = 'https://api.avalai.ir/v1'
 $env:OPENAI_MODEL = 'gpt-5.6-luna'
 .\.venv\Scripts\python.exe -m app.agents.smoke_test

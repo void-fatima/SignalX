@@ -5,12 +5,13 @@ from app.agents.scoring import score
 from app.agents.providers.base import Provider, ProviderError
 from app.agents.providers.factory import get_provider
 from app.agents.providers.real import RealProvider
+from app.agents.providers.gemini import GeminiProvider
 from app.agents.qualification import validate_qualification
 
 
 def analyze(product: ProductSnapshot, target: TargetMessage, messages: list[TargetMessage], config: RunConfig, provider: Provider) -> tuple[AnalysisResult, list[UsageEvent]]:
     if (config.provider_mode not in {"mock", "real"}
-            or (config.provider_mode == "real" and not isinstance(provider, RealProvider))
+            or (config.provider_mode == "real" and not isinstance(provider, (RealProvider, GeminiProvider)))
             or getattr(provider, "provider_mode", config.provider_mode) != config.provider_mode):
         raise ProviderError("Configured provider mode does not match the supplied provider", [])
     context = select_context(target, messages, config)

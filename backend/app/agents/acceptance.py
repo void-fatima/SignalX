@@ -73,14 +73,18 @@ class RequestPacer:
     other processes/organization traffic. Budgets count paid-capable HTTP attempts,
     not confirmed account charges, which cannot be inferred after network failures.
     """
-    def __init__(self, budget: int):
+    def __init__(self, budget: int, *, endpoint: str = "https://api.avalai.ir/v1/responses"):
+        if endpoint not in {"https://api.avalai.ir/v1/responses",
+                            "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"}:
+            raise ValueError("Acceptance requires a supported real-provider endpoint")
+        self.endpoint = endpoint
         self.budget = budget
         self.request_count = 0
         self.next_allowed = monotonic() + MIN_INTERVAL_SECONDS
 
     def before_request(self, request: httpx.Request) -> None:
-        if str(request.url) != "https://api.avalai.ir/v1/responses" or request.method != "POST":
-            raise RuntimeError("Acceptance transport requires the configured AvalAI Responses endpoint")
+        if str(request.url) != self.endpoint or request.method != "POST":
+            raise RuntimeError("Acceptance transport requires the configured real-provider endpoint")
         if self.request_count >= self.budget:
             raise RuntimeError("Acceptance HTTP request budget exhausted")
         while (remaining := self.next_allowed - monotonic()) > 0:
@@ -98,16 +102,17 @@ class AnalysisSnapshot(BaseModel):
 
 def save_snapshot(path: Path, inputs: AgentInput, analysis: AgentOutput) -> None:
     snapshot = AnalysisSnapshot(agent_input=inputs, analysis=analysis)
-    key = os.environ.get("OPENAI_API_KEY", "").strip()
+    keys = [key for name in ("OPENAI_API_KEY", "GEMINI_API_KEY")
+            if (key := os.environ.get(name, "").strip())]
     def contains_key(value):
         if isinstance(value, str):
-            return key in value
+            return any(key in value for key in keys)
         if isinstance(value, dict):
             return any(contains_key(name) or contains_key(item) for name, item in value.items())
         if isinstance(value, list):
             return any(contains_key(item) for item in value)
         return False
-    if key and contains_key(snapshot.model_dump(mode="json")):
+    if contains_key(snapshot.model_dump(mode="json")):
         raise AcceptanceValidationError("snapshot_secret")
     text = snapshot.model_dump_json(indent=2)
     # Never overwrite an existing file. Backend persistence is not involved.
