@@ -6,6 +6,11 @@ See [Business Setup](docs/business-setup.md) for migration ordering, historical
 ownership backfill and team integration. The Agent and Telegram implementations
 are preserved; older foundation documents describe their original bootstrap state.
 
+Failure recovery adds explicit analysis retries and human-approved Telegram send
+retries, preserving successful results and blocking uncertain deliveries. See
+[failure handling](docs/failure-handling.md) for migration 0004, API/idempotency
+semantics and team handoff.
+
 Runnable Mock foundation aligned with the revised SignalX five-day architecture, created directly in
 the cloned SignalX repository. English UI supports Persian/English messages.
 Next.js + TypeScript + Tailwind; FastAPI + Pydantic; SQLAlchemy + Alembic;

@@ -106,6 +106,8 @@ class AnalysisRun(Record, Base):
     started_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
     finished_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    attempt_no: Mapped[int] = mapped_column(Integer, default=1)
+    retry_history: Mapped[list] = mapped_column(json_type, default=list)
 
 
 class Analysis(Record, Base):
@@ -116,6 +118,7 @@ class Analysis(Record, Base):
     status: Mapped[str] = mapped_column(String(20))
     is_candidate: Mapped[bool] = mapped_column(Boolean)
     screening_reason: Mapped[str] = mapped_column(Text)
+    failure_category: Mapped[str | None] = mapped_column(String(50), nullable=True)
     signals: Mapped[dict | None] = mapped_column(json_type, nullable=True)
     intent: Mapped[str | None] = mapped_column(String(100), nullable=True)
     need: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -139,6 +142,7 @@ class Usage(Record, Base):
     analysis_id: Mapped[str | None] = mapped_column(ForeignKey("analyses.id"), nullable=True)
     stage: Mapped[str] = mapped_column(String(30))
     attempt_no: Mapped[int] = mapped_column(Integer, default=1)
+    run_attempt_no: Mapped[int] = mapped_column(Integer, default=1)
     request_id: Mapped[str | None] = mapped_column(String(200), nullable=True)
     model: Mapped[str] = mapped_column(String(100), default="deterministic-mock-v1")
     provider_mode: Mapped[str] = mapped_column(String(20), default="mock")

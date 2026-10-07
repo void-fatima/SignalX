@@ -11,7 +11,7 @@ from app.schemas.api import ProductInput, ProductPatch, ProductOut, ImportOut, B
 from app.core.errors import AppError
 from app.core.config import settings
 from app.services.import_service import import_csv
-from app.services.analysis_service import create_run
+from app.services.analysis_service import create_run, retry_run
 from app.auth.contracts import CurrentUser
 from app.auth.dependencies import current_user
 from app.services.ownership_service import owned, owned_run
@@ -44,7 +44,7 @@ def health():
 def ready(session: DB):
     try:
         revision = session.execute(text("SELECT version_num FROM alembic_version")).scalar()
-        if revision != "0003":
+        if revision != "0004":
             raise ValueError("Migration revision is not current")
         for model in (Product, ImportBatch, Message, AnalysisRun, Analysis, Usage, UserRecord, AuthSession,
                       TelegramChatMapping, TelegramReceipt, TelegramDelivery):
@@ -112,12 +112,23 @@ def run(id: UUID, session: DB, user: User):
     return owned_run(session, id, user.id)
 
 
+@router.post("/analysis/runs/{id}/retry", response_model=RunOut, status_code=202)
+def retry(id: UUID, session: DB, user: User, idempotency_key: Annotated[str, Header(alias="Idempotency-Key")]):
+    return retry_run(session, id, user.id, idempotency_key)
+
+
 @router.get("/leads", response_model=Page[AnalysisOut])
 def leads(run_id: UUID, session: DB, user: User, decision: Literal["ignore", "review", "respond"] | None = None,
-          min_score: Annotated[int | None, Query(ge=0, le=100)] = None, limit: Limit = 20, offset: Offset = 0):
+          min_score: Annotated[int | None, Query(ge=0, le=100)] = None,
+          status: Literal["completed", "failed"] | None = None, limit: Limit = 20, offset: Offset = 0):
     owned_run(session, run_id, user.id)
     statement = select(Analysis).where(Analysis.run_id == str(run_id))
-    statement = statement.where(Analysis.decision == decision) if decision else statement.where(Analysis.decision.in_(["review", "respond"]))
+    if status:
+        statement = statement.where(Analysis.status == status)
+    if decision:
+        statement = statement.where(Analysis.decision == decision)
+    elif status != "failed":
+        statement = statement.where(Analysis.decision.in_(["review", "respond"]))
     if min_score is not None:
         statement = statement.where(Analysis.lead_score >= min_score)
     return page(session, statement.order_by(Analysis.lead_score.desc(), Analysis.id), limit, offset)
@@ -130,4 +141,6 @@ def lead(id: UUID, session: DB, user: User):
     run = owned_run(session, analysis.run_id, user.id)
     context = session.scalars(select(Message).where(Message.id.in_(analysis.context_message_ids), Message.batch_id == run.batch_id,
         Message.conversation_id == message.conversation_id).order_by(Message.timestamp, Message.external_id)).all()
-    return {"analysis": analysis, "message": message, "context": context, "product_snapshot": run.product_snapshot, "offline_context": True}
+    telegram = session.scalar(select(TelegramReceipt.id).where(TelegramReceipt.run_id == run.id, TelegramReceipt.message_id == message.id))
+    return {"analysis": analysis, "message": message, "context": context, "product_snapshot": run.product_snapshot,
+        "offline_context": not bool(telegram), "source": "telegram" if telegram else "csv"}

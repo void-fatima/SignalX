@@ -264,8 +264,8 @@ def test_readiness_checks_migration_and_required_tables(client, factory):
         session.execute(text("INSERT INTO alembic_version VALUES ('0001')")); session.commit()
     assert client.get("/api/v1/ready").status_code == 503
     with factory() as session:
-        session.execute(text("UPDATE alembic_version SET version_num='0003'")); session.commit()
-    assert client.get("/api/v1/ready").json() == {"status": "ready", "revision": "0003"}
+        session.execute(text("UPDATE alembic_version SET version_num='0004'")); session.commit()
+    assert client.get("/api/v1/ready").json() == {"status": "ready", "revision": "0004"}
     with factory() as session:
         AuthSession.__table__.drop(session.get_bind())
     assert client.get("/api/v1/ready").status_code == 503

@@ -56,7 +56,7 @@ def test_upgrade_preserves_legacy_product_messages_and_telegram_receipts(tmp_pat
         assert connection.execute(select(current.tables["messages"].c.content)).scalar() == "My dog needs care"
         assert connection.execute(select(current.tables["telegram_receipts"].c.id)).scalar() == receipt_id
         assert connection.execute(select(current.tables["analysis_runs"].c.product_id)).scalar() == product_id
-        assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar() == "0003"
+        assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar() == "0004"
         assert connection.exec_driver_sql("PRAGMA foreign_key_check").all() == []
         assert connection.exec_driver_sql("PRAGMA foreign_keys").scalar() == 1
         assert compare_metadata(MigrationContext.configure(connection), Base.metadata) == []

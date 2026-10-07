@@ -20,6 +20,13 @@ supports trusted bearer clients. HTTP keys and import deduplication are per-user
 See [migration and authentication details](business-setup.md). Frozen Agent
 contracts remain unchanged; generated API types are synchronized with this branch.
 
+Failure recovery adds POST `/analysis/runs/{id}/retry` (202, required
+`Idempotency-Key`) and GET `/leads?run_id={id}&status=failed`. RunOut includes
+`attempt_no`; AnalysisOut adds nullable `failure_category`; LeadDetail identifies
+`csv`/`telegram` sources. Telegram approval retains its existing reply endpoint
+with an optional send key for compatibility. See [failure handling](failure-handling.md)
+for exact replay, cooldown, safe-error and reconciliation semantics and fixtures.
+
 Runs snapshot the product and config. processed_count includes failed messages;
 successful count is processed_count minus failed_count. Screened-out analyses
 have null signals/score/intent, decision ignore. Failed analyses have decision
@@ -30,8 +37,9 @@ Context is offline, limited to the same batch/conversation, up to three precedin
 and two following messages (parent prioritized), maximum five messages and 8000
 characters. Product edits never change old run snapshots.
 
-Reply, feedback and analytics endpoints in the architecture are later-stage
-work, outside the bootstrap scope. Do not show a generated reply as a real AI result.
+Telegram human-approved reply endpoints are implemented; see
+[Telegram integration](telegram-integration.md). Feedback and analytics remain
+outside this change. Mock drafts/results must stay labeled as synthetic.
 
 Auth and ownership are implemented by the Business Setup follow-up. Roham owns
 their final integration and deployment; Fatima owns frontend review. Existing

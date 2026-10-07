@@ -95,6 +95,12 @@ after process interruption likewise needs operator reconciliation. Telegram has
 no transaction with our DB; exactly-once external delivery cannot be guaranteed
 after a crash. There are no transport retries or automatic outreach.
 
+The failure-handling extension adds hashed send keys, approved-text/status recovery,
+server-enforced 429 cooldowns and an explicit analysis retry API. See
+[failure handling](failure-handling.md) for migration 0004 and current UI/API
+semantics. Use an `Idempotency-Key` on new approval requests; replays never resend
+a recorded failed attempt. Uncertain delivery still requires operator reconciliation.
+
 ## Fatima's exact API contract
 
 All user endpoints use `Authorization: Bearer <backend-session-token>` and the

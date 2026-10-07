@@ -1,0 +1,66 @@
+{
+  "id": "00000000-0000-0000-0000-000000000001",
+  "run_id": "00000000-0000-0000-0000-000000000002",
+  "product_id": "00000000-0000-0000-0000-000000000003",
+  "message_id": "00000000-0000-0000-0000-000000000004",
+  "source": "telegram",
+  "original_message": {
+    "source": "telegram",
+    "update_id": 10,
+    "chat_id": -100123,
+    "message_id": 7,
+    "chat_type": "supergroup",
+    "chat_title": "Test group",
+    "sender_id": 8,
+    "sender_username": "test_user",
+    "sender_display_name": "User",
+    "text": "I need a beginner course",
+    "timestamp": "2026-10-07T09:00:00Z",
+    "reply_to_message_id": null,
+    "message_thread_id": 3
+  },
+  "context": [],
+  "analysis": {
+    "screening": {
+      "is_candidate": true,
+      "reason": "direct_signal"
+    },
+    "qualification": {
+      "intent": "searching_for_course",
+      "need": "Beginner course search",
+      "purchase_intent": 0.8,
+      "product_fit": 0.9,
+      "need_strength": 0.8,
+      "urgency": 0.0,
+      "confidence": 0.9,
+      "response_opportunity": 0.8,
+      "evidence": [
+        {
+          "message_id": "00000000-0000-0000-0000-000000000004",
+          "quote": "I need a beginner course",
+          "reason": "Author states a need"
+        }
+      ],
+      "limitations": []
+    },
+    "scoring": {
+      "score": 76,
+      "decision": "RESPOND"
+    },
+    "usage": [],
+    "suggested_reply": null,
+    "decision_reason": "Score qualifies for RESPOND (70-100); no decision guard applied.",
+    "prompt_version": "qualify_real_v1",
+    "scoring_version": "score_v1"
+  },
+  "delivery": {
+    "status": "failed",
+    "telegram_message_id": null,
+    "failure_category": "rate_limit",
+    "delivery_uncertain": false,
+    "draft_busy": false,
+    "approved_text": "Human-reviewed reply",
+    "failure_http_status": 429,
+    "retry_after_at": "2026-10-08T10:01:00Z"
+  }
+}

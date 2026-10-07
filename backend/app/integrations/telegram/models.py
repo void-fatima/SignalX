@@ -1,8 +1,9 @@
-"""Telegram tables frozen in migration 0002; Product ownership guards access."""
-from sqlalchemy import BigInteger, Boolean, ForeignKey, String, Text, UniqueConstraint
+"""Telegram tables; Product ownership guards access."""
+from datetime import datetime
+from sqlalchemy import BigInteger, Boolean, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.models import Base, Record, json_type
+from app.models import Base, Record, UTCDateTime, json_type
 
 
 class TelegramChatMapping(Record, Base):
@@ -38,3 +39,6 @@ class TelegramDelivery(Record, Base):
     failure_category: Mapped[str | None] = mapped_column(String(50), nullable=True)
     delivery_uncertain: Mapped[bool] = mapped_column(Boolean, default=False)
     draft_busy: Mapped[bool] = mapped_column(Boolean, default=False)
+    failure_http_status: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    retry_after_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+    send_history: Mapped[list] = mapped_column(json_type, default=list)

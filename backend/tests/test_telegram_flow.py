@@ -402,3 +402,163 @@ def test_shared_api_fixture_and_agent_contract_are_valid():
     assert fixture.source == "telegram" and fixture.analysis.scoring.score == 76
     assert fixture.analysis.qualification.evidence[0].message_id == str(fixture.message_id)
     assert fixture.delivery.status == "not_sent"
+
+
+@pytest.mark.parametrize("failure,category,requests", [
+    ("timeout", "provider_timeout", 1), ("transport", "provider_failure", 1),
+    ("http", "provider_failure", 1), ("malformed", "invalid_provider_output", 2),
+])
+def test_real_provider_failure_persists_then_explicit_retry_recovers(client, factory, business, llm_http, failure, category, requests):
+    assert post(client, update()).json()["status"] == "queued"
+    calls = []
+    def fail(request):
+        calls.append(request)
+        assert str(request.url) == "https://api.avalai.ir/v1/responses"
+        if failure == "timeout":
+            raise httpx.ReadTimeout("fake-secret-never-persist")
+        if failure == "transport":
+            raise httpx.ConnectError("fake-secret-never-persist")
+        if failure == "http":
+            return httpx.Response(503, json={"error": {"message": "fake-secret-never-persist"}})
+        return httpx.Response(200, json={"status": "completed", "model": "gpt-5.6-luna",
+            "output": [{"type": "message", "content": [{"type": "output_text", "text": "not-json"}]}],
+            "usage": {"input_tokens": 13, "output_tokens": 7}})
+    with httpx.Client(transport=httpx.MockTransport(fail)) as http, real_provider_client(http):
+        assert process_one(factory)
+        assert not process_one(factory)
+    assert len(calls) == requests and not llm_http
+    with factory() as session:
+        failed = session.scalar(select(Analysis))
+        run_id, lead_id = failed.run_id, failed.id
+        source = session.scalar(select(Message)).content
+        assert failed.failure_category == category and failed.status == "failed"
+        assert session.scalar(select(AnalysisRun)).status == "failed"
+        assert session.scalar(select(func.count()).select_from(Usage)) == requests
+    listed = client.get(f"/api/v1/leads?run_id={run_id}&status=failed", headers=HEADERS)
+    assert listed.status_code == 200 and listed.json()["total"] == 1
+    assert "fake-secret-never-persist" not in listed.text
+    assert client.get(f"/api/v1/leads/{lead_id}", headers=HEADERS).json()["source"] == "telegram"
+    path = f"/api/v1/analysis/runs/{run_id}/retry"
+    result = client.post(path, headers={**HEADERS, "Idempotency-Key": "explicit-recovery"})
+    assert result.status_code == 202 and result.json()["attempt_no"] == 2
+    assert process_one(factory)
+    assert len(llm_http) == 1
+    detail = client.get(f"/api/v1/leads/{lead_id}/telegram", headers=HEADERS)
+    assert detail.status_code == 200 and detail.json()["analysis"]["scoring"] is not None
+    with factory() as session:
+        assert session.scalar(select(func.count()).select_from(Analysis)) == 1
+        assert session.scalar(select(Message)).content == source
+        assert session.get(Analysis, lead_id).failure_category is None
+        assert session.scalar(select(func.count()).select_from(Usage)) == requests + 1
+
+
+def test_explicit_send_retry_retains_approval_and_repeated_keys_never_resend(client, factory, business, llm_http):
+    id = complete(client, factory)
+    path = f"/api/v1/leads/{id}/telegram/reply"
+    calls = []
+    def handle(request):
+        calls.append(request)
+        if len(calls) == 1:
+            return httpx.Response(400, json={"ok": False, "description": TOKEN})
+        body = json.loads(request.content)
+        return httpx.Response(200, json={"ok": True, "result": {"message_id": 99, "chat": {"id": body["chat_id"]}}})
+    with httpx.Client(transport=httpx.MockTransport(handle)) as http:
+        app.dependency_overrides[dependencies.telegram_client] = lambda: TelegramClient(TelegramSettings(), client=http)
+        first_key, second_key = {**HEADERS, "Idempotency-Key": "approval-one"}, {**HEADERS, "Idempotency-Key": "approval-two"}
+        try:
+            assert client.post(path, json={"text": "Approved text"}, headers=first_key).status_code == 502
+            detail = client.get(f"/api/v1/leads/{id}/telegram", headers=HEADERS).json()["delivery"]
+            assert detail["status"] == "failed" and detail["approved_text"] == "Approved text" and detail["failure_http_status"] == 400
+            assert not detail["delivery_uncertain"] and detail["telegram_message_id"] is None
+            replay = client.post(path, json={"text": "Approved text"}, headers=first_key)
+            assert replay.status_code == 200 and replay.json()["delivery"]["status"] == "failed" and len(calls) == 1
+            assert client.post(path, json={"text": "Different text"}, headers=first_key).status_code == 409
+            recovered = client.post(path, json={"text": "Approved text"}, headers=second_key)
+            assert recovered.status_code == 200 and recovered.json()["delivery"]["status"] == "sent"
+            assert client.post(path, json={"text": "Approved text"}, headers=second_key).status_code == 200
+            assert client.post(path, json={"text": "Approved text"}, headers=first_key).status_code == 200
+            assert len(calls) == 2
+        finally:
+            app.dependency_overrides.pop(dependencies.telegram_client, None)
+    with factory() as session:
+        history = session.scalar(select(TelegramDelivery)).send_history
+        assert [attempt["status"] for attempt in history] == ["failed", "sent"]
+
+
+def test_rate_limit_cooldown_blocks_send_until_explicit_retry(client, factory, business, llm_http, telegram_http):
+    from datetime import timedelta
+    from app.models import utcnow
+    id = complete(client, factory)
+    path = f"/api/v1/leads/{id}/telegram/reply"
+    def fail(request):
+        return httpx.Response(429, json={"ok": False, "parameters": {"retry_after": 60}})
+    with httpx.Client(transport=httpx.MockTransport(fail)) as http:
+        app.dependency_overrides[dependencies.telegram_client] = lambda: TelegramClient(TelegramSettings(), client=http)
+        assert client.post(path, json={"text": "Approved"}, headers=HEADERS).status_code == 502
+        blocked = client.post(path, json={"text": "Approved"}, headers=HEADERS)
+        assert blocked.status_code == 409 and blocked.json()["error"]["code"] == "telegram_retry_after"
+    with factory() as session:
+        session.scalar(select(TelegramDelivery)).retry_after_at = utcnow() - timedelta(seconds=1)
+        session.commit()
+    def success(request):
+        telegram_http.append(request)
+        return httpx.Response(200, json={"ok": True, "result": {"message_id": 99, "chat": {"id": -100123}}})
+    with httpx.Client(transport=httpx.MockTransport(success)) as http:
+        app.dependency_overrides[dependencies.telegram_client] = lambda: TelegramClient(TelegramSettings(), client=http)
+        try:
+            assert client.post(path, json={"text": "Approved"}, headers=HEADERS).json()["delivery"]["status"] == "sent"
+        finally:
+            app.dependency_overrides.pop(dependencies.telegram_client, None)
+    assert len(telegram_http) == 1
+
+
+@pytest.mark.parametrize("same_key", [False, True])
+def test_concurrent_approval_is_claimed_before_http_and_never_sends_twice(client, factory, business, llm_http, same_key):
+    id = complete(client, factory)
+    path = f"/api/v1/leads/{id}/telegram/reply"
+    calls = []
+    first = {**HEADERS, "Idempotency-Key": "first"}
+    second = first if same_key else {**HEADERS, "Idempotency-Key": "second"}
+    def handle(request):
+        calls.append(request)
+        # A second HTTP action arrives while the first actual Telegram call is active.
+        repeated = client.post(path, json={"text": "Approved"}, headers=second)
+        assert repeated.status_code == (200 if same_key else 409)
+        if same_key:
+            assert repeated.json()["delivery"]["status"] == "sending"
+        return httpx.Response(200, json={"ok": True, "result": {"message_id": 99, "chat": {"id": -100123}}})
+    with httpx.Client(transport=httpx.MockTransport(handle)) as http:
+        app.dependency_overrides[dependencies.telegram_client] = lambda: TelegramClient(TelegramSettings(), client=http)
+        try:
+            response = client.post(path, json={"text": "Approved"}, headers=first)
+            assert response.status_code == 200 and response.json()["delivery"]["status"] == "sent"
+        finally:
+            app.dependency_overrides.pop(dependencies.telegram_client, None)
+    assert len(calls) == 1
+
+
+def test_uncertain_delivery_stays_blocked_even_with_new_send_key(client, factory, business, llm_http):
+    id = complete(client, factory)
+    path = f"/api/v1/leads/{id}/telegram/reply"
+    calls = []
+    def timeout(request):
+        calls.append(request)
+        raise httpx.ReadTimeout(TOKEN)
+    with httpx.Client(transport=httpx.MockTransport(timeout)) as http:
+        app.dependency_overrides[dependencies.telegram_client] = lambda: TelegramClient(TelegramSettings(), client=http)
+        try:
+            assert client.post(path, headers={**HEADERS, "Idempotency-Key": "one"}, json={"text": "Approved"}).status_code == 502
+            assert client.post(path, headers={**HEADERS, "Idempotency-Key": "two"}, json={"text": "Approved"}).status_code == 409
+        finally:
+            app.dependency_overrides.pop(dependencies.telegram_client, None)
+    assert len(calls) == 1
+
+
+def test_failed_send_retry_still_requires_owner(client, factory, business, llm_http, telegram_http):
+    id = complete(client, factory)
+    with factory() as session:
+        session.add(TelegramDelivery(analysis_id=id, state="failed", approved_text="Saved approval", failure_category="invalid_request"))
+        session.scalar(select(TelegramChatMapping)).owner_user_id = str(uuid4())
+        session.commit()
+    response = client.post(f"/api/v1/leads/{id}/telegram/reply", headers={**HEADERS, "Idempotency-Key": "retry"}, json={"text": "Saved approval"})
+    assert response.status_code == 404 and not telegram_http

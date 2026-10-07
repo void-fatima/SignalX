@@ -1,0 +1,48 @@
+{
+  "analysis": {
+    "id": "a3da4adb-6b26-4844-9747-67f47dfa9aa2",
+    "run_id": "72059a08-e457-4f04-b543-932be4087a1b",
+    "message_id": "bd942785-4495-4de7-ba03-f012c076867c",
+    "status": "failed",
+    "is_candidate": true,
+    "screening_reason": "processing_error",
+    "signals": null,
+    "intent": null,
+    "need": null,
+    "budget_signal": null,
+    "lead_score": null,
+    "decision": null,
+    "decision_reason": null,
+    "reason": "The AI provider timed out. Your message is saved; you can retry.",
+    "evidence": [],
+    "context_message_ids": [],
+    "limitations": [],
+    "scoring_version": "score_v1",
+    "prompt_version": "qualify_v1",
+    "provider_mode": "mock",
+    "failure_category": "provider_timeout"
+  },
+  "message": {
+    "id": "bd942785-4495-4de7-ba03-f012c076867c",
+    "batch_id": "746df548-0ca1-4729-8f75-21c716787e05",
+    "external_id": "m03",
+    "conversation_id": "course",
+    "author": "mina",
+    "content": "دنبال دوره بک‌اند پروژه‌محور هستم",
+    "timestamp": "2026-10-04T08:02:00Z",
+    "reply_to_external_id": null
+  },
+  "context": [],
+  "product_snapshot": {
+    "name": "Backend Course",
+    "description": "دوره بک‌اند پروژه‌محور",
+    "target_customer": "Developers",
+    "problems_solved": [],
+    "best_fit": [],
+    "not_fit": [],
+    "price": null,
+    "currency": "USD"
+  },
+  "offline_context": true,
+  "source": "csv"
+}

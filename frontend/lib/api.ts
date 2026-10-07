@@ -6,6 +6,7 @@ export type Run = components["schemas"]["RunOut"];
 export type Analysis = components["schemas"]["AnalysisOut"];
 export type LeadDetail = components["schemas"]["LeadDetail"];
 export type CurrentUser = components["schemas"]["CurrentUser"];
+export type TelegramLead = components["schemas"]["TelegramLeadOut"];
 export type Page<T> = { items: T[]; total: number; limit: number; offset: number };
 export class ApiError extends Error {
   constructor(message: string, public details: { row?: number; field?: string; message?: string }[] = [], public status = 0) { super(message); }
@@ -29,6 +30,10 @@ export const api = {
   importCSV: (data: FormData) => request<ImportResult>("/imports", { method: "POST", body: data }),
   startRun: (product_id: string, batch_id: string, key: string) => request<Run>("/analysis/runs", { method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": key }, body: JSON.stringify({ product_id, batch_id }) }),
   run: (id: string) => request<Run>(`/analysis/runs/${id}`),
-  leads: (run: string, decision: string, offset: number, minScore: string) => request<Page<Analysis>>(`/leads?run_id=${encodeURIComponent(run)}&offset=${offset}${decision ? `&decision=${decision}` : ""}${minScore ? `&min_score=${minScore}` : ""}`),
+  retryRun: (id: string, key: string) => request<Run>(`/analysis/runs/${id}/retry`, { method: "POST", headers: { "Idempotency-Key": key } }),
+  leads: (run: string, decision: string, offset: number, minScore: string, status = "") => request<Page<Analysis>>(`/leads?run_id=${encodeURIComponent(run)}&offset=${offset}${decision ? `&decision=${decision}` : ""}${minScore ? `&min_score=${minScore}` : ""}${status ? `&status=${status}` : ""}`),
   lead: (id: string) => request<LeadDetail>(`/leads/${id}`),
+  telegramLead: (id: string) => request<TelegramLead>(`/leads/${id}/telegram`),
+  draftTelegramReply: (id: string) => request<TelegramLead>(`/leads/${id}/telegram/suggested-reply`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" }),
+  sendTelegramReply: (id: string, text: string, key: string) => request<TelegramLead>(`/leads/${id}/telegram/reply`, { method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": key }, body: JSON.stringify({ text }) }),
 };
