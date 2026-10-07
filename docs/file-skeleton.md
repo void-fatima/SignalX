@@ -7,7 +7,7 @@
 | Backend پایه | api/routes/main.py، core، db، models، schemas/api.py، services، worker، migrations | مسیر Mock قابل اجرا |
 | Auth | app/auth/contracts.py، security.py، service.py، dependencies.py، api/routes/auth.py | register/login/logout/me، scrypt hash، نشست قابل ابطال و HttpOnly cookie پیاده شده؛ UI و deployment هنوز باقی |
 | Draft/Feedback | schemas/response.py، services/response_service.py | تولید on-demand از Agent، ویرایش/تأیید بدون ارسال، upsert بازخورد و ذخیره Usage آماده |
-| Analytics | schemas/analytics.py، services/analytics_service.py | قرارداد تایپ‌شده آماده؛ endpoint و تجمیع Usage/هزینه در شاخهٔ جداگانه می‌آید |
+| Analytics | schemas/analytics.py، services/analytics_service.py | شمارش run، بازخورد و تجمیع Usage/هزینه با حفظ unknown/null آماده |
 | Agent | contracts/screening/context/qualification/scoring/pipeline/cost/evaluation | منطق پایه و تست‌ها آماده |
 | Real provider | agents/providers/real.py | adapter ساختاریافته با timeout، usage/cost نامطمئن و حالت صریح؛ live Docker credentials جداگانه لازم است |
 | Prompt | agents/prompts/qualification.py، reply.py | builderهای qualification و reply به provider وصل‌اند |
@@ -20,7 +20,7 @@
 | CI | .github/workflows/ci.yml | تست backend، قراردادها، typecheck/build فرانت؛ اجرای GitHub هنوز انجام نشده |
 | مستندات | architecture/api-contract/team-plan/setayesh-plan/ai-engine/evaluation/deployment/delivery/demo/verification | راهنمای توسعه و محدودیت‌ها |
 
-Auth routes و migration واقعی 0002 به API متصل شده‌اند. Routeهای Response/Feedback و
-persistence آن‌ها اکنون پیاده شده‌اند؛ Analytics هنوز endpoint ندارد. AuthGuard و ارسال credentialed request
+Auth routes و migration واقعی 0002 به API متصل شده‌اند. Routeهای Response/Feedback/
+Analytics و persistence آن‌ها اکنون پیاده شده‌اند. AuthGuard و ارسال credentialed request
 در UI با فاطیماست. سه عضو تیم از این فایل‌ها برای توسعه استفاده می‌کنند؛
 docs/team-plan.md مالکیت را دارد.

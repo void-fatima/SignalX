@@ -14,6 +14,7 @@ from app.models import (
 )
 from app.schemas.api import ProductInput, ProductPatch, ProductOut, ImportOut, BatchOut, MessageOut, RunInput, RunOut, AnalysisOut, LeadDetail, Page
 from app.schemas.response import ResponseDraft, ResponsePatch, FeedbackInput, FeedbackOut
+from app.schemas.analytics import AnalyticsOverview
 from app.core.errors import AppError
 from app.services.import_service import import_csv
 from app.services.analysis_service import create_run
@@ -24,6 +25,7 @@ from app.services.response_service import (
     save_feedback,
     update_response,
 )
+from app.services.analytics_service import overview as analytics_overview
 from app.auth.contracts import CurrentUser
 from app.auth.dependencies import get_current_user, verify_origin
 
@@ -180,3 +182,8 @@ def patch_response(id: UUID, payload: ResponsePatch, session: DB, current: Curre
 @router.put("/leads/{id}/feedback", response_model=FeedbackOut, dependencies=[Depends(verify_origin)])
 def put_feedback(id: UUID, payload: FeedbackInput, session: DB, current: Current):
     return save_feedback(session, current.id, id, payload)
+
+
+@router.get("/analytics/overview", response_model=AnalyticsOverview)
+def run_analytics(run_id: UUID, session: DB, current: Current):
+    return analytics_overview(session, current.id, run_id)

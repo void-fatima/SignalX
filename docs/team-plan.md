@@ -5,7 +5,7 @@
 
 | عضو | مالکیت اصلی | قدم بعدی |
 | --- | --- | --- |
-| رهام | API/DB/Auth/user ownership، schema/migration، services/worker، persistence، Docker/CI/Deploy/Release | تکمیل response/feedback، سپس analytics و PostgreSQL verification |
+| رهام | API/DB/Auth/user ownership، schema/migration، services/worker، persistence، Docker/CI/Deploy/Release | response/feedback/analytics، PostgreSQL verification و آماده‌سازی release candidate |
 | ستایش | تمام Agent/provider/prompt/scoring/cost/evaluation/reply logic و AI docs | ارزیابی Agent و هماهنگی rate/provider تنظیم‌شده برای اجرای live |
 | فاطیما | تمام Frontend/UI/UX، Auth UI، client API، demo/pitch/screenshots | Auth UI و guard، smoke مرورگر مسیر Mock و حالات خطا/empty/loading |
 
@@ -22,8 +22,7 @@
 | 5 | blocker/clean checkout/production/release | AI claims + metrics/cost/limitations/examples/docs | مرورگر QA/screenshots/pitch/video | اجرای مستقل مسیر داوری و تحویل |
 
 وضعیت checkout فعلی: مسیر Product→CSV→Worker→Agent→PostgreSQL در Mock با smoke بیست
-پیامی تأیید شد؛ response draft و feedback در شاخهٔ فعلی پیاده شده‌اند و analytics
-در شاخهٔ بعدی قرار دارد.
+پیامی تأیید شد؛ response draft، feedback و analytics هم در Backend پیاده شده‌اند.
 Auth/session و user scope در Backend هستند. UI/auth integration با فاطیماست. Adapter
 واقعی سمت Agent موجود است اما Docker فعلی روی Mock است و live Worker smoke هنوز تأیید
 نشده. Deployment آنلاین و انتخاب نرخ/budget policy باقی‌اند.

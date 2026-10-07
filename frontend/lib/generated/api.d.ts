@@ -211,6 +211,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/analytics/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Run Analytics */
+        get: operations["run_analytics_api_v1_analytics_overview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/register": {
         parameters: {
             query?: never;
@@ -339,6 +356,41 @@ export interface components {
              * @enum {string}
              */
             provider_mode: "mock" | "real";
+        };
+        /** AnalyticsOverview */
+        AnalyticsOverview: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /**
+             * Provider Mode
+             * @enum {string}
+             */
+            provider_mode: "mock" | "real";
+            /** Total Count */
+            total_count: number;
+            /** Qualified Leads */
+            qualified_leads: number;
+            /** Review Count */
+            review_count: number;
+            /** Failed Count */
+            failed_count: number;
+            /** Total Cost Usd */
+            total_cost_usd: string | null;
+            /** Cost Per Message */
+            cost_per_message: string | null;
+            /** Cost Per Qualified Lead */
+            cost_per_qualified_lead: string | null;
+            /** Unknown Usage Count */
+            unknown_usage_count: number;
+            /** Cost Complete */
+            cost_complete: boolean;
+            /** Feedback Acceptance */
+            feedback_acceptance: number | null;
+            /** Feedback Coverage */
+            feedback_coverage: number | null;
         };
         /** BatchOut */
         BatchOut: {
@@ -1579,6 +1631,64 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FeedbackOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Bad Gateway */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    run_analytics_api_v1_analytics_overview_get: {
+        parameters: {
+            query: {
+                run_id: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnalyticsOverview"];
                 };
             };
             /** @description Not Found */

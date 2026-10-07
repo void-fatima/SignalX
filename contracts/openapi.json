@@ -1229,6 +1229,81 @@
         }
       }
     },
+    "/api/v1/analytics/overview": {
+      "get": {
+        "summary": "Run Analytics",
+        "operationId": "run_analytics_api_v1_analytics_overview_get",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsOverview"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          }
+        }
+      }
+    },
     "/api/v1/auth/register": {
       "post": {
         "tags": [
@@ -1691,6 +1766,131 @@
           "provider_mode"
         ],
         "title": "AnalysisOut"
+      },
+      "AnalyticsOverview": {
+        "properties": {
+          "run_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Run Id"
+          },
+          "provider_mode": {
+            "type": "string",
+            "enum": [
+              "mock",
+              "real"
+            ],
+            "title": "Provider Mode"
+          },
+          "total_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Total Count"
+          },
+          "qualified_leads": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Qualified Leads"
+          },
+          "review_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Review Count"
+          },
+          "failed_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Failed Count"
+          },
+          "total_cost_usd": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Cost Usd"
+          },
+          "cost_per_message": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Per Message"
+          },
+          "cost_per_qualified_lead": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Per Qualified Lead"
+          },
+          "unknown_usage_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Unknown Usage Count"
+          },
+          "cost_complete": {
+            "type": "boolean",
+            "title": "Cost Complete"
+          },
+          "feedback_acceptance": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedback Acceptance"
+          },
+          "feedback_coverage": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedback Coverage"
+          }
+        },
+        "type": "object",
+        "required": [
+          "run_id",
+          "provider_mode",
+          "total_count",
+          "qualified_leads",
+          "review_count",
+          "failed_count",
+          "total_cost_usd",
+          "cost_per_message",
+          "cost_per_qualified_lead",
+          "unknown_usage_count",
+          "cost_complete",
+          "feedback_acceptance",
+          "feedback_coverage"
+        ],
+        "title": "AnalyticsOverview"
       },
       "BatchOut": {
         "properties": {

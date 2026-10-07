@@ -3,6 +3,7 @@ import json
 import os
 import time
 import uuid
+from decimal import Decimal
 from http.cookiejar import CookieJar
 from pathlib import Path
 from urllib.request import Request, build_opener, HTTPCookieProcessor
@@ -71,7 +72,13 @@ def main():
     assert detail["response_draft"]["status"] == "approved"
     assert detail["feedback"]["relevant"] is True
 
-    print(f"HTTP smoke passed: 20 messages, {leads['total']} respond results, score 84, draft/feedback persisted; run={run['id']}")
+    _, analytics = request(f"/analytics/overview?run_id={run['id']}")
+    assert analytics["total_count"] == 20
+    assert analytics["qualified_leads"] == leads["total"]
+    assert analytics["provider_mode"] == "mock" and analytics["cost_complete"] is True
+    assert Decimal(str(analytics["total_cost_usd"])) == 0
+    assert analytics["feedback_acceptance"] == 1
+    print(f"HTTP smoke passed: 20 messages, {leads['total']} respond results, score 84, draft/feedback/analytics persisted; run={run['id']}")
 
 
 if __name__ == "__main__":
