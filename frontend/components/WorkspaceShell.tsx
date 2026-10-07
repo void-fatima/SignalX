@@ -73,7 +73,7 @@ export default function WorkspaceShell({ children }: { children: React.ReactNode
         <select className="topbar-product" aria-label="Selected product" value={selectedProductId} onChange={event => setSelectedProductId(event.target.value)} disabled={selectionLocked || !products.length} title={selectionLocked ? "Save or cancel your changes before switching products." : undefined}><option value="">{products.length ? "New product" : "Choose a product"}</option>{products.map(product => <option key={product.id} value={product.id}>{product.name}</option>)}</select>
         <span className="avatar avatar-small topbar-avatar" aria-label={demo ? "Demo profile" : name}>{initials}</span>
       </header>
-      <main id="main-content" className={pathname === "/leads" ? "inbox-main" : pathname.startsWith("/leads/") ? "review-main" : pathname === "/products" ? "product-main" : "page-main"}><ReviewSessionProvider key={demo ? "demo" : user?.id || "guest"}>{children}</ReviewSessionProvider></main>
+      <main id="main-content" className={pathname === "/leads" ? "inbox-main" : pathname.startsWith("/leads/") ? "review-main" : pathname === "/products" ? "product-main" : "page-main"}><ReviewSessionProvider scope={demo ? "demo" : user?.id || "guest"}>{children}</ReviewSessionProvider></main>
     </div>
   </div></WorkspaceContext.Provider>;
 }
