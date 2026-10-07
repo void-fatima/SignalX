@@ -7,6 +7,7 @@ import EvidenceText from "@/components/leads/EvidenceText";
 import SignalCard from "@/components/leads/SignalCard";
 import SignalAnalysisDialog from "@/components/leads/SignalAnalysisDialog";
 import ReplyComposer from "@/components/leads/ReplyComposer";
+import ReplyFeedback from "@/components/leads/ReplyFeedback";
 import { useLeadReview } from "@/components/leads/useLeadReview";
 import { useReviewSession } from "@/components/leads/ReviewSession";
 import { useWorkspaceProducts } from "@/components/useWorkspaceProducts";
@@ -34,7 +35,7 @@ export default function ReviewReply({ params }: { params: Promise<{ id: string }
       <section className="review-context"><h3>Conversation context</h3><p><Icon name="chat" size={24}/><span dir="auto">{demo && id === "demo-lead-1" ? "A request for practical, project-based backend learning." : detail.analysis.reason}</span></p>{detail.context.filter(m => m.batch_id === detail.message.batch_id && m.conversation_id === detail.message.conversation_id).map(m => <div className="context-message" key={m.id}><strong><bdi>{m.author}</bdi></strong><p dir={textDirection(m.content)}>{m.content}</p></div>)}</section>
       <SignalCard detail={detail} onOpen={() => setAnalysisOpen(true)}/>
       <footer className="review-source-footer"><Icon name="file" size={27}/><div><small>Source</small><strong>{demo ? demoMetadata[id]?.filename : context?.filename || `Batch ${detail.message.batch_id.slice(0, 8)}`} · Run {demo ? "024" : detail.analysis.run_id.slice(0, 8)}</strong></div><span className={`workflow-status ${run?.status === "partial" ? "amber" : ""}`}>{run?.status || "Status unavailable"}</span></footer>{runError && <p className="run-warning">Run status unavailable: {runError}</p>}
-    </section><div className="review-editor-column"><ReplyComposer key={id} demo={demo} draft={draft} onChange={value => setDrafts(previous => ({ ...previous, [id]: value }))}/></div></div>}
+    </section><div className="review-editor-column"><ReplyComposer key={id} expanded demo={demo} draft={draft} onChange={value => setDrafts(previous => ({ ...previous, [id]: value }))} onGenerate={language => setDrafts(previous => ({ ...previous, [id]: { text: language === "fa" ? demoMetadata[id]?.reply || "" : `Hi ${detail.message.author}, how much backend experience do you have so far?\nWhat kind of project would you like to work on?`, status: "draft" } }))}/><ReplyFeedback key={id} id={id} demo={demo}/></div></div>}
     {detail && <SignalAnalysisDialog detail={detail} demo={demo} open={analysisOpen} onDismiss={() => setAnalysisOpen(false)}/>}
   </div>;
 }
