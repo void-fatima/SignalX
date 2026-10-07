@@ -20,6 +20,7 @@ from app.agents.prompts.qualification import output_schema
 from app.agents.prompts.reply import output_schema as reply_schema
 from app.agents.providers.base import BaseProvider, ProviderError
 from app.agents.providers.gemini_config import GeminiProviderConfig
+from app.agents.providers.gemini_errors import request_failure
 from app.agents.providers.real import _legacy_result, _legacy_usage, _tokens
 from app.agents.providers.reply_diagnostics import (
     ReplyOutputError, parse_reply_completion, validation_diagnostic,
@@ -118,8 +119,14 @@ class GeminiProvider(BaseProvider):
                     record = self._usage({}, attempt, started, stage)
                     record.outcome = "timeout" if isinstance(exc, httpx.TimeoutException) else "provider_error"
                     records.append(record)
-                    raise ProviderError("Gemini request timed out" if record.outcome == "timeout"
-                                        else "Gemini provider request failed", records, diagnostics=diagnostics) from None
+                    diagnostic = request_failure(record.stage, attempt, self.config.timeout_seconds, exc=exc)
+                    categories = cast(str, diagnostic["provider_error_category"])
+                    cause = diagnostic["cause_category"]
+                    if isinstance(cause, str):
+                        categories += "; " + cause
+                    message = "Gemini request timed out" if record.outcome == "timeout" else "Gemini provider request failed"
+                    raise ProviderError(message + " (" + categories + ")", records, diagnostics=diagnostics,
+                                        provider_diagnostics=[diagnostic]) from None
                 response_json_valid = True
                 try:
                     parsed_body = response.json()
@@ -132,10 +139,12 @@ class GeminiProvider(BaseProvider):
                 records.append(record)
                 if not response.is_success:
                     record.outcome = "provider_error"
-                    raise ProviderError(_http_error(response.status_code), records, diagnostics=diagnostics) from None
+                    raise ProviderError(_http_error(response.status_code), records, diagnostics=diagnostics,
+                        provider_diagnostics=[request_failure(record.stage, attempt, self.config.timeout_seconds, response=response)]) from None
                 if body.get("error") is not None:
                     record.outcome = "provider_error"
-                    raise ProviderError("Gemini returned a provider error", records, diagnostics=diagnostics) from None
+                    raise ProviderError("Gemini returned a provider error", records, diagnostics=diagnostics,
+                        provider_diagnostics=[request_failure(record.stage, attempt, self.config.timeout_seconds, response=response)]) from None
                 payload = None
                 try:
                     if stage == "suggested_reply":
@@ -212,7 +221,7 @@ class GeminiProvider(BaseProvider):
         try:
             result, records = self.qualify_structured(product, target, context)
         except ProviderError as exc:
-            raise ProviderError(str(exc), _legacy_usage(exc.usage)) from None
+            raise ProviderError(str(exc), _legacy_usage(exc.usage), provider_diagnostics=exc.provider_diagnostics) from None
         return _legacy_result(result), _legacy_usage(records)
 
     def analyze(self, inputs: AgentInput) -> AgentOutput:

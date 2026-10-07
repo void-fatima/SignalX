@@ -241,7 +241,7 @@ def main(argv: list[str] | None = None) -> int:
             "failed_check": exc.diagnostics[-1]["failed_check"],
             "failure_category": exc.diagnostics[-1]["failure_category"]} if exc.diagnostics else {})
         _print_report({**summary, "status": "provider_error", "error": str(exc),
-            **diagnostic_report,
+            **diagnostic_report, "provider_diagnostics": exc.provider_diagnostics,
             "guidance": "Stop this run on authentication, quota, balance, rate-limit or compatibility failures. No fallback or automatic HTTP 429 retry.",
             "paid_api_request_attempts": pacer.request_count, "completed_scenarios": reports,
             "usage": usage_report(exc.usage[prior_usage_count:])}, failed=True)

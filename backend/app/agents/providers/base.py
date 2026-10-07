@@ -29,9 +29,11 @@ class StructuredProvider(Provider, Protocol):
 
 class ProviderError(Exception):
     def __init__(self, message: str, usage: list[UsageEvent] | list[UsageInfo], *,
-                 diagnostics: list[dict[str, object]] | None = None):
+                 diagnostics: list[dict[str, object]] | None = None,
+                 provider_diagnostics: list[dict[str, object]] | None = None):
         super().__init__(message)
         self.usage = usage
         # Private error metadata, never a field of the frozen Agent contracts.
         # Providers must supply sanitized diagnostics, not raw model/errors text.
         self.diagnostics = diagnostics if diagnostics is not None else []
+        self.provider_diagnostics = provider_diagnostics if provider_diagnostics is not None else []
