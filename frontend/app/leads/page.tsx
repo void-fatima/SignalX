@@ -10,6 +10,7 @@ import RunSummary from "@/components/leads/RunSummary";
 import LeadConversation from "@/components/leads/LeadConversation";
 import SignalAnalysisDialog from "@/components/leads/SignalAnalysisDialog";
 import ReplyComposer, { type ReviewDraft } from "@/components/leads/ReplyComposer";
+import { useReviewSession } from "@/components/leads/ReviewSession";
 import useInbox from "@/components/leads/useInbox";
 import { demoMetadata } from "@/lib/demo-inbox";
 import { filterLeads } from "@/lib/lead-presentation";
@@ -19,7 +20,7 @@ function Inbox() {
   const [runId, setRunId] = useState("");
   const [decision, setDecision] = useState(""), [minScore, setMinScore] = useState(""), [offset, setOffset] = useState(0);
   const [query, setQuery] = useState(""), [filtersOpen, setFiltersOpen] = useState(false), [selected, setSelected] = useState("");
-  const [drafts, setDrafts] = useState<Record<string, ReviewDraft>>({});
+  const { drafts, setDrafts } = useReviewSession();
   const [analysisOpen, setAnalysisOpen] = useState(false);
   useEffect(() => { setRunId(search.get("run_id") || localStorage.getItem("run_id") || ""); setQuery(search.get("q") || ""); setOffset(0); setSelected(search.get("lead_id") || ""); }, [search]);
   const { page, details, run, error, detailErrors, runError, loading, retry } = useInbox({ runId, demo, decision, minScore, offset });
