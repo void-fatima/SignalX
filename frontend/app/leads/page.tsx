@@ -8,6 +8,7 @@ import Icon from "@/components/Icon";
 import LeadQueue from "@/components/leads/LeadQueue";
 import RunSummary from "@/components/leads/RunSummary";
 import LeadConversation from "@/components/leads/LeadConversation";
+import SignalAnalysisDialog from "@/components/leads/SignalAnalysisDialog";
 import ReplyComposer, { type ReviewDraft } from "@/components/leads/ReplyComposer";
 import useInbox from "@/components/leads/useInbox";
 import { demoMetadata } from "@/lib/demo-inbox";
@@ -19,11 +20,13 @@ function Inbox() {
   const [decision, setDecision] = useState(""), [minScore, setMinScore] = useState(""), [offset, setOffset] = useState(0);
   const [query, setQuery] = useState(""), [filtersOpen, setFiltersOpen] = useState(false), [selected, setSelected] = useState("");
   const [drafts, setDrafts] = useState<Record<string, ReviewDraft>>({});
+  const [analysisOpen, setAnalysisOpen] = useState(false);
   useEffect(() => { setRunId(search.get("run_id") || localStorage.getItem("run_id") || ""); setOffset(0); setSelected(""); }, [search]);
   const { page, details, run, error, detailErrors, runError, loading, retry } = useInbox({ runId, demo, decision, minScore, offset });
   const items = filterLeads(page?.items || [], decision, minScore, query, details);
   const selectedId = items.some(item => item.id === selected) ? selected : items[0]?.id || "";
   const detail = details[selectedId];
+  useEffect(() => { setAnalysisOpen(false); }, [selectedId, runId, demo, decision, minScore, offset]);
   const selectedIndex = items.findIndex(item => item.id === selectedId);
   const draft = drafts[selectedId] || { text: demo ? demoMetadata[selectedId]?.reply || "" : "", status: "draft" as const };
   return <>
@@ -40,8 +43,9 @@ function Inbox() {
       {page && page.total > page.limit && <div className="queue-pagination"><button className="secondary-button" disabled={loading || offset === 0} onClick={() => setOffset(Math.max(0, offset - page.limit))}>Previous</button><span>{offset + 1}–{Math.min(offset + page.limit, page.total)} of {page.total}</span><button className="secondary-button" disabled={loading || offset + page.limit >= page.total} onClick={() => setOffset(offset + page.limit)}>Next</button></div>}
       <div className="queue-import"><Icon name="file" size={24}/><div><strong>{demo ? "developer-community.csv" : run?.batch_id ? `Batch ${run.batch_id.slice(0, 8)}` : "No import selected"}</strong><span>{run?.total_count ?? "—"} messages{run && ` · ${new Date(run.created_at).toLocaleDateString("en-GB")}`}</span></div>{run && <span className="status-dot"/>}</div>
     </section><div className="detail-column" aria-busy={loading}>
-      {loading ? <div className="detail-placeholder" role="status"><Icon name="chat" size={35}/><h2>Gathering the conversation</h2><p>Loading source, context and evidence.</p></div> : detail ? <><LeadConversation detail={detail} demo={demo} previous={selectedIndex > 0 ? () => setSelected(items[selectedIndex - 1].id) : undefined} next={selectedIndex < items.length - 1 ? () => setSelected(items[selectedIndex + 1].id) : undefined}/><ReplyComposer key={selectedId} draft={draft} demo={demo} onChange={value => setDrafts(current => ({ ...current, [selectedId]: value }))}/></> : <div className="detail-placeholder"><Icon name="chat" size={35}/><h2>{detailErrors[selectedId] ? "Source could not be loaded" : "Your next opportunity starts here"}</h2><p>{detailErrors[selectedId] || (query || decision || minScore ? "Try another search or filter." : "Select an opportunity to review its conversation and signals.")}</p>{detailErrors[selectedId] && <button type="button" onClick={retry}>Retry source details</button>}</div>}
+      {loading ? <div className="detail-placeholder" role="status"><Icon name="chat" size={35}/><h2>Gathering the conversation</h2><p>Loading source, context and evidence.</p></div> : detail ? <><LeadConversation detail={detail} demo={demo} onAnalysis={() => setAnalysisOpen(true)} previous={selectedIndex > 0 ? () => setSelected(items[selectedIndex - 1].id) : undefined} next={selectedIndex < items.length - 1 ? () => setSelected(items[selectedIndex + 1].id) : undefined}/><ReplyComposer key={selectedId} draft={draft} demo={demo} onChange={value => setDrafts(current => ({ ...current, [selectedId]: value }))}/></> : <div className="detail-placeholder"><Icon name="chat" size={35}/><h2>{detailErrors[selectedId] ? "Source could not be loaded" : "Your next opportunity starts here"}</h2><p>{detailErrors[selectedId] || (query || decision || minScore ? "Try another search or filter." : "Select an opportunity to review its conversation and signals.")}</p>{detailErrors[selectedId] && <button type="button" onClick={retry}>Retry source details</button>}</div>}
     </div></div>
+    {detail && <SignalAnalysisDialog detail={detail} demo={demo} open={analysisOpen} onDismiss={() => setAnalysisOpen(false)}/>}
   </>;
 }
 export default function Leads() { return <Suspense fallback={<p className="loading-state" role="status">Loading workspace…</p>}><Inbox/></Suspense>; }
