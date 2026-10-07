@@ -50,3 +50,4 @@ th, td { padding: 14px 10px; border-bottom: 1px solid var(--line); text-align: l
 @media (max-width: 1000px) { .workspace { grid-template-columns: 180px minmax(0, 1fr); } .sidebar .brand { width: 160px; } .sidebar { padding-inline: 10px; } .topbar { padding-inline: 20px; } }
 @media (max-width: 700px) { .workspace { display: block; } .sidebar { display: none; } .navigation-open .sidebar { display: flex; position: fixed; inset: 60px 0 0; z-index: 30; overflow: auto; } .mobile-menu { display: inline-flex; } .topbar { height: 60px; padding: 0 16px; } .topbar-note { display: none; } .page-main { padding: 22px 16px; } }
 
+.error-message { border-color: #8e4c66; color: #f2a2b9; }
