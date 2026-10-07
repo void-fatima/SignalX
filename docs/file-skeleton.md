@@ -9,7 +9,7 @@
 | Draft/Feedback | schemas/response.py، services/response_service.py | تولید on-demand از Agent، ویرایش/تأیید بدون ارسال، upsert بازخورد و ذخیره Usage آماده |
 | Analytics | schemas/analytics.py، services/analytics_service.py | شمارش run، بازخورد و تجمیع Usage/هزینه با حفظ unknown/null آماده |
 | Agent | contracts/screening/context/qualification/scoring/pipeline/cost/evaluation | منطق پایه و تست‌ها آماده |
-| Real provider | agents/providers/real.py | adapter ساختاریافته با timeout، usage/cost نامطمئن و حالت صریح؛ live Docker credentials جداگانه لازم است |
+| Real provider | agents/providers/real.py، gemini.py، factory.py | انتخاب صریح AvalAI/Gemini، validation و usage؛ Docker/Hosting برای real mode به متغیرهای server-side و Secret نیاز دارد |
 | Prompt | agents/prompts/qualification.py، reply.py | builderهای qualification و reply به provider وصل‌اند |
 | Reply | agents/reply.py | تولید draft on-demand و validation؛ ذخیره و endpoint سمت Backend |
 | UI | products/imports/runs/leads و details | مسیر Mock موجود |

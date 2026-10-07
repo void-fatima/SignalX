@@ -1,3 +1,6 @@
+import json
+
+import httpx
 from sqlalchemy import select
 import pytest
 
@@ -6,6 +9,7 @@ from app.agents.contracts import (
     ScoringResult, ScreeningResult, UsageInfo,
 )
 from app.agents.orchestrator import analyze_agent
+from app.agents.providers.factory import real_provider_client
 from app.models import Analysis, AnalysisRun, Usage
 from app.services.agent_contract_service import build_agent_input, validate_agent_output
 from app.services.analysis_service import process_one
@@ -112,6 +116,88 @@ def test_worker_persists_real_output_and_keeps_unknown_cost_null(client, factory
     assert detail.json()["analysis"]["provider_mode"] == "real"
     assert detail.json()["analysis"]["decision_reason"]
     assert detail.json()["analysis"]["prompt_version"] == "qualify_real_v1"
+
+
+def test_worker_gemini_orchestrator_persists_agent_output_and_usage(client, factory, monkeypatch):
+    """Exercise the Gemini adapter through the production Worker boundary without network calls."""
+    _payload, run = setup_run(client, key="gemini-agent-contract-worker")
+    with factory() as session:
+        analysis_run = session.get(AnalysisRun, run["id"])
+        analysis_run.config_snapshot = {**analysis_run.config_snapshot, "provider_mode": "real"}
+        session.commit()
+
+    monkeypatch.setenv("LLM_PROVIDER", "gemini")
+    monkeypatch.setenv("GEMINI_API_KEY", "fake-gemini-worker-test-key")
+    monkeypatch.setenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
+    monkeypatch.setenv(
+        "GEMINI_BASE_URL",
+        "https://generativelanguage.googleapis.com/v1beta/openai/",
+    )
+    requests = []
+
+    def handle(request):
+        requests.append(request)
+        request_body = json.loads(request.content)
+        supplied = json.loads(request_body["messages"][-1]["content"])
+        target = supplied["target"]
+        qualification = {
+            "intent": "course_search",
+            "need": "Looking for a beginner backend course",
+            "purchase_intent": 0.9,
+            "product_fit": 0.9,
+            "need_strength": 0.8,
+            "urgency": 0.4,
+            "confidence": 0.9,
+            "response_opportunity": 0.8,
+            "evidence": [{
+                "message_id": target["id"],
+                "quote": target["content"],
+                "reason": "The target message is the supplied evidence.",
+            }],
+            "limitations": ["Budget is unknown"],
+        }
+        response = {
+            "model": "gemini-3.5-flash-lite",
+            "choices": [{
+                "index": 0,
+                "finish_reason": "stop",
+                "message": {"role": "assistant", "content": json.dumps(qualification)},
+            }],
+            "usage": {"prompt_tokens": 120, "completion_tokens": 45, "total_tokens": 165},
+        }
+        return httpx.Response(200, json=response)
+
+    with httpx.Client(transport=httpx.MockTransport(handle)) as client_transport:
+        with real_provider_client(client_transport):
+            assert process_one(factory, agent_orchestrator=analyze_agent)
+
+    with factory() as session:
+        analyses = session.scalars(select(Analysis).where(Analysis.run_id == run["id"])).all()
+        usage_rows = session.scalars(select(Usage).where(Usage.run_id == run["id"])).all()
+        run_record = session.get(AnalysisRun, run["id"])
+
+    assert run_record.status == "completed"
+    assert run_record.processed_count == len(analyses) == 20
+    candidate_rows = [row for row in analyses if row.is_candidate]
+    assert candidate_rows and len(requests) == len(usage_rows) == len(candidate_rows)
+    assert all(row.provider_mode == "real" for row in analyses)
+    assert all(row.agent_output is not None for row in analyses)
+    assert all(row.prompt_version == "qualify_gemini_v1" for row in candidate_rows)
+    assert all(row.scoring_version == "score_v1" and row.decision_reason for row in candidate_rows)
+    assert all(row.agent_output["scoring"]["score"] == row.lead_score for row in candidate_rows)
+    assert all(event.provider_mode == "real" and event.model == "gemini-3.5-flash-lite"
+               and event.input_tokens == 120 and event.output_tokens == 45
+               and event.cost_usd is None and event.cost_status == "unknown"
+               for event in usage_rows)
+
+    response = client.get(f"/api/v1/leads?run_id={run['id']}&decision=respond")
+    assert response.status_code == 200
+    assert response.json()["total"] > 0
+    lead_id = response.json()["items"][0]["id"]
+    detail = client.get(f"/api/v1/leads/{lead_id}")
+    assert detail.status_code == 200
+    assert detail.json()["analysis"]["provider_mode"] == "real"
+    assert detail.json()["analysis"]["prompt_version"] == "qualify_gemini_v1"
 
 
 def test_backend_rejects_agent_evidence_outside_input():
