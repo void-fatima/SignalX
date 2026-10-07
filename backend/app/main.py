@@ -19,9 +19,9 @@ async def lifespan(app):
 
 
 app = FastAPI(title="singnalX API", version="0.1.0", lifespan=lifespan,
-    responses={404: {"model": ErrorOut}, 409: {"model": ErrorOut}, 422: {"model": ErrorOut}})
+    responses={404: {"model": ErrorOut}, 409: {"model": ErrorOut}, 422: {"model": ErrorOut}, 502: {"model": ErrorOut}})
 app.add_middleware(CORSMiddleware, allow_origins=[origin.strip() for origin in settings().cors_origins.split(",") if origin.strip()],
-    allow_credentials=True, allow_methods=["GET", "POST", "PATCH"], allow_headers=["Content-Type", "Idempotency-Key"])
+    allow_credentials=True, allow_methods=["GET", "POST", "PUT", "PATCH"], allow_headers=["Content-Type", "Idempotency-Key"])
 
 
 @app.exception_handler(Exception)

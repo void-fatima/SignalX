@@ -5,8 +5,8 @@
 
 | عضو | مالکیت اصلی | قدم بعدی |
 | --- | --- | --- |
-| رهام | API/DB/Auth/user ownership، schema/migration، services/worker، persistence، Docker/CI/Deploy/Release | Auth و جداسازی دادهٔ دو کاربر، تست PostgreSQL/Compose و deploy اولیه |
-| ستایش | تمام Agent/provider/prompt/scoring/cost/evaluation/reply logic و AI docs | انتخاب provider/model، adapter واقعی با structured output و usage attempts |
+| رهام | API/DB/Auth/user ownership، schema/migration، services/worker، persistence، Docker/CI/Deploy/Release | تکمیل response/feedback، سپس analytics و PostgreSQL verification |
+| ستایش | تمام Agent/provider/prompt/scoring/cost/evaluation/reply logic و AI docs | ارزیابی Agent و هماهنگی rate/provider تنظیم‌شده برای اجرای live |
 | فاطیما | تمام Frontend/UI/UX، Auth UI، client API، demo/pitch/screenshots | Auth UI و guard، smoke مرورگر مسیر Mock و حالات خطا/empty/loading |
 
 فاطیما مالک تمام UI است؛ رهام و ستایش UI جدید نمی‌سازند. ستایش انتخاب context و
@@ -21,8 +21,10 @@
 | 4 | response/feedback/analytics/cost persistence/restart + release candidate | grounded reply/cost/dev tuning/test evaluation | reply/feedback/cost cards/responsive/demo | freeze کامل پایان روز 4 |
 | 5 | blocker/clean checkout/production/release | AI claims + metrics/cost/limitations/examples/docs | مرورگر QA/screenshots/pitch/video | اجرای مستقل مسیر داوری و تحویل |
 
-وضعیت checkout فعلی: مسیر محلی Product→CSV→Mock worker→Lead/detail آماده است؛ Auth،
-sessionهای قابل ابطال و scope کاربر در Backend پیاده شده‌اند. اتصال UI/auth با فاطیما،
-اجرای PostgreSQL/Compose و deployment آنلاین هنوز باقی‌اند. Provider واقعی آماده نیست.
-Cost/evaluation utility موجود است اما حسابداری و ارزیابی واقعی انجام نشده‌اند.
+وضعیت checkout فعلی: مسیر Product→CSV→Worker→Agent→PostgreSQL در Mock با smoke بیست
+پیامی تأیید شد؛ response draft و feedback در شاخهٔ فعلی پیاده شده‌اند و analytics
+در شاخهٔ بعدی قرار دارد.
+Auth/session و user scope در Backend هستند. UI/auth integration با فاطیماست. Adapter
+واقعی سمت Agent موجود است اما Docker فعلی روی Mock است و live Worker smoke هنوز تأیید
+نشده. Deployment آنلاین و انتخاب نرخ/budget policy باقی‌اند.
 [وضعیت و کارهای ستایش](setayesh-plan.md)

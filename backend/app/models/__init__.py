@@ -161,3 +161,22 @@ class Usage(Record, Base):
     price_version: Mapped[str | None] = mapped_column(String(50), nullable=True)
     latency_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
     outcome: Mapped[str] = mapped_column(String(20))
+
+
+class SuggestedResponse(Record, Base):
+    __tablename__ = "suggested_responses"
+    __table_args__ = (UniqueConstraint("analysis_id", name="uq_suggested_responses_analysis_id"),)
+    analysis_id: Mapped[str] = mapped_column(ForeignKey("analyses.id"))
+    response_text: Mapped[str] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(20))
+    provider_mode: Mapped[str] = mapped_column(String(20))
+    updated_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
+
+
+class LeadFeedback(Record, Base):
+    __tablename__ = "lead_feedback"
+    __table_args__ = (UniqueConstraint("analysis_id", name="uq_lead_feedback_analysis_id"),)
+    analysis_id: Mapped[str] = mapped_column(ForeignKey("analyses.id"))
+    relevant: Mapped[bool] = mapped_column(Boolean)
+    comment: Mapped[str | None] = mapped_column(Text, nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
