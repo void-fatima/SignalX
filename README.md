@@ -1,9 +1,11 @@
 # singnalX
 
-The backend now includes account/session endpoints and user-scoped data access.
-The login/register pages remain UI shells until Fatima connects them to the API.
-Real provider, response persistence and online deployment remain pending. See
-[file readiness](docs/file-skeleton.md).
+The backend includes account/session endpoints, user-scoped data access,
+response/feedback persistence and run analytics. AvalAI (`gpt-5.6-luna`) is the
+current real-provider target, and the Agent-side live test was reported
+successful. Backend Worker/PostgreSQL hosting and its production smoke are still
+pending. The login/register pages remain UI shells until Fatima connects them to
+the API. See [file readiness](docs/file-skeleton.md).
 
 Runnable Mock foundation aligned with the revised SignalX five-day architecture, created directly in
 the cloned SignalX repository. English UI supports Persian/English messages.
@@ -123,11 +125,12 @@ types must change together; [ownership](docs/team-plan.md),
 Mock output is synthetic demonstration data, not real LLM analysis or measured
 accuracy. Recorded Mock usage has no real tokens, cost zero and cost_status=mock.
 Screened-out messages have null scores; failed messages have null decisions.
-No automatic message sending. Real provider/embedding, paid usage/budget control,
-response generation, feedback, advanced analytics, evaluation datasets,
-deployment and presentation media are next-stage work. Backend authentication and
-user isolation are implemented locally. The auth UI, browser credential handling,
-PostgreSQL/Compose verification and online deployment remain pending.
+No automatic message sending. Real provider adapters, response drafts, feedback
+and run analytics are implemented locally; live AvalAI Worker persistence on a
+selected host is still pending. Paid usage/budget control, evaluation datasets,
+deployment and presentation media remain outstanding. Backend authentication
+and user isolation are implemented locally. The auth UI and browser credential
+handling remain with Fatima.
 Pre-authentication records are unowned and inaccessible through authenticated APIs.
 
 Pure cost utilities and an offline evaluation CLI are now implemented; real
