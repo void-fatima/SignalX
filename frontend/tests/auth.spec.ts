@@ -59,3 +59,49 @@ for (const viewport of [{ width: 1705, height: 1152 }, { width: 390, height: 844
     await expect(page).toHaveURL(/\/register\?demo=1$/);
   });
 }
+
+test("registration checks password confirmation without posting invalid input", async ({ page }) => {
+  let posts = 0;
+  await page.route("**/api/v1/auth/register", route => { posts++; return route.fulfill({ status: 201, json: user }); });
+  await page.goto("/register");
+  await page.getByLabel("Email", { exact: true }).fill(user.email);
+  await page.getByLabel("Password", { exact: true }).fill("demonstration-only");
+  await page.getByLabel("Confirm password", { exact: true }).fill("different-password");
+  await page.getByRole("button", { name: "Create account", exact: true }).click();
+  await expect(page.getByText("Passwords must match.")).toBeVisible();
+  await expect(page.getByLabel("Confirm password", { exact: true })).toBeFocused();
+  expect(posts).toBe(0);
+  await page.getByRole("button", { name: "Show confirm password", exact: true }).click();
+  await expect(page.getByLabel("Confirm password", { exact: true })).toHaveAttribute("type", "text");
+  await page.getByLabel("Confirm password", { exact: true }).fill("demonstration-only");
+  await page.getByRole("button", { name: "Create account", exact: true }).click();
+  await expect(page.getByRole("status")).toContainText("Account created. Sign in to continue.");
+  expect(posts).toBe(1);
+  await expect(page.getByLabel("Password", { exact: true })).toHaveValue("");
+  await expect(page).toHaveURL(/\/register$/);
+});
+
+test("duplicate accounts show the backend error without claiming success", async ({ page }) => {
+  await page.route("**/api/v1/auth/register", route => route.fulfill({ status: 409, json: { error: { message: "An account with this email already exists" } } }));
+  await page.goto("/register");
+  await page.getByLabel("Email", { exact: true }).fill(user.email);
+  await page.getByLabel("Password", { exact: true }).fill("demonstration-only");
+  await page.getByLabel("Confirm password", { exact: true }).fill("demonstration-only");
+  await page.getByRole("button", { name: "Create account", exact: true }).click();
+  await expect(page.getByRole("alert").filter({ hasText: "already exists" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Account created", exact: true })).toHaveCount(0);
+});
+
+for (const viewport of [{ width: 1285, height: 866 }, { width: 390, height: 700 }, { width: 900, height: 600 }]) {
+  test(`account creation remains usable at ${viewport.width}x${viewport.height}`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await page.goto("/register?demo=1");
+    await expect(page.getByRole("heading", { name: "Create your account" })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.getByRole("button", { name: "Create account", exact: true }).scrollIntoViewIfNeeded();
+    await expect(page.getByRole("button", { name: "Create account", exact: true })).toBeInViewport();
+    await page.screenshot({ path: `test-results/signup-${viewport.width}x${viewport.height}.png`, fullPage: true });
+    await page.getByRole("link", { name: "Sign in", exact: true }).click();
+    await expect(page).toHaveURL(/\/login\?demo=1$/);
+  });
+}

@@ -24,3 +24,17 @@
 @media (max-width: 1100px) { .auth-form-panel { padding: 60px 40px 110px; }.auth-brand-content h2 { font-size: 27px; }.auth-brand-content p { font-size: 18px; }.auth-form-content h1 { font-size: 42px; }.auth-subtitle { font-size: 18px; margin-bottom: 30px; }.auth-field label { font-size: 15px; }.auth-input input { font-size: 16px; padding-block: 15px; }.auth-primary { min-height: 56px; font-size: 18px; }.auth-footer { bottom: 35px; font-size: 12px; } }
 @media (max-width: 760px) { .auth-layout { grid-template-columns: 1fr; }.auth-brand-panel { border-right: 0; border-bottom: 1px solid #352648; padding: 28px 20px 22px; }.auth-brand-content { padding: 0; }.brand-stacked { width: 128px; }.auth-brand-content h2 { font-size: 19px; margin: 10px 0 4px; }.auth-brand-content p { font-size: 12px; }.auth-ribbons { opacity: .6; }.auth-form-panel { padding: 34px 24px 85px; align-items: start; }.auth-form-content { max-width: 480px; }.auth-form-content h1 { font-size: 35px; }.auth-eyebrow { font-size: 10px; margin-bottom: 10px; }.auth-subtitle { font-size: 16px; margin-bottom: 25px; }.auth-field { margin-bottom: 20px; }.auth-input { padding-inline: 14px; gap: 12px; }.auth-switch { font-size: 14px; margin-top: 25px; }.auth-footer { bottom: 24px; } }
 @media (max-height: 780px) and (min-width: 761px) { .auth-form-panel { padding-block: 45px 100px; }.auth-brand-panel { padding-block: 30px; }.brand-stacked { width: min(370px, 34vw); }.auth-brand-content h2 { font-size: 28px; }.auth-brand-content p { font-size: 18px; }.auth-form-content h1 { font-size: 43px; }.auth-subtitle { font-size: 18px; margin-bottom: 27px; }.auth-field { margin-bottom: 20px; }.auth-input input { padding-block: 14px; font-size: 16px; }.auth-primary { min-height: 55px; font-size: 18px; }.auth-switch { margin-top: 25px; font-size: 15px; }.auth-footer { bottom: 25px; } }
+@media (min-width: 1101px) and (max-width: 1399px) {
+  .brand-stacked { width: min(460px, 40vw); }
+  .auth-brand-content h2 { font-size: 29px; }
+  .auth-brand-content p { font-size: 20px; }
+  .auth-form-panel { padding: 70px 52px 100px 120px; }
+  .auth-form-content h1 { font-size: 43px; }
+  .auth-subtitle { font-size: 20px; margin-bottom: 30px; }
+  .auth-field { margin-bottom: 22px; }
+  .auth-field label { font-size: 16px; }
+  .auth-input input { font-size: 16px; padding-block: 14px; }
+  .auth-primary { min-height: 59px; font-size: 19px; }
+  .auth-switch { font-size: 15px; margin-top: 28px; }
+  .auth-footer { bottom: 36px; font-size: 13px; }
+}
