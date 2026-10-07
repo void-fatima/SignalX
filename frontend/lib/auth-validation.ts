@@ -6,3 +6,10 @@ export function validateCredentials(email: string, password: string) {
   else if (password.length > 128) errors.password = "Use no more than 128 characters.";
   return errors;
 }
+
+export function validateRegistration(email: string, password: string, confirmation: string) {
+  const errors: { email?: string; password?: string; confirmation?: string } = validateCredentials(email, password);
+  if (!confirmation) errors.confirmation = "Confirm your password.";
+  else if (confirmation !== password) errors.confirmation = "Passwords must match.";
+  return errors;
+}
