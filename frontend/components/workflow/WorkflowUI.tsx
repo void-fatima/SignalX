@@ -1,6 +1,6 @@
 import Link from "next/link";
-export function PageHeading({ title, children, actions }: { title: string; children: React.ReactNode; actions?: React.ReactNode }) {
-  return <div className="workflow-heading"><div><h1>{title}</h1>{children}</div>{actions && <div className="workflow-actions">{actions}</div>}</div>;
+export function PageHeading({ title, children, actions, date }: { title: string; children: React.ReactNode; actions?: React.ReactNode; date?: string }) {
+  return <div className="workflow-heading"><div><div className="workflow-title"><h1>{title}</h1>{date && <span>{date}</span>}</div>{children}</div>{actions && <div className="workflow-actions">{actions}</div>}</div>;
 }
 export function Panel({ title, children, extra, className = "" }: { title: string; children: React.ReactNode; extra?: React.ReactNode; className?: string }) {
   return <section className={`workflow-panel ${className}`}><div className="panel-heading"><h2>{title}</h2>{extra}</div>{children}</section>;
