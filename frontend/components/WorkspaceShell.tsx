@@ -23,6 +23,7 @@ export default function WorkspaceShell({ children }: { children: React.ReactNode
   const [selectionLocked, setSelectionLocked] = useState(false);
   const [query, setQuery] = useState("");
   const [accountError, setAccountError] = useState("");
+  const [signingOut, setSigningOut] = useState(false);
   const current = navigation.find(item => pathname.startsWith(item.href) || (item.href === "/imports" && pathname.startsWith("/runs/")));
   const auth = pathname === "/login" || pathname === "/register";
   useEffect(() => {
@@ -40,26 +41,30 @@ export default function WorkspaceShell({ children }: { children: React.ReactNode
     router.push(`/leads?${params}`);
   }
   async function signOut() {
+    if (signingOut) return;
+    if (demo) { router.push("/login?demo=1"); return; }
+    setSigningOut(true); setAccountError("");
     try { await api.logout(); setUser(null); setProducts([]); setSelectedProductId(""); localStorage.removeItem("product_id"); localStorage.removeItem("run_id"); router.push("/login"); }
     catch { setAccountError("Sign out failed. Please try again."); }
+    finally { setSigningOut(false); }
   }
   if (auth) return <main id="main-content" className="auth-main">{children}</main>;
   const name = demo ? "Fatima" : user?.email.split("@")[0] || "Guest";
   const initials = demo ? "FO" : name.slice(0, 1).toUpperCase();
   const modeLink = `${pathname}${demo ? "" : "?demo=1"}`;
-  return <WorkspaceContext.Provider value={{ demo, user, products, setProducts, selectedProductId, setSelectedProductId, selectionLocked, setSelectionLocked }}><div className={`workspace ${pathname === "/products" ? "workspace-products" : ""} ${["/dashboard", "/imports"].includes(pathname) || pathname.startsWith("/runs/") ? "workspace-workflow" : ""} ${open ? "navigation-open" : ""}`}>
+  return <WorkspaceContext.Provider value={{ demo, user, products, setProducts, selectedProductId, setSelectedProductId, selectionLocked, setSelectionLocked, signOut, signingOut, accountError }}><div className={`workspace ${pathname === "/products" ? "workspace-products" : ""} ${["/dashboard", "/imports", "/settings"].includes(pathname) || pathname.startsWith("/runs/") ? "workspace-workflow" : ""} ${open ? "navigation-open" : ""}`}>
     <a className="skip-link" href="#main-content">Skip to content</a>
     <aside className="sidebar" aria-label="Workspace sidebar">
       <Brand />
       <div className="workspace-label">Workspace</div>
       <details className="workspace-picker"><summary><span className="avatar avatar-small">{name.slice(0, 1).toUpperCase()}</span><span>{demo ? "Fatima" : "Local workspace"}</span><Icon name="chevron" size={15} style={{ transform: "rotate(90deg)" }}/></summary><div className="workspace-picker-menu"><span>{demo ? "Synthetic demo workspace" : user ? "Connected account workspace" : "Sign in to access your products"}</span><Link href={modeLink}>{demo ? "Use connected workspace" : "Explore demo workspace"}</Link></div></details>
       <nav aria-label="Main navigation">{navigation.map(item => <Link key={item.href} href={demo ? `${item.href}?demo=1` : item.href} aria-current={current?.href === item.href ? "page" : undefined} onClick={() => setOpen(false)}><Icon name={item.icon}/>{item.label}{current?.href === item.href && <Icon name="chevron" size={16}/>}</Link>)}</nav>
-      <div className="sidebar-footer"><details className="sidebar-utility"><summary><Icon name="settings"/>Settings</summary><p>Workspace preferences are not available yet. <Link href="/login">Account access</Link></p></details><details className="sidebar-utility"><summary><Icon name="help"/>Help &amp; support</summary><p>Define a product, import a CSV, then review the signals. <Link href="/imports">Open Imports</Link></p></details><div className="workspace-profile"><span className="avatar avatar-small">{initials}</span><div><strong><bdi>{name}</bdi></strong><span>{demo ? "Demo profile" : user?.email || "Not signed in"}</span></div>{user ? <button className="account-action" onClick={signOut} type="button">Sign out</button> : <Link className="account-action" href={demo ? "/login?demo=1" : "/login"}>Account</Link>}</div>{accountError && <p role="alert">{accountError}</p>}</div>
+      <div className="sidebar-footer"><Link className="sidebar-settings" href={demo ? "/settings?demo=1" : "/settings"} aria-current={pathname === "/settings" ? "page" : undefined} onClick={() => setOpen(false)}><Icon name="settings"/>Settings</Link><details className="sidebar-utility"><summary><Icon name="help"/>Help &amp; support</summary><p>Define a product, import a CSV, then review the signals. <Link href="/imports">Open Imports</Link></p></details><div className="workspace-profile"><span className="avatar avatar-small">{initials}</span><div><strong><bdi>{name}</bdi></strong><span>{demo ? "Demo profile" : user?.email || "Not signed in"}</span></div>{user ? <button className="account-action" onClick={signOut} type="button">Sign out</button> : <Link className="account-action" href={demo ? "/login?demo=1" : "/login"}>Account</Link>}</div>{accountError && <p role="alert">{accountError}</p>}</div>
     </aside>
     <div className="workspace-body">
       <header className="topbar">
         <button className="icon-button mobile-menu" type="button" aria-label="Toggle workspace navigation" aria-expanded={open} onClick={() => setOpen(!open)}><Icon name="menu"/></button>
-        <div className="breadcrumb"><span>Workspace</span><span>/</span><strong>{current?.label || (auth ? "Account" : "Welcome")}</strong></div>
+        <div className="breadcrumb"><span>Workspace</span><span>/</span><strong>{current?.label || (pathname === "/settings" ? "Settings" : auth ? "Account" : "Welcome")}</strong></div>
         <form className="topbar-search" onSubmit={searchConversations} role="search"><Icon name="search" size={17}/><input type="search" aria-label="Search workspace conversations" placeholder="Search conversations…" value={query} onChange={event => setQuery(event.target.value)}/><kbd>↵</kbd></form>
         <select className="topbar-product" aria-label="Selected product" value={selectedProductId} onChange={event => setSelectedProductId(event.target.value)} disabled={selectionLocked || !products.length} title={selectionLocked ? "Save or cancel your changes before switching products." : undefined}><option value="">{products.length ? "New product" : "Choose a product"}</option>{products.map(product => <option key={product.id} value={product.id}>{product.name}</option>)}</select>
         <span className="avatar avatar-small topbar-avatar" aria-label={demo ? "Demo profile" : name}>{initials}</span>
