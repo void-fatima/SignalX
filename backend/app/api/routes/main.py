@@ -28,6 +28,7 @@ from app.services.response_service import (
 from app.services.analytics_service import overview as analytics_overview
 from app.auth.contracts import CurrentUser
 from app.auth.dependencies import get_current_user, verify_origin
+from app.integrations.telegram.models import TelegramChatMapping, TelegramDelivery, TelegramReceipt
 
 router = APIRouter()
 DB = Annotated[Session, Depends(get_session)]
@@ -71,7 +72,7 @@ def ready(session: DB):
         if revision != expected_revision:
             raise ValueError("Migration revision is not current")
         for model in (User, UserSession, Product, ImportBatch, Message, AnalysisRun, Analysis, Usage,
-                      SuggestedResponse, LeadFeedback):
+                      SuggestedResponse, LeadFeedback, TelegramChatMapping, TelegramReceipt, TelegramDelivery):
             session.execute(select(model.id).limit(1))
     except Exception as exc:
         raise AppError("not_ready", "Database or migration is not ready", 503) from exc
