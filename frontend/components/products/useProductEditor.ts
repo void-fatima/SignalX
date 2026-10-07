@@ -37,10 +37,13 @@ export function useProductEditor() {
     selection.current = selectedProductId; setDraft(initial); setBaseline(initial); setErrors({}); setNotice(""); setError("");
   }, [loading, selectedProductId, products]);
   useEffect(() => { setSelectionLocked(dirty || busy || loading); return () => setSelectionLocked(false); }, [dirty, busy, loading, setSelectionLocked]);
+  useEffect(() => {
+    if (!demo && products.some(product => product.id === selectedProductId)) localStorage.setItem("product_id", selectedProductId);
+  }, [demo, products, selectedProductId]);
   function change(key: keyof ProductDraft, value: string) {
     setDraft(previous => ({ ...previous, [key]: value })); setErrors(previous => ({ ...previous, [key]: undefined })); setNotice("");
   }
-  function cancel() { setDraft(baseline); setErrors({}); setError(""); setNotice("Changes discarded."); }
+  function cancel() { setDraft(baseline); setErrors({}); setError(""); setNotice("Changes discarded."); document.getElementById("product-name")?.focus(); }
   async function save() {
     const invalid = validateProduct(draft); setErrors(invalid); setNotice(""); setError("");
     const first = Object.keys(invalid)[0];
@@ -64,5 +67,5 @@ export function useProductEditor() {
     finally { if (current === version.current) setBusy(false); }
   }
   return { demo, products, selectedProductId, draft, errors, loading, busy, dirty, error, notice, total, change, cancel, save,
-    retry: () => setReload(value => value + 1), create: () => setSelectedProductId("") };
+    retry: () => setReload(value => value + 1), create: () => setSelectedProductId(""), select: (id: string) => setSelectedProductId(id) };
 }
