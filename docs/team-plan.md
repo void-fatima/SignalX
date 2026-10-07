@@ -5,7 +5,7 @@
 
 | عضو | مالکیت اصلی | قدم بعدی |
 | --- | --- | --- |
-| رهام | API/DB/Auth/user ownership، schema/migration، services/worker، persistence، Docker/CI/Deploy/Release | پیکربندی Gemini روی Host و تست نهایی Worker→Agent→Persistence |
+| رهام | API/DB/Auth/user ownership، schema/migration، services/worker، persistence، Docker/CI/Deploy/Release | یکپارچه‌سازی شاخهٔ Backend با main، پیکربندی AvalAI روی Host و تست نهایی Worker→Agent→Persistence |
 | ستایش | تمام Agent/provider/prompt/scoring/cost/evaluation/reply logic و AI docs | ارزیابی Agent و هماهنگی rate/provider تنظیم‌شده برای اجرای live |
 | فاطیما | تمام Frontend/UI/UX، Auth UI، client API، demo/pitch/screenshots | Auth UI و guard، smoke مرورگر مسیر Mock و حالات خطا/empty/loading |
 
@@ -21,9 +21,10 @@
 | 4 | response/feedback/analytics/cost persistence/restart + release candidate | grounded reply/cost/dev tuning/test evaluation | reply/feedback/cost cards/responsive/demo | freeze کامل پایان روز 4 |
 | 5 | blocker/clean checkout/production/release | AI claims + metrics/cost/limitations/examples/docs | مرورگر QA/screenshots/pitch/video | اجرای مستقل مسیر داوری و تحویل |
 
-وضعیت checkout فعلی: مسیر Product→CSV→Worker→Agent→PostgreSQL در Mock تأیید شده؛
-response draft، feedback و analytics در Backend پیاده شده‌اند. Gemini Provider در شاخهٔ
-محلی Integration ادغام و Compose برای انتقال تنظیماتش آماده شده است. Hosting/Secret
-Production هنوز انتخاب/تنظیم نشده و Live Gemini Worker smoke اجرا نشده است. UI/auth
-integration با فاطیماست؛ تنظیم نرخ و budget policy هم باقی است.
+وضعیت checkout فعلی: مسیر Product→CSV→Worker→Agent→PostgreSQL در Mock قبلاً تأیید شده؛
+response draft، feedback و analytics در Backend پیاده شده‌اند. PR اتصال Provider به
+شاخهٔ Backend Analytics ادغام شده و CI شاخهٔ مقصد پاس است؛ این کار هنوز به `main` نرسیده.
+AvalAI smoke سمت Agent طبق گزارش تیم موفق بوده، اما Host/Secret Production انتخاب یا
+تنظیم نشده و تست نهایی Worker→Agent→PostgreSQL روی Host باقی است. UI/Auth integration
+با فاطیماست؛ تنظیم نرخ معتبر و budget policy سمت Agent باقی است.
 [وضعیت و کارهای ستایش](setayesh-plan.md)

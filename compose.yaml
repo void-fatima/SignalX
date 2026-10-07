@@ -11,11 +11,6 @@ x-backend-environment: &backend-environment
   OPENAI_PRICE_VERSION: ${OPENAI_PRICE_VERSION:-}
   OPENAI_INPUT_USD_PER_MILLION: ${OPENAI_INPUT_USD_PER_MILLION:-}
   OPENAI_OUTPUT_USD_PER_MILLION: ${OPENAI_OUTPUT_USD_PER_MILLION:-}
-  GEMINI_API_KEY: ${GEMINI_API_KEY:-}
-  GEMINI_MODEL: ${GEMINI_MODEL:-}
-  GEMINI_BASE_URL: ${GEMINI_BASE_URL:-https://generativelanguage.googleapis.com/v1beta/openai/}
-  GEMINI_TIMEOUT_SECONDS: ${GEMINI_TIMEOUT_SECONDS:-30}
-  GEMINI_MAX_OUTPUT_TOKENS: ${GEMINI_MAX_OUTPUT_TOKENS:-2000}
   CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
   AUTH_COOKIE_NAME: ${AUTH_COOKIE_NAME:-singnalx_session}
   AUTH_COOKIE_SECURE: ${AUTH_COOKIE_SECURE:-false}
@@ -45,7 +40,6 @@ services:
     environment:
       <<: *backend-environment
       OPENAI_API_KEY: ""
-      GEMINI_API_KEY: ""
     command: ["alembic", "upgrade", "head"]
     depends_on:
       database: {condition: service_healthy}

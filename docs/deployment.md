@@ -1,43 +1,62 @@
-# Deployment handoff — Roham
+# Backend Deployment — Roham
 
-The local compose.yaml is the starting point. Online hosting is not configured
-or performed. Choose the container host and database together before adding
-provider-specific deployment files. The Gemini Agent branch is integrated locally;
-production variables must be added to the selected host before a live deployment.
+The current real-provider target is AvalAI. The Agent-side AvalAI test was
+reported successful; that does not yet verify the deployed Backend Worker,
+PostgreSQL persistence, or production hosting. No cloud host/project is
+configured in this repository yet.
 
-For Gemini, configure these variables on both the API and Worker services:
+## Provider settings
+
+Set the following server-side variables on both the API and Worker services:
 
 ```text
 PROVIDER_MODE=real
-LLM_PROVIDER=gemini
-GEMINI_MODEL=gemini-3.5-flash-lite
-GEMINI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/
-GEMINI_API_KEY=<host secret>
+LLM_PROVIDER=avalai
+OPENAI_BASE_URL=https://api.avalai.ir/v1
+OPENAI_MODEL=gpt-5.6-luna
+OPENAI_API_KEY=<AvalAI secret>
+OPENAI_TIMEOUT_SECONDS=30
+OPENAI_MAX_OUTPUT_TOKENS=2000
 ```
 
-Also set `GEMINI_TIMEOUT_SECONDS=30` and `GEMINI_MAX_OUTPUT_TOKENS=2000` unless
-the deployment needs different bounded values. Keep `GEMINI_API_KEY` in the
-host's secret manager; do not commit it or place it in frontend variables. The
-API needs the key for on-demand reply drafts, and the Worker needs it for runs.
-Database migration service does not need any provider key. Keep the backend
-`PROVIDER_MODE=real`; the Agent's provider selector is independently
-`LLM_PROVIDER=gemini`. Usage costs remain unknown/null unless verified pricing
-is configured by the Agent contract.
+`PROVIDER_MODE=real` makes the Backend construct `AgentInput` with real mode;
+`LLM_PROVIDER=avalai` selects the Agent's AvalAI-compatible Responses provider.
+The API needs the key for explicitly requested reply drafts, and the Worker
+needs it for analysis runs. Store `OPENAI_API_KEY` in the host secret manager;
+never commit it or expose it to frontend variables. Keep the migration job free
+of provider credentials.
 
-Backend auth and ownership routes now exist locally. Before the online release,
-connect the auth UI/API client, verify credentialed browser requests, run migration
-0002 on PostgreSQL, and check two-user isolation there. Also require migrations
-before API/worker startup; one worker; persistent PostgreSQL; HTTPS and secure
-session settings; origin/CORS configuration; server-only secrets; explicit
-provider mode; health/readiness checks; known model rates and bounded paid usage;
-and restart smoke tests. Build the frontend with the reachable API URL, not localhost.
+Do not set Gemini variables for this deployment. The Agent code may retain its
+separate provider adapter, but AvalAI is the agreed production selection.
+Leave price variables unset unless the current AvalAI rates and price version
+have been verified; unknown cost must stay null.
 
-For same-site frontend/API hosts, `AUTH_COOKIE_SAMESITE=lax` is sufficient. If
-the frontend and API use different sites, configure `AUTH_COOKIE_SAMESITE=none`
-and `AUTH_COOKIE_SECURE=true` over HTTPS, and set `CORS_ORIGINS` to the exact
-frontend origin. Browsers may restrict third-party cookies; prefer same-site
-custom domains or a same-origin proxy when that restriction applies.
+## Backend services
 
-Confirm the URL lifetime and competition requirements from the actual rules.
-The revised plan targets first online Mock slice at end of Day 2. This file is a
-handoff plan, not a deployable host configuration or a deployed URL.
+Use a persistent PostgreSQL service and the `backend/Dockerfile` image for both
+API and Worker. Build context is `backend/`. Run `alembic upgrade head` as a
+release/migration job before starting either service. Start the API with the
+image's default command, and start exactly one Worker with:
+
+```text
+python -m app.worker
+```
+
+Set the host's internal PostgreSQL URL as `DATABASE_URL` on the migration, API,
+and Worker services. Expose the API on the port expected by the selected host;
+the API readiness endpoint is `/api/v1/ready`. Keep PostgreSQL private.
+
+For an HTTPS deployment, set `AUTH_COOKIE_SECURE=true`. Use `lax` when the UI
+and API are same-site. For separate sites, configure `AUTH_COOKIE_SAMESITE=none`,
+`AUTH_COOKIE_SECURE=true`, and the exact frontend origin in `CORS_ORIGINS`; prefer
+same-site custom domains where possible. The frontend Auth UI/API wiring remains
+Fatima's task.
+
+## Release gate
+
+After choosing and configuring a host, verify migration, API readiness, Worker
+startup, restart recovery, user isolation, and a real `Worker → Agent → PostgreSQL`
+run. Inspect persisted screening, qualification, score, decision, evidence,
+usage, versions, and nullable cost. Keep the test bounded to a small approved
+dataset; no automatic outreach is enabled. Do not call the deployment complete
+until the host reports a successful release and the persisted run is verified.

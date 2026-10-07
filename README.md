@@ -3,8 +3,9 @@
 The backend includes account/session endpoints, user-scoped data access, Agent
 provider adapters (AvalAI and Gemini), response/feedback persistence and run
 analytics. The login/register pages remain UI shells until Fatima connects them
-to the API. Gemini hosting configuration and deployed live verification remain
-pending. See [file readiness](docs/file-skeleton.md).
+to the API. AvalAI (`gpt-5.6-luna`) is the current real-provider target; the
+Agent-side live test was reported successful. Backend Worker/PostgreSQL hosting
+and its production smoke are still pending. See [file readiness](docs/file-skeleton.md).
 
 Runnable Mock foundation aligned with the revised SignalX five-day architecture, created directly in
 the cloned SignalX repository. English UI supports Persian/English messages.
@@ -126,7 +127,7 @@ Mock output is synthetic demonstration data, not real LLM analysis or measured
 accuracy. Recorded Mock usage has no real tokens, cost zero and cost_status=mock.
 Screened-out messages have null scores; failed messages have null decisions.
 No automatic message sending. Real provider adapters, response drafts, feedback
-and run analytics are implemented locally; live Gemini Worker persistence on the
+and run analytics are implemented locally; live AvalAI Worker persistence on a
 selected host is still pending. Paid usage/budget control, evaluation datasets,
 deployment and presentation media remain outstanding. Backend authentication and
 user isolation are implemented locally. The auth UI and browser credential
