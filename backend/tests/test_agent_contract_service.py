@@ -42,16 +42,7 @@ def test_backend_builds_agent_input_with_internal_parent_and_scoped_context(clie
 
 def test_worker_contract_path_persists_complete_agent_output(client, factory):
     _payload, run = setup_run(client, key="agent-contract-worker")
-
-    def with_versions(agent_input):
-        output = analyze_agent(agent_input)
-        return output.model_copy(update={
-            "decision_reason": "fixture_decision_reason" if output.scoring else None,
-            "prompt_version": None,
-            "scoring_version": "score_v1" if output.scoring else None,
-        })
-
-    assert process_one(factory, agent_orchestrator=with_versions)
+    assert process_one(factory, agent_orchestrator=analyze_agent)
 
     with factory() as session:
         analyses = session.scalars(select(Analysis).where(Analysis.run_id == run["id"])).all()
@@ -65,11 +56,11 @@ def test_worker_contract_path_persists_complete_agent_output(client, factory):
                    for analysis in analyses if analysis.lead_score is not None)
         assert all(analysis.reason == analysis.need and analysis.budget_signal == "unknown"
                    for analysis in analyses if analysis.is_candidate)
-        assert all(analysis.decision_reason == "fixture_decision_reason"
+        assert all(analysis.decision_reason
                    and analysis.scoring_version == "score_v1"
                    and analysis.prompt_version is None
                    for analysis in analyses if analysis.is_candidate)
-        assert all(analysis.decision_reason is None and analysis.scoring_version is None
+        assert all(analysis.decision_reason and analysis.scoring_version is None
                    and analysis.prompt_version is None
                    for analysis in analyses if not analysis.is_candidate)
         assert any(event.model is None or event.model == "deterministic-mock-v1" for event in usage)
