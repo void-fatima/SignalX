@@ -176,9 +176,9 @@ test("loading source state gives way to an honest failed-analysis dialog", async
   await expect(dialog.locator(".dialog-evidence blockquote")).toHaveCount(0);
 });
 
-test("account shell shares the brand and remains an honest integration shell", async ({ page }) => {
-  await page.goto("/login");
-  await expect(page.locator(".brand-large img")).toBeVisible();
-  await expect(page.getByLabel("Email")).toBeDisabled();
-  await expect(page.getByRole("status")).toContainText("not connected yet");
+test("sign-in preview shares the brand without creating a pretend session", async ({ page }) => {
+  await page.goto("/login?demo=1");
+  await expect(page.locator(".brand-stacked img")).toBeVisible();
+  await expect(page.getByLabel("Email", { exact: true })).toBeEnabled();
+  await expect(page.getByText("Demo preview · no authentication is performed.")).toBeVisible();
 });

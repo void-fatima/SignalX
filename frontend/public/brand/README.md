@@ -11,6 +11,13 @@ the ribbon folds. Earlier transparent extractions produced edge debris and were
 discarded. Compact, large and mark variants share this one artwork. Do not place
 the screen-blended lockup on light surfaces without preparing a suitable asset.
 
+`signalx-stacked.png` is the auth-panel variant, prepared with the built-in
+imagegen tool using the same horizontal asset as input. Prompt: Layout-only
+adaptation; place the same folded violet ribbon X above the same custom SignalX
+wordmark. Preserve silhouette, gradients, folds, letter shapes and lavender final
+X. Uniform pure black background, clean lettering and edges, no decorations.
+Tightly frame a square stacked composition with safe edge clearance.
+
 Final prompt: Rebuild this exact horizontal logo smoothly on a perfectly uniform
 pure black #000000 background. Preserve the folded violet ribbon X silhouette,
 gradients, custom SignalX letter shapes and horizontal layout. Repair all edge
