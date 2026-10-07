@@ -159,7 +159,9 @@ def test_dataset_checksum_catches_edited_holdout(tmp_path):
 
 def test_dataset_checksum_survives_windows_git_line_endings(tmp_path):
     for name in ("cases.json", "labels.json", "manifest.json"):
-        (tmp_path / name).write_bytes((DATA_DIRECTORY / name).read_bytes().replace(b"\n", b"\r\n"))
+        source = (DATA_DIRECTORY / name).read_bytes()
+        canonical_lf = source.replace(b"\r\n", b"\n")
+        (tmp_path / name).write_bytes(canonical_lf.replace(b"\n", b"\r\n"))
     manifest, cases, labels = load_dataset(tmp_path)
     assert manifest.case_count == len(cases) == len(labels) == 64
 
