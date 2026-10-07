@@ -23,8 +23,10 @@ behind HTTPS; local HTTP uses the default `false`.
 Runs snapshot the product and config. processed_count includes failed messages;
 successful count is processed_count minus failed_count. Screened-out analyses
 have null signals/score/intent, decision ignore. Failed analyses have decision
-null. All output has provider_mode=mock. Usage has null real token counts and zero
-cost_usd with cost_status=mock. This is not real provider telemetry.
+null. Analysis output reports the provider mode used by its run (`mock` or `real`).
+Mock usage has null token counts and zero cost_usd with cost_status=mock. Real
+usage preserves unknown token counts and cost as null; missing telemetry is not
+inferred by the API.
 Prompt and scoring versions are nullable when their corresponding Agent stage
 did not run; Backend does not invent versions for screened-out messages.
 

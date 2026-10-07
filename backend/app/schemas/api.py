@@ -116,7 +116,7 @@ class AnalysisOut(ORM):
     limitations: list[str]
     scoring_version: str | None
     prompt_version: str | None
-    provider_mode: Literal["mock"]
+    provider_mode: Literal["mock", "real"]
 
 
 class LeadDetail(BaseModel):

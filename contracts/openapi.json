@@ -1247,7 +1247,10 @@
           },
           "provider_mode": {
             "type": "string",
-            "const": "mock",
+            "enum": [
+              "mock",
+              "real"
+            ],
             "title": "Provider Mode"
           }
         },

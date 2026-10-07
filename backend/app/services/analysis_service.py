@@ -73,6 +73,7 @@ def process_one(factory, provider_override=None, agent_orchestrator=None) -> boo
                 session.get(AnalysisRun, run_id).heartbeat_at = utcnow()
                 session.commit()
             # All database sessions/transactions are closed before provider invocation.
+            analysis_metadata_overrides = {}
             try:
                 if agent_orchestrator is not None:
                     agent_input = build_agent_input(
@@ -102,8 +103,14 @@ def process_one(factory, provider_override=None, agent_orchestrator=None) -> boo
                 usage = getattr(exc, "usage", [])
                 result = AnalysisResult(status="failed", is_candidate=True, screening_reason="processing_error",
                     decision=None, reason=str(exc)[:1000], provider_mode=config.provider_mode)
+                # A failed request did not complete Qualification or Scoring.
+                # The legacy result model has non-null defaults for those versions;
+                # do not persist those defaults as if the stages actually ran.
+                analysis_metadata_overrides = {"scoring_version": None, "prompt_version": None}
             with factory() as session:
-                analysis = Analysis(run_id=run_id, message_id=target.id, **result.model_dump(mode="json"))
+                values = result.model_dump(mode="json")
+                values.update(analysis_metadata_overrides)
+                analysis = Analysis(run_id=run_id, message_id=target.id, **values)
                 session.add(analysis)
                 session.flush()
                 for event in usage:

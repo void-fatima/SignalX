@@ -3,7 +3,7 @@ import pytest
 
 from app.agents.contracts import (
     AgentInput, AgentOutput, EvidenceItem, QualificationResult, RunConfig,
-    ScoringResult, ScreeningResult,
+    ScoringResult, ScreeningResult, UsageInfo,
 )
 from app.agents.orchestrator import analyze_agent
 from app.models import Analysis, AnalysisRun, Usage
@@ -65,6 +65,53 @@ def test_worker_contract_path_persists_complete_agent_output(client, factory):
                    for analysis in analyses if not analysis.is_candidate)
         assert any(event.model is None or event.model == "deterministic-mock-v1" for event in usage)
         assert any(event.cost_status == "mock" and event.cost_usd == 0 for event in usage)
+
+
+def test_worker_persists_real_output_and_keeps_unknown_cost_null(client, factory):
+    payload, run = setup_run(client, key="real-agent-contract-worker")
+    with factory() as session:
+        analysis_run = session.get(AnalysisRun, run["id"])
+        analysis_run.config_snapshot = {**analysis_run.config_snapshot, "provider_mode": "real"}
+        session.commit()
+
+    def real_contract_fixture(agent_input):
+        message = agent_input.message
+        qualification = QualificationResult(
+            intent="course_search", need="Looking for a backend course", purchase_intent=.8,
+            product_fit=.8, need_strength=.7, urgency=.4, confidence=.9, response_opportunity=.8,
+            evidence=[EvidenceItem(message_id=message.id, quote=message.content, reason="Contract test evidence")],
+            limitations=["Budget is unknown"],
+        )
+        return AgentOutput(
+            screening=ScreeningResult(is_candidate=True, reason="direct_signal"),
+            qualification=qualification,
+            scoring=ScoringResult(score=72, decision="RESPOND"),
+            decision_reason="The score meets the respond threshold.",
+            prompt_version="qualify_real_v1", scoring_version="score_v1",
+            usage=[UsageInfo(stage="qualification", attempt_no=1, provider_mode="real",
+                model="contract-test-model", input_tokens=120, output_tokens=30,
+                estimated_cost=None, cost_status="unknown", price_version=None,
+                latency_ms=12, outcome="success")],
+        )
+
+    assert process_one(factory, agent_orchestrator=real_contract_fixture)
+    status = client.get(f"/api/v1/analysis/runs/{run['id']}")
+    assert status.status_code == 200 and status.json()["status"] == "completed"
+    with factory() as session:
+        analyses = session.scalars(select(Analysis).where(Analysis.run_id == run["id"])).all()
+        usage_rows = session.scalars(select(Usage).where(Usage.run_id == run["id"])).all()
+        assert len(analyses) == len(usage_rows) == 20
+        assert all(row.provider_mode == "real" and row.decision_reason
+                   and row.scoring_version == "score_v1"
+                   and row.prompt_version == "qualify_real_v1" for row in analyses)
+        assert all(row.provider_mode == "real" and row.cost_usd is None
+                   and row.cost_status == "unknown" for row in usage_rows)
+
+    detail = client.get(f"/api/v1/leads/{analyses[0].id}")
+    assert detail.status_code == 200
+    assert detail.json()["analysis"]["provider_mode"] == "real"
+    assert detail.json()["analysis"]["decision_reason"]
+    assert detail.json()["analysis"]["prompt_version"] == "qualify_real_v1"
 
 
 def test_backend_rejects_agent_evidence_outside_input():

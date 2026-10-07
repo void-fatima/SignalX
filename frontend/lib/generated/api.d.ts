@@ -301,9 +301,9 @@ export interface components {
             prompt_version: string | null;
             /**
              * Provider Mode
-             * @constant
+             * @enum {string}
              */
-            provider_mode: "mock";
+            provider_mode: "mock" | "real";
         };
         /** BatchOut */
         BatchOut: {

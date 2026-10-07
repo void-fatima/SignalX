@@ -5,7 +5,7 @@ from app.models import Message, AnalysisRun, Analysis, Usage, utcnow
 from app.services.analysis_service import process_one, recover_interrupted
 from app.agents.providers.mock import MockProvider
 from app.agents.providers.base import ProviderError
-from app.agents.contracts import UsageEvent
+from app.agents.contracts import AgentOutput, ScreeningResult, UsageEvent, UsageInfo
 from fastapi.testclient import TestClient
 from app.main import app
 
@@ -71,7 +71,7 @@ def test_partial_failure_and_attempt_usage(client, factory):
             return super().qualify(product, target, context)
     assert process_one(factory, FailingProvider())
     status = client.get(f"/api/v1/analysis/runs/{run['id']}").json()
-    assert status["status"] == "partial" and status["failed_count"] == 1 and status["processed_count"] == 20
+    assert status["status"] == "partial" and status["failed_count"] == 1 and status["processed_count"] == 20, status.get("error")
     with factory() as session:
         failed = session.scalar(select(Analysis).where(Analysis.status == "failed"))
         assert failed.decision is None and failed.lead_score is None
@@ -85,15 +85,38 @@ def test_real_contract_failure_keeps_real_provider_mode(client, factory):
         current.config_snapshot = {**current.config_snapshot, "provider_mode": "real"}
         session.commit()
 
+    calls = 0
+
     def fail_agent(_inputs):
-        raise RuntimeError("Synthetic real-provider failure")
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            raise ProviderError("Synthetic real-provider timeout", [UsageInfo(
+                stage="qualification", attempt_no=1, provider_mode="real", model="test-model",
+                input_tokens=None, output_tokens=None, estimated_cost=None, cost_status="unknown",
+                price_version=None, latency_ms=0, outcome="timeout")])
+        return AgentOutput(screening=ScreeningResult(is_candidate=False, reason="unrelated"),
+                           decision_reason="Screening rejected the message.")
 
     assert process_one(factory, agent_orchestrator=fail_agent)
+    status = client.get(f"/api/v1/analysis/runs/{run['id']}").json()
+    assert status["status"] == "partial" and status["failed_count"] == 1, status.get("error")
     with factory() as session:
         failed = session.scalar(select(Analysis).where(
             Analysis.run_id == run["id"], Analysis.status == "failed"))
         assert failed is not None
         assert failed.provider_mode == "real"
+        assert failed.scoring_version is None and failed.prompt_version is None
+        timeout_usage = session.scalar(select(Usage).where(
+            Usage.run_id == run["id"], Usage.outcome == "timeout"))
+        assert timeout_usage is not None
+        assert timeout_usage.provider_mode == "real" and timeout_usage.cost_usd is None
+        assert timeout_usage.cost_status == "unknown"
+    detail = client.get(f"/api/v1/leads/{failed.id}")
+    assert detail.status_code == 200
+    assert detail.json()["analysis"]["provider_mode"] == "real"
+    assert detail.json()["analysis"]["prompt_version"] is None
+    assert detail.json()["analysis"]["scoring_version"] is None
 
 
 def test_expired_worker_recovery(client, factory):
