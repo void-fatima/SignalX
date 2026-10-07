@@ -67,13 +67,13 @@ def generate_suggested_reply(agent_input: AgentInput, analysis: AgentOutput) -> 
     try:
         provider = get_provider(mode)
     except ProviderError as exc:
-        raise ProviderError(str(exc), [*analysis.usage, *exc.usage]) from None
+        raise ProviderError(str(exc), [*analysis.usage, *exc.usage], diagnostics=exc.diagnostics) from None
     if provider.provider_mode != mode:
         raise ProviderError("Reply provider mode does not match the supplied mode", analysis.usage)
     try:
         text, records = provider.generate_reply_structured(inputs, qualification, analysis.scoring.decision)
     except ProviderError as exc:
-        raise ProviderError(str(exc), [*analysis.usage, *exc.usage]) from None
+        raise ProviderError(str(exc), [*analysis.usage, *exc.usage], diagnostics=exc.diagnostics) from None
     try:
         records = [UsageInfo.model_validate(record.model_dump(), strict=True) for record in records]
         if (not records or len(records) > 2 or records[-1].outcome != "success"

@@ -22,6 +22,13 @@ class ReplyDraft(BaseModel):
     parts: list[ReplyPart] = Field(min_length=1, max_length=3)
 
 
+class ReplyValidationError(ValueError):
+    """Name the existing policy check without exposing the rejected text."""
+    def __init__(self, failed_check: str, message: str):
+        super().__init__(message)
+        self.failed_check = failed_check
+
+
 # Free-form questions must not introduce sensitive commercial claims, calls to
 # action, identifiers or instructions. Facts use exact Product text instead.
 UNSAFE_QUESTION = re.compile(
@@ -45,28 +52,28 @@ def render_draft(draft: ReplyDraft, product: ProductInput, target_text: str) -> 
     """
     questions = [part for part in draft.parts if part.kind == "question"]
     if len(questions) != 1 or draft.parts[-1].kind != "question":
-        raise ValueError("Draft requires one final clarifying question")
+        raise ReplyValidationError("reply_question_structure", "Draft requires one final clarifying question")
     question = questions[0]
     if (question.product_field is not None or not question.text.strip().endswith(("?", "؟"))
             or UNSAFE_QUESTION.search(question.text)
             or re.search(r"[.!;\n]", question.text)
             or sum(question.text.count(char) for char in ("?", "؟")) != 1):
-        raise ValueError("Unsafe draft question")
+        raise ReplyValidationError("reply_question_safety", "Unsafe draft question")
     if bool(PERSIAN.search(question.text)) != bool(PERSIAN.search(target_text)):
-        raise ValueError("Draft question must match the target language")
+        raise ReplyValidationError("reply_question_language", "Draft question must match the target language")
     for part in draft.parts:
         if not part.text.strip() or any(ord(char) < 32 and char not in "\n\t" for char in part.text):
-            raise ValueError("Invalid draft text")
+            raise ReplyValidationError("reply_text_content", "Invalid draft text")
         if any(re.search(pattern, normalize(part.text)) for pattern in INSTRUCTION_PATTERNS):
-            raise ValueError("Untrusted instructions cannot become reply content")
+            raise ReplyValidationError("reply_untrusted_instruction", "Untrusted instructions cannot become reply content")
         if part.kind == "product_fact":
             if part.product_field is None or part.text != getattr(product, part.product_field):
                 # Substring matching alone would allow dropping negation or
                 # qualifications, e.g. 'not available' -> 'available'.
-                raise ValueError("Product claims must quote the whole supplied field exactly")
+                raise ReplyValidationError("reply_product_fact_grounding", "Product claims must quote the whole supplied field exactly")
             # Do not repeat instructions disguised as a supplied product fact.
             if re.search(r"ignore previous|system prompt|api[_ ]?key|دستور|کلید", part.text, re.I):
-                raise ValueError("Untrusted instructions cannot become reply facts")
+                raise ReplyValidationError("reply_product_fact_instruction", "Untrusted instructions cannot become reply facts")
             if bool(PERSIAN.search(part.text)) != bool(PERSIAN.search(target_text)):
-                raise ValueError("Omit product quotes in another language")
+                raise ReplyValidationError("reply_product_fact_language", "Omit product quotes in another language")
     return " ".join(part.text.strip() for part in draft.parts)
