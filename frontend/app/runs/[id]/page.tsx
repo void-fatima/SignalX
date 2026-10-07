@@ -5,6 +5,8 @@ import Link from "next/link";
 import Icon from "@/components/Icon";
 import { useWorkspaceProducts } from "@/components/useWorkspaceProducts";
 import { useRunProgress, terminalStatuses } from "@/components/workflow/useRunProgress";
+import { useRunResults } from "@/components/workflow/useRunResults";
+import ArrivingResults from "@/components/workflow/ArrivingResults";
 import { DemoNotice, PageHeading, Panel, WorkflowLink } from "@/components/workflow/WorkflowUI";
 import { readRunContext, type RunContext } from "@/lib/run-context";
 import "@/app/workflow.css";
@@ -14,6 +16,8 @@ export default function RunPage({ params }: { params: Promise<{ id: string }> })
   const { id } = use(params), search = useSearchParams(), router = useRouter();
   const workspace = useWorkspaceProducts(), { demo } = workspace;
   const { run, error, loading, updated, retry } = useRunProgress(id, demo, search.get("state"));
+  const [resultsRefresh, setResultsRefresh] = useState(0);
+  const results = useRunResults(id, run?.batch_id, run?.processed_count || 0, demo, resultsRefresh);
   const [context, setContext] = useState<RunContext | null>(null), [issuesOpen, setIssuesOpen] = useState(false);
   useEffect(() => { setContext(readRunContext(id)); setIssuesOpen(false); }, [id, demo]);
   const completed = !!run && terminalStatuses.includes(run.status);
@@ -41,6 +45,7 @@ export default function RunPage({ params }: { params: Promise<{ id: string }> })
       {run.status === "queued" && !demo && <p className="workflow-empty">Waiting for the analysis worker to pick up this run.</p>}
       <div className="progress-footer"><span><i className="status-dot"/>{demo ? "Static demo · updates off" : error ? "Updates paused · retry connection" : completed ? "Final run status" : `Updates automatically${updated ? ` · checked ${new Date(updated).toLocaleTimeString("en-GB")}` : ""}`}</span>{ready ? <WorkflowLink href={leadsHref}>View available results <Icon name="chevron" size={17}/></WorkflowLink> : <span className="workflow-empty">No results available yet.</span>}</div>
     </Panel><Panel title="Run details" className="run-details"><dl>{[["Product", context?.product || workspace.products.find(p => p.id === run.product_id)?.name || (demo && !sourcePreview ? "Backend Academy" : `Product ${run.product_id.slice(0, 8)}`)], ["Community", context?.community || (demo && !sourcePreview ? "Developer community" : "Not available from run API")], ["Source", context?.filename || (demo && !sourcePreview ? "developer-community.csv" : `Batch ${run.batch_id.slice(0, 8)}`)], ["Messages", String(total)], ["Started", sourcePreview ? "Not started" : run.started_at ? new Date(run.started_at).toLocaleDateString("en-GB") : "Not started"], ["Mode", mock ? "Mock" : run.config_snapshot.provider_mode === "real" ? "Real" : "Unknown"], ["Cost", mock ? "$0.00" : "Unavailable"]].map(([term, value]) => <div key={term}><dt>{term}</dt><dd>{value}</dd></div>)}</dl><p><Icon name="info" size={19}/>{mock ? "Mock run — no provider charges." : "Provider cost is not exposed by this API."}</p></Panel></div>}
+    {run && <ArrivingResults {...results} demo={demo} community={context?.community || "Imported community"} href={leadsHref} retry={() => setResultsRefresh(value => value + 1)}/>}
     {demo && <details className="demo-state-controls"><summary>Demo status previews</summary><label htmlFor="demo-run-state">Demo run state</label><select id="demo-run-state" value={run?.status || "running"} disabled={sourcePreview} onChange={e => router.replace(`/runs/${id}?demo=1&state=${e.target.value}`)}>{["queued", "running", "partial", "completed", "failed", "interrupted"].map(s => <option key={s} value={s}>{s}</option>)}</select><p>Manual snapshots only. No progress is simulated automatically.</p></details>}
   </div>;
 }
