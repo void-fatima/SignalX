@@ -9,9 +9,11 @@ Errors are {"error":{"code":"...","message":"...","details":[]}}.
 Implemented endpoints: health/ready; POST/GET/PATCH products; POST imports;
 GET messages; POST analysis/runs (202, required Idempotency-Key);
 GET analysis/runs/{id}; GET leads (run_id required, decision/min_score filters);
-GET leads/{id}; POST /auth/register; POST /auth/login; POST /auth/logout;
-GET /auth/me. Authenticated product, import, message, run, and lead operations
-are scoped to the current user. Same-user reuse of an idempotency key with a
+GET leads/{id}; POST/PATCH leads/{id}/response; PUT leads/{id}/feedback;
+POST /auth/register; POST /auth/login;
+POST /auth/logout; GET /auth/me. Authenticated product, import, message, run,
+lead, response, and feedback operations are scoped to the current user.
+Same-user reuse of an idempotency key with a
 different payload returns 409. Import accepts multipart file + community_name.
 Import checksum and idempotency uniqueness are scoped per user.
 
@@ -34,8 +36,13 @@ Context is offline, limited to the same batch/conversation, up to three precedin
 and two following messages (parent prioritized), maximum five messages and 8000
 characters. Product edits never change old run snapshots.
 
-Reply, feedback and analytics endpoints in the architecture are later-stage
-work, outside the bootstrap scope. Do not show a generated reply as a real AI result.
+Response drafts are generated only on explicit POST and remain pending until a
+human changes their status. Approval only persists status; the Backend never sends
+community messages. Existing drafts are reused unless `?regenerate=true` is
+requested. Reply attempts are persisted in `llm_usage`; the draft and feedback
+remain available from GET leads/{id}. Feedback is one current vote per analysis.
+Never show mock output as a real AI result. Run-level analytics is not part of this
+branch yet.
 
 Pre-authentication rows remain unowned after migration 0002 and are inaccessible
 through authenticated API routes. Auth endpoints and ownership enforcement are

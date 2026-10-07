@@ -15,8 +15,9 @@ API و یک worker مستقل از همان کدبیس و image. Redis/Celery، 
 
 مسیر MVP نهایی: Register/Login → Product → CSV → Run → Worker →
 Screen/Context/Qualify/Score → Lead/Evidence/Cost → Reply on demand.
-Routeهای Auth و session و scope کاربر در Backend به‌صورت محلی پیاده شده‌اند؛
-اتصال UI/client احراز هویت هنوز با فاطیماست. Provider واقعی پیاده نشده است.
+Routeهای Auth، session و scope کاربر در Backend به‌صورت محلی پیاده شده‌اند؛
+اتصال UI/client احراز هویت هنوز با فاطیماست. Adapter واقعی Agent پیاده شده؛
+اجرای live در هر محیط به تنظیم provider و credential نیاز دارد.
 
 ## مالکیت
 
@@ -57,26 +58,30 @@ rounding زبان‌ها در مرزها ایجاد نشود. Confidence<0.60، 
 Rate با واحد **USD به ازای یک میلیون توکن** به تابع داده می‌شود؛ تقسیم بر 1,000,000
 ضروری است. نرخ واقعی اختراع نمی‌شود. usage/rate نامعلوم cost=null؛ Mock صفر با badge
 و cost_status=mock است. هزینه/پیام یا Lead با مخرج صفر یا هزینهٔ ناقص null می‌شود.
-منطق خالص cost آماده است؛ budget enforcement، نرخ provider و accounting واقعی هنوز آماده نیستند.
+منطق Agent cost و ذخیره Usage آماده‌اند؛ endpoint تجمیع Analytics در شاخهٔ جداگانهٔ
+بعدی توسعه می‌یابد. Budget enforcement و تنظیم معتبر نرخ‌ها هنوز انجام نشده‌اند.
 
-## تغییرهای لازم برای نسخه آنلاین — هنوز پیاده نشده‌اند
+## کارهای باقی‌مانده برای نسخه آنلاین
 
-Routeهای Auth، password hashing، نشست قابل ابطال و scope محصول، import، پیام، run
-و lead در Backend به‌صورت محلی پیاده شده‌اند. Migration 0002 داده‌های قبل از Auth
+Routeهای Auth، password hashing، نشست قابل ابطال و scope محصول، import، پیام، run،
+lead، draft پاسخ و feedback در Backend پیاده شده‌اند. Analytics در این شاخه هنوز
+پیاده نشده است. Migration 0002 داده‌های قبل از Auth
 را بدون مالک می‌گذارد تا API احراز‌شده آن‌ها را نشان ندهد. فاطیما باید UI احراز هویت
 را به API وصل کند و درخواست‌ها را با credentials بفرستد. بررسی PostgreSQL/Compose
 و deployment آنلاین باقی است.
 
 Deploy تا پایان روز 2، provider واقعی تا پایان روز 3، Cost/Reply/Feedback/Evaluation
-و freeze کامل تا پایان روز 4، release روز 5. نسخهٔ کنونی local Mock است و آمادهٔ
-داوری آنلاین تلقی نمی‌شود. Provider/model، نرخ‌ها، secret و میزبان هنوز انتخاب نشده‌اند.
+و freeze کامل تا پایان روز 4، release روز 5. Adapter واقعی آماده است؛ Smoke واقعی
+Worker در Docker فعلی اجرا نشده و Docker در حال حاضر روی Mock است. Deployment آنلاین،
+اتصال Auth UI و تنظیم rates/secrets همچنان باقی‌اند.
 
 ## اسکلت انتخاب‌شده
 
 ساختار تفصیلی فعلی را حفظ می‌کنیم؛ schema، models، migrations، contracts/generated types
 و tests واقعی از درخت خلاصهٔ PDF حذف نمی‌شوند. بخش Agent اکنون qualification validation،
-provider factory، cost و evaluation مستقل دارد. Auth route/service فعال است؛ reply،
-analytics و UI هنوز placeholder هستند و storage صوری یا ارسال reply وصل نشده است.
+provider factory، cost، evaluation و تولید draft پاسخ on-demand دارد. Backend draft و
+feedback را ذخیره می‌کند؛ پاسخ اجتماعی به‌صورت خودکار ارسال نمی‌شود. Analytics در
+شاخهٔ جداگانه می‌آید. UI همچنان مالکیت فاطیماست.
 [راهنمای فایل‌ها](file-skeleton.md) وضعیت هر بخش را مشخص می‌کند.
 
 [مقایسه و تصمیم‌ها](architecture-comparison.md) · [برنامه تیم](team-plan.md) ·
