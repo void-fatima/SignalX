@@ -53,3 +53,5 @@
 .avatar-violet.avatar-small { background: linear-gradient(145deg, #9859db, #5825af); border-color: #c19aff; }
 @media (min-width: 1600px) { .queue-row-top > strong { font-size: 16px; }.queue-community { font-size: 13px; }.queue-preview { font-size: 13px; }.queue-preview[dir="rtl"] { font-size: 14px; }.decision-compact { font-size: 11px; }.signal-card { width: 310px; }.signal-card-title > strong { font-size: 18px; }.signal-card-score > span > b { font-size: 54px; }.source-section { padding-right: 330px; }.source-quote { margin-right: -330px; }.source-section > p, .source-section > .muted, .intent-tags { margin-right: -330px; } }
 @media (max-width: 900px) { .inbox-grid { grid-template-columns: minmax(0, 1fr); } }
+
+.reply-expand-link { display: flex; align-items: center; gap: 7px; width: fit-content; margin: 9px 0 0 auto; font-size: 11px; }
