@@ -44,7 +44,11 @@ export default function WorkspaceShell({ children }: { children: React.ReactNode
     if (signingOut) return;
     if (demo) { router.push("/login?demo=1"); return; }
     setSigningOut(true); setAccountError("");
-    try { await api.logout(); setUser(null); setProducts([]); setSelectedProductId(""); localStorage.removeItem("product_id"); localStorage.removeItem("run_id"); router.push("/login"); }
+    try {
+      await api.logout(); setUser(null); setProducts([]); setSelectedProductId("");
+      try { localStorage.removeItem("product_id"); localStorage.removeItem("run_id"); } catch { /* The server session has already ended, even if storage is unavailable. */ }
+      router.push("/login");
+    }
     catch { setAccountError("Sign out failed. Please try again."); }
     finally { setSigningOut(false); }
   }
