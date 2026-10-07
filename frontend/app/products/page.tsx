@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import Icon from "@/components/Icon";
+import ProductPreview from "@/components/products/ProductPreview";
 import { useProductEditor } from "@/components/products/useProductEditor";
 import type { ProductDraft } from "@/lib/product-profile";
 import "./product.css";
@@ -23,7 +24,7 @@ export default function Products() {
         <div className="product-field-pair">{field("best_fit", "Best fit", true)}{field("not_fit", "Not a fit", true)}</div><div className="product-field-pair">{field("price", "Price (optional)")}{field("currency", "Currency", false, 3)}</div></section>
       <div className="product-actions"><button type="submit" disabled={!!selectedProductId && !dirty}><Icon name="check"/>{busy ? "Saving…" : "Save product"}</button><button type="button" className="product-cancel" onClick={editor.cancel} disabled={!dirty}>Cancel</button><span className="product-save-state">{dirty || !selectedProductId ? "Changes not saved" : demo ? "Demo profile" : "Saved profile"}</span></div>
     </fieldset>{notice && <p role="status" className="product-feedback product-success">{notice}</p>}</form>
-    <aside className="product-preview-placeholder"><h2>Profile preview</h2><p dir="auto">{draft.name}</p><p dir="auto">{draft.description}</p></aside></div>
+    <ProductPreview draft={draft} loading={loading} available={total != null}/></div>
     {!loading && total != null && <details className="saved-products"><summary>Manage saved products ({total})</summary><div><button type="button" className="product-cancel" disabled={dirty || busy || !selectedProductId} onClick={editor.create}><Icon name="plus" size={16}/>New product</button>{editor.products.map(product => <div className="saved-product-row" key={product.id}><span dir="auto">{product.name}</span>{demo ? <span className="field-hint">Demo · local only</span> : <Link href="/imports" onClick={() => localStorage.setItem("product_id", product.id)}>Select &amp; import →</Link>}</div>)}</div></details>}
   </>;
 }
