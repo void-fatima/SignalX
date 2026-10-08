@@ -3,6 +3,7 @@ import json
 import os
 import time
 import uuid
+from decimal import Decimal
 from http.cookiejar import CookieJar
 from pathlib import Path
 from urllib.request import Request, build_opener, HTTPCookieProcessor
@@ -12,13 +13,18 @@ base = os.environ.get("SMOKE_API_URL", "http://127.0.0.1:8000/api/v1")
 opener = build_opener(HTTPCookieProcessor(CookieJar()))
 
 
-def request(path, data=None, headers=None):
-    with opener.open(Request(base + path, data=data, headers=headers or {}), timeout=10) as response:
+def request(path, data=None, headers=None, method=None):
+    with opener.open(Request(base + path, data=data, headers=headers or {}, method=method), timeout=10) as response:
         return response.status, json.load(response)
 
 
+def json_request(method, path, body, headers=None):
+    return request(path, json.dumps(body).encode(),
+                   {"Content-Type": "application/json", **(headers or {})}, method=method)
+
+
 def post(path, body, headers=None):
-    return request(path, json.dumps(body).encode(), {"Content-Type": "application/json", **(headers or {})})
+    return json_request("POST", path, body, headers)
 
 
 def main():
@@ -48,11 +54,31 @@ def main():
     assert current["processed_count"] == 20
     _, leads = request(f"/leads?run_id={run['id']}&decision=respond")
     assert leads["total"] >= 1
-    _, detail = request(f"/leads/{leads['items'][0]['id']}")
+    lead_id = leads["items"][0]["id"]
+    _, detail = request(f"/leads/{lead_id}")
     assert detail["analysis"]["lead_score"] == 84
     assert detail["analysis"]["provider_mode"] == "mock"
     assert all(m["conversation_id"] == detail["message"]["conversation_id"] for m in detail["context"])
-    print(f"HTTP smoke passed: 20 messages, {leads['total']} respond results, sample score 84; run={run['id']}")
+
+    _, draft = request(f"/leads/{lead_id}/response", data=b"", method="POST")
+    assert draft["status"] == "pending" and draft["provider_mode"] == "mock"
+    _, reused = request(f"/leads/{lead_id}/response", data=b"", method="POST")
+    assert reused["response_text"] == draft["response_text"]
+    _, approved = json_request("PATCH", f"/leads/{lead_id}/response", {"status": "approved"})
+    assert approved["status"] == "approved"
+    _, feedback = json_request("PUT", f"/leads/{lead_id}/feedback", {"relevant": True})
+    assert feedback["relevant"] is True
+    _, detail = request(f"/leads/{lead_id}")
+    assert detail["response_draft"]["status"] == "approved"
+    assert detail["feedback"]["relevant"] is True
+
+    _, analytics = request(f"/analytics/overview?run_id={run['id']}")
+    assert analytics["total_count"] == 20
+    assert analytics["qualified_leads"] == leads["total"]
+    assert analytics["provider_mode"] == "mock" and analytics["cost_complete"] is True
+    assert Decimal(str(analytics["total_cost_usd"])) == 0
+    assert analytics["feedback_acceptance"] == 1
+    print(f"HTTP smoke passed: 20 messages, {leads['total']} respond results, score 84, draft/feedback/analytics persisted; run={run['id']}")
 
 
 if __name__ == "__main__":

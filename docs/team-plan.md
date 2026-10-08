@@ -5,8 +5,8 @@
 
 | عضو | مالکیت اصلی | قدم بعدی |
 | --- | --- | --- |
-| رهام | API/DB/Auth/user ownership، schema/migration، services/worker، persistence، Docker/CI/Deploy/Release | Auth و جداسازی دادهٔ دو کاربر، تست PostgreSQL/Compose و deploy اولیه |
-| ستایش | تمام Agent/provider/prompt/scoring/cost/evaluation/reply logic و AI docs | انتخاب provider/model، adapter واقعی با structured output و usage attempts |
+| رهام | API/DB/Auth/user ownership، schema/migration، services/worker، persistence، Docker/CI/Deploy/Release | یکپارچه‌سازی شاخهٔ Backend با main، پیکربندی AvalAI روی Host و تست نهایی Worker→Agent→Persistence |
+| ستایش | تمام Agent/provider/prompt/scoring/cost/evaluation/reply logic و AI docs | ارزیابی Agent و هماهنگی rate/provider تنظیم‌شده برای اجرای live |
 | فاطیما | تمام Frontend/UI/UX، Auth UI، client API، demo/pitch/screenshots | Auth UI و guard، smoke مرورگر مسیر Mock و حالات خطا/empty/loading |
 
 فاطیما مالک تمام UI است؛ رهام و ستایش UI جدید نمی‌سازند. ستایش انتخاب context و
@@ -21,8 +21,10 @@
 | 4 | response/feedback/analytics/cost persistence/restart + release candidate | grounded reply/cost/dev tuning/test evaluation | reply/feedback/cost cards/responsive/demo | freeze کامل پایان روز 4 |
 | 5 | blocker/clean checkout/production/release | AI claims + metrics/cost/limitations/examples/docs | مرورگر QA/screenshots/pitch/video | اجرای مستقل مسیر داوری و تحویل |
 
-وضعیت checkout فعلی: مسیر محلی Product→CSV→Mock worker→Lead/detail آماده است؛ Auth،
-sessionهای قابل ابطال و scope کاربر در Backend پیاده شده‌اند. اتصال UI/auth با فاطیما،
-اجرای PostgreSQL/Compose و deployment آنلاین هنوز باقی‌اند. Provider واقعی آماده نیست.
-Cost/evaluation utility موجود است اما حسابداری و ارزیابی واقعی انجام نشده‌اند.
+وضعیت checkout فعلی: مسیر Product→CSV→Worker→Agent→PostgreSQL در Mock قبلاً تأیید شده؛
+response draft، feedback و analytics در Backend پیاده شده‌اند. تغییرات Backend برای
+این موارد و تنظیم هدف AvalAI روی شاخهٔ انتشار در حال آماده‌سازی‌اند و هنوز به `main`
+نرسیده‌اند. AvalAI smoke سمت Agent طبق گزارش تیم موفق بوده، اما Host/Secret Production
+انتخاب یا تنظیم نشده و تست نهایی Worker→Agent→PostgreSQL روی Host باقی است. UI/Auth
+integration با فاطیماست.
 [وضعیت و کارهای ستایش](setayesh-plan.md)

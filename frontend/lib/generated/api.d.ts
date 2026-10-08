@@ -176,6 +176,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/leads/{id}/response": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Response */
+        post: operations["create_response_api_v1_leads__id__response_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Patch Response */
+        patch: operations["patch_response_api_v1_leads__id__response_patch"];
+        trace?: never;
+    };
+    "/api/v1/leads/{id}/feedback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Put Feedback */
+        put: operations["put_feedback_api_v1_leads__id__feedback_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/analytics/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Run Analytics */
+        get: operations["run_analytics_api_v1_analytics_overview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/register": {
         parameters: {
             query?: never;
@@ -244,10 +296,128 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/integrations/telegram/chats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Map Chat */
+        post: operations["map_chat_api_v1_integrations_telegram_chats_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/integrations/telegram/leads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Leads */
+        get: operations["leads_api_v1_integrations_telegram_leads_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/leads/{lead_id}/telegram": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lead */
+        get: operations["lead_api_v1_leads__lead_id__telegram_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/leads/{lead_id}/telegram/suggested-reply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Suggested Reply */
+        post: operations["suggested_reply_api_v1_leads__lead_id__telegram_suggested_reply_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/leads/{lead_id}/telegram/reply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approved Reply */
+        post: operations["approved_reply_api_v1_leads__lead_id__telegram_reply_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/integrations/telegram/webhook": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Webhook */
+        post: operations["webhook_integrations_telegram_webhook_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AgentOutput */
+        AgentOutput: {
+            screening: components["schemas"]["ScreeningResult"];
+            qualification?: components["schemas"]["QualificationResult"] | null;
+            scoring?: components["schemas"]["ScoringResult"] | null;
+            /** Decision Reason */
+            decision_reason?: string | null;
+            /** Prompt Version */
+            prompt_version?: string | null;
+            /** Scoring Version */
+            scoring_version?: string | null;
+            /** Usage */
+            usage?: components["schemas"]["UsageInfo"][];
+            /** Suggested Reply */
+            suggested_reply?: string | null;
+        };
         /** AnalysisOut */
         AnalysisOut: {
             /**
@@ -305,6 +475,46 @@ export interface components {
              */
             provider_mode: "mock" | "real";
         };
+        /** AnalyticsOverview */
+        AnalyticsOverview: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /**
+             * Provider Mode
+             * @enum {string}
+             */
+            provider_mode: "mock" | "real";
+            /** Total Count */
+            total_count: number;
+            /** Qualified Leads */
+            qualified_leads: number;
+            /** Review Count */
+            review_count: number;
+            /** Failed Count */
+            failed_count: number;
+            /** Total Cost Usd */
+            total_cost_usd: string | null;
+            /** Cost Per Message */
+            cost_per_message: string | null;
+            /** Cost Per Qualified Lead */
+            cost_per_qualified_lead: string | null;
+            /** Unknown Usage Count */
+            unknown_usage_count: number;
+            /** Cost Complete */
+            cost_complete: boolean;
+            /** Feedback Acceptance */
+            feedback_acceptance: number | null;
+            /** Feedback Coverage */
+            feedback_coverage: number | null;
+        };
+        /** ApprovedReply */
+        ApprovedReply: {
+            /** Text */
+            text: string;
+        };
         /** BatchOut */
         BatchOut: {
             /**
@@ -333,6 +543,50 @@ export interface components {
             /** Community Name */
             community_name: string;
         };
+        /** ChatMappingInput */
+        ChatMappingInput: {
+            /**
+             * Product Id
+             * Format: uuid
+             */
+            product_id: string;
+            /** Telegram Chat Id */
+            telegram_chat_id: number;
+        };
+        /** ChatMappingOut */
+        ChatMappingOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Product Id
+             * Format: uuid
+             */
+            product_id: string;
+            /** Telegram Chat Id */
+            telegram_chat_id: number;
+            /** Enabled */
+            enabled: boolean;
+        };
+        /**
+         * ContextMessage
+         * @description Caller supplies only messages from the target's batch/conversation.
+         */
+        ContextMessage: {
+            /** Id */
+            id: string;
+            /** Content */
+            content: string;
+            /** Author */
+            author: string;
+            /**
+             * Timestamp
+             * Format: date-time
+             */
+            timestamp: string;
+        };
         /** Credentials */
         Credentials: {
             /** Email */
@@ -355,6 +609,42 @@ export interface components {
              */
             created_at: string;
         };
+        /**
+         * Decision
+         * @enum {string}
+         */
+        Decision: "IGNORE" | "REVIEW" | "RESPOND";
+        /** DeliveryOut */
+        DeliveryOut: {
+            /**
+             * Status
+             * @default not_sent
+             * @enum {string}
+             */
+            status: "not_sent" | "sending" | "sent" | "failed";
+            /** Telegram Message Id */
+            telegram_message_id?: number | null;
+            /** Failure Category */
+            failure_category?: string | null;
+            /**
+             * Delivery Uncertain
+             * @default false
+             */
+            delivery_uncertain: boolean;
+            /**
+             * Draft Busy
+             * @default false
+             */
+            draft_busy: boolean;
+        };
+        /** DraftRequest */
+        DraftRequest: {
+            /**
+             * Regenerate
+             * @default false
+             */
+            regenerate: boolean;
+        };
         /** ErrorBody */
         ErrorBody: {
             /** Code */
@@ -376,6 +666,39 @@ export interface components {
             message_id: string;
             /** Quote */
             quote: string;
+        };
+        /** EvidenceItem */
+        EvidenceItem: {
+            /** Message Id */
+            message_id: string;
+            /** Quote */
+            quote: string;
+            /** Reason */
+            reason: string;
+        };
+        /** FeedbackInput */
+        FeedbackInput: {
+            /** Relevant */
+            relevant: boolean;
+            /** Comment */
+            comment?: string | null;
+        };
+        /** FeedbackOut */
+        FeedbackOut: {
+            /** Relevant */
+            relevant: boolean;
+            /** Comment */
+            comment?: string | null;
+            /**
+             * Analysis Id
+             * Format: uuid
+             */
+            analysis_id: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /** ImportOut */
         ImportOut: {
@@ -404,6 +727,8 @@ export interface components {
              * @default true
              */
             offline_context: boolean;
+            response_draft?: components["schemas"]["ResponseDraft"] | null;
+            feedback?: components["schemas"]["FeedbackOut"] | null;
         };
         /** MessageOut */
         MessageOut: {
@@ -539,6 +864,61 @@ export interface components {
             /** Currency */
             currency?: string | null;
         };
+        /** QualificationResult */
+        QualificationResult: {
+            /** Intent */
+            intent: string;
+            /** Need */
+            need: string;
+            /** Purchase Intent */
+            purchase_intent: number;
+            /** Product Fit */
+            product_fit: number;
+            /** Need Strength */
+            need_strength: number;
+            /** Urgency */
+            urgency: number;
+            /** Confidence */
+            confidence: number;
+            /** Response Opportunity */
+            response_opportunity: number;
+            /** Evidence */
+            evidence?: components["schemas"]["EvidenceItem"][];
+            /** Limitations */
+            limitations?: string[];
+        };
+        /** ResponseDraft */
+        ResponseDraft: {
+            /**
+             * Analysis Id
+             * Format: uuid
+             */
+            analysis_id: string;
+            /** Response Text */
+            response_text: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "approved" | "edited" | "rejected";
+            /**
+             * Provider Mode
+             * @enum {string}
+             */
+            provider_mode: "mock" | "real";
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** ResponsePatch */
+        ResponsePatch: {
+            /** Response Text */
+            response_text?: string | null;
+            /** Status */
+            status?: ("pending" | "approved" | "edited" | "rejected") | null;
+        };
         /** RunInput */
         RunInput: {
             /**
@@ -598,6 +978,19 @@ export interface components {
                 [key: string]: unknown;
             };
         };
+        /** ScoringResult */
+        ScoringResult: {
+            /** Score */
+            score: number;
+            decision: components["schemas"]["Decision"];
+        };
+        /** ScreeningResult */
+        ScreeningResult: {
+            /** Is Candidate */
+            is_candidate: boolean;
+            /** Reason */
+            reason: string;
+        };
         /** SessionGrant */
         SessionGrant: {
             user: components["schemas"]["CurrentUser"];
@@ -621,6 +1014,144 @@ export interface components {
             confidence: number;
             /** Response Opportunity */
             response_opportunity: number;
+        };
+        /** TelegramLeadOut */
+        TelegramLeadOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /**
+             * Product Id
+             * Format: uuid
+             */
+            product_id: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+            /**
+             * Source
+             * @default telegram
+             * @constant
+             */
+            source: "telegram";
+            original_message: components["schemas"]["TelegramMessage"];
+            /** Context */
+            context?: components["schemas"]["ContextMessage"][];
+            analysis: components["schemas"]["AgentOutput"];
+            delivery: components["schemas"]["DeliveryOut"];
+        };
+        /** TelegramLeadPage */
+        TelegramLeadPage: {
+            /** Items */
+            items: components["schemas"]["TelegramLeadOut"][];
+            /** Total */
+            total: number;
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+        };
+        /** TelegramMessage */
+        TelegramMessage: {
+            /**
+             * Source
+             * @default telegram
+             * @constant
+             */
+            source: "telegram";
+            /** Update Id */
+            update_id: number;
+            /** Chat Id */
+            chat_id: number;
+            /** Message Id */
+            message_id: number;
+            /**
+             * Chat Type
+             * @enum {string}
+             */
+            chat_type: "group" | "supergroup";
+            /** Chat Title */
+            chat_title?: string | null;
+            /** Sender Id */
+            sender_id: number;
+            /** Sender Username */
+            sender_username?: string | null;
+            /** Sender Display Name */
+            sender_display_name: string;
+            /** Text */
+            text: string;
+            /**
+             * Timestamp
+             * Format: date-time
+             */
+            timestamp: string;
+            /** Reply To Message Id */
+            reply_to_message_id?: number | null;
+            /** Message Thread Id */
+            message_thread_id?: number | null;
+        };
+        /**
+         * UsageInfo
+         * @description One provider attempt. Unknown measurements remain null, not assumed zero.
+         */
+        UsageInfo: {
+            /** Stage */
+            stage: string;
+            /**
+             * Attempt No
+             * @default 1
+             */
+            attempt_no: number;
+            /**
+             * Provider Mode
+             * @enum {string}
+             */
+            provider_mode: "mock" | "real";
+            /** Model */
+            model?: string | null;
+            /** Input Tokens */
+            input_tokens?: number | null;
+            /** Output Tokens */
+            output_tokens?: number | null;
+            /** Estimated Cost */
+            estimated_cost?: string | null;
+            /**
+             * Cost Status
+             * @default unknown
+             * @enum {string}
+             */
+            cost_status: "known" | "unknown" | "mock";
+            /** Price Version */
+            price_version?: string | null;
+            /** Latency Ms */
+            latency_ms?: number | null;
+            /**
+             * Outcome
+             * @default unknown
+             */
+            outcome: string;
+        };
+        /** WebhookOut */
+        WebhookOut: {
+            /**
+             * Ok
+             * @default true
+             */
+            ok: boolean;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ignored" | "unmapped" | "queued" | "duplicate";
         };
     };
     responses: never;
@@ -676,6 +1207,15 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorOut"];
                 };
             };
+            /** @description Bad Gateway */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
         };
     };
     ready_api_v1_ready_get: {
@@ -716,6 +1256,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Bad Gateway */
+            502: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -766,6 +1315,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Bad Gateway */
+            502: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -824,6 +1382,15 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorOut"];
                 };
             };
+            /** @description Bad Gateway */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
         };
     };
     product_api_v1_products__id__get: {
@@ -866,6 +1433,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Bad Gateway */
+            502: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -926,6 +1502,15 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorOut"];
                 };
             };
+            /** @description Bad Gateway */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
         };
     };
     upload_api_v1_imports_post: {
@@ -977,6 +1562,15 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorOut"];
                 };
             };
+            /** @description Bad Gateway */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
         };
     };
     messages_api_v1_messages_get: {
@@ -1021,6 +1615,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Bad Gateway */
+            502: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1081,6 +1684,15 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorOut"];
                 };
             };
+            /** @description Bad Gateway */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
         };
     };
     run_api_v1_analysis_runs__id__get: {
@@ -1123,6 +1735,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Bad Gateway */
+            502: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1183,6 +1804,15 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorOut"];
                 };
             };
+            /** @description Bad Gateway */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
         };
     };
     lead_api_v1_leads__id__get: {
@@ -1225,6 +1855,257 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Bad Gateway */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    create_response_api_v1_leads__id__response_post: {
+        parameters: {
+            query?: {
+                regenerate?: boolean;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResponseDraft"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Bad Gateway */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    patch_response_api_v1_leads__id__response_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResponsePatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResponseDraft"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Bad Gateway */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    put_feedback_api_v1_leads__id__feedback_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FeedbackInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeedbackOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Bad Gateway */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    run_analytics_api_v1_analytics_overview_get: {
+        parameters: {
+            query: {
+                run_id: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnalyticsOverview"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Bad Gateway */
+            502: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1283,6 +2164,15 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorOut"];
                 };
             };
+            /** @description Bad Gateway */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
         };
     };
     login_api_v1_auth_login_post: {
@@ -1327,6 +2217,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Bad Gateway */
+            502: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1379,6 +2278,15 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorOut"];
                 };
             };
+            /** @description Bad Gateway */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
         };
     };
     me_api_v1_auth_me_get: {
@@ -1419,6 +2327,374 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Bad Gateway */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    map_chat_api_v1_integrations_telegram_chats_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChatMappingInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatMappingOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Bad Gateway */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    leads_api_v1_integrations_telegram_leads_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TelegramLeadPage"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Bad Gateway */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    lead_api_v1_leads__lead_id__telegram_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lead_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TelegramLeadOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Bad Gateway */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    suggested_reply_api_v1_leads__lead_id__telegram_suggested_reply_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lead_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DraftRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TelegramLeadOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Bad Gateway */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    approved_reply_api_v1_leads__lead_id__telegram_reply_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lead_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApprovedReply"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TelegramLeadOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Bad Gateway */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    webhook_integrations_telegram_webhook_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Telegram-Bot-Api-Secret-Token"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Bad Gateway */
+            502: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -89,3 +89,59 @@ def test_analysis_versions_allow_null_when_stages_do_not_run(tmp_path):
         assert columns["scoring_version"] == 0
         assert columns["prompt_version"] == 0
         assert saved == (None, None)
+
+
+def test_response_feedback_migration_is_reversible_on_sqlite(tmp_path):
+    database = tmp_path / "response-feedback.db"
+    env = {**os.environ, "DATABASE_URL": f"sqlite:///{database.as_posix()}"}
+    for operation in (("upgrade", "head"), ("downgrade", "0004")):
+        result = subprocess.run(
+            [sys.executable, "-m", "alembic", *operation],
+            cwd=BACKEND_ROOT,
+            env=env,
+            text=True,
+            capture_output=True,
+        )
+        assert result.returncode == 0, result.stdout + result.stderr
+        if operation[0] == "upgrade":
+            with sqlite3.connect(database) as connection:
+                tables = {row[0] for row in connection.execute(
+                    "SELECT name FROM sqlite_master WHERE type='table'")}
+                assert {"suggested_responses", "lead_feedback"} <= tables
+
+    with sqlite3.connect(database) as connection:
+        tables = {row[0] for row in connection.execute(
+            "SELECT name FROM sqlite_master WHERE type='table'")}
+    assert "suggested_responses" not in tables and "lead_feedback" not in tables
+
+
+def test_telegram_migration_references_backend_users_for_mapping_and_approval(tmp_path):
+    database = tmp_path / "telegram-ownership.db"
+    env = {**os.environ, "DATABASE_URL": f"sqlite:///{database.as_posix()}"}
+    result = subprocess.run(
+        [sys.executable, "-m", "alembic", "upgrade", "head"],
+        cwd=BACKEND_ROOT,
+        env=env,
+        text=True,
+        capture_output=True,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+
+    with sqlite3.connect(database) as connection:
+        mapping_fks = {
+            (row[2], row[3], row[4])
+            for row in connection.execute("PRAGMA foreign_key_list(telegram_chat_mappings)")
+        }
+        delivery_fks = {
+            (row[2], row[3], row[4])
+            for row in connection.execute("PRAGMA foreign_key_list(telegram_deliveries)")
+        }
+        tables = {row[0] for row in connection.execute(
+            "SELECT name FROM sqlite_master WHERE type='table'")}
+        revision = connection.execute("SELECT version_num FROM alembic_version").fetchone()[0]
+
+    assert ("users", "owner_user_id", "id") in mapping_fks
+    assert ("products", "product_id", "id") in mapping_fks
+    assert ("users", "approved_by", "id") in delivery_fks
+    assert {"telegram_chat_mappings", "telegram_receipts", "telegram_deliveries"} <= tables
+    assert revision == "0006"

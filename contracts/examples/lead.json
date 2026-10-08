@@ -82,5 +82,7 @@
     "price": null,
     "currency": "USD"
   },
-  "offline_context": true
+  "offline_context": true,
+  "response_draft": null,
+  "feedback": null
 }

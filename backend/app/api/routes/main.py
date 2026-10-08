@@ -8,13 +8,27 @@ from alembic.script import ScriptDirectory
 from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 from app.db.session import get_session
-from app.models import User, UserSession, Product, ImportBatch, Message, AnalysisRun, Analysis, Usage
+from app.models import (
+    User, UserSession, Product, ImportBatch, Message, AnalysisRun, Analysis, Usage,
+    SuggestedResponse, LeadFeedback,
+)
 from app.schemas.api import ProductInput, ProductPatch, ProductOut, ImportOut, BatchOut, MessageOut, RunInput, RunOut, AnalysisOut, LeadDetail, Page
+from app.schemas.response import ResponseDraft, ResponsePatch, FeedbackInput, FeedbackOut
+from app.schemas.analytics import AnalyticsOverview
 from app.core.errors import AppError
 from app.services.import_service import import_csv
 from app.services.analysis_service import create_run
+from app.services.response_service import (
+    feedback_out,
+    generate_response,
+    response_out,
+    save_feedback,
+    update_response,
+)
+from app.services.analytics_service import overview as analytics_overview
 from app.auth.contracts import CurrentUser
 from app.auth.dependencies import get_current_user, verify_origin
+from app.integrations.telegram.models import TelegramChatMapping, TelegramDelivery, TelegramReceipt
 
 router = APIRouter()
 DB = Annotated[Session, Depends(get_session)]
@@ -57,7 +71,8 @@ def ready(session: DB):
         expected_revision = ScriptDirectory.from_config(config).get_current_head()
         if revision != expected_revision:
             raise ValueError("Migration revision is not current")
-        for model in (User, UserSession, Product, ImportBatch, Message, AnalysisRun, Analysis, Usage):
+        for model in (User, UserSession, Product, ImportBatch, Message, AnalysisRun, Analysis, Usage,
+                      SuggestedResponse, LeadFeedback, TelegramChatMapping, TelegramReceipt, TelegramDelivery):
             session.execute(select(model.id).limit(1))
     except Exception as exc:
         raise AppError("not_ready", "Database or migration is not ready", 503) from exc
@@ -142,4 +157,34 @@ def lead(id: UUID, session: DB, current: Current):
         raise AppError("not_found", "Record does not exist", 404)
     context = session.scalars(select(Message).where(Message.id.in_(analysis.context_message_ids), Message.batch_id == run.batch_id,
         Message.conversation_id == message.conversation_id).order_by(Message.timestamp, Message.external_id)).all()
-    return {"analysis": analysis, "message": message, "context": context, "product_snapshot": run.product_snapshot, "offline_context": True}
+    response = session.scalar(select(SuggestedResponse).where(SuggestedResponse.analysis_id == analysis.id))
+    feedback = session.scalar(select(LeadFeedback).where(LeadFeedback.analysis_id == analysis.id))
+    return {
+        "analysis": analysis,
+        "message": message,
+        "context": context,
+        "product_snapshot": run.product_snapshot,
+        "offline_context": True,
+        "response_draft": response_out(response),
+        "feedback": feedback_out(feedback),
+    }
+
+
+@router.post("/leads/{id}/response", response_model=ResponseDraft, dependencies=[Depends(verify_origin)])
+def create_response(id: UUID, session: DB, current: Current, regenerate: bool = False):
+    return generate_response(session, current.id, id, regenerate=regenerate)
+
+
+@router.patch("/leads/{id}/response", response_model=ResponseDraft, dependencies=[Depends(verify_origin)])
+def patch_response(id: UUID, payload: ResponsePatch, session: DB, current: Current):
+    return update_response(session, current.id, id, payload)
+
+
+@router.put("/leads/{id}/feedback", response_model=FeedbackOut, dependencies=[Depends(verify_origin)])
+def put_feedback(id: UUID, payload: FeedbackInput, session: DB, current: Current):
+    return save_feedback(session, current.id, id, payload)
+
+
+@router.get("/analytics/overview", response_model=AnalyticsOverview)
+def run_analytics(run_id: UUID, session: DB, current: Current):
+    return analytics_overview(session, current.id, run_id)

@@ -94,6 +94,7 @@ class RunOut(ORM):
 
 
 from app.agents.contracts import Signals, Evidence
+from app.schemas.response import ResponseDraft, FeedbackOut
 
 
 class AnalysisOut(ORM):
@@ -125,6 +126,8 @@ class LeadDetail(BaseModel):
     context: list[MessageOut]
     product_snapshot: dict
     offline_context: bool = True
+    response_draft: ResponseDraft | None = None
+    feedback: FeedbackOut | None = None
 
 
 T = TypeVar("T")

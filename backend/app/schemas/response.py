@@ -1,4 +1,4 @@
-"""Draft response contracts; not yet mounted in the public API."""
+"""Draft response contracts used by the authenticated Backend API."""
 from datetime import datetime
 from typing import Literal
 from uuid import UUID
@@ -21,3 +21,8 @@ class ResponsePatch(BaseModel):
 class FeedbackInput(BaseModel):
     relevant: bool
     comment: str | None = Field(default=None, max_length=2000)
+
+
+class FeedbackOut(FeedbackInput):
+    analysis_id: UUID
+    updated_at: datetime
