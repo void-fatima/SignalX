@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 
-export type IconName = "home" | "product" | "file" | "leads" | "search" | "respond" | "review" | "chat" | "chevron" | "arrow" | "plus" | "close" | "expand" | "edit" | "copy" | "check" | "filter" | "menu" | "mail" | "lock" | "eye" | "eye-off" | "settings" | "help" | "info" | "bulb" | "ban";
+export type IconName = "home" | "product" | "file" | "leads" | "search" | "respond" | "review" | "chat" | "chevron" | "arrow" | "plus" | "close" | "expand" | "edit" | "copy" | "check" | "filter" | "menu" | "mail" | "lock" | "eye" | "eye-off" | "settings" | "help" | "info" | "bulb" | "ban" | "refresh" | "thumbs-up";
 const paths: Record<IconName, React.ReactNode> = {
   home: <><path d="m3 10 9-7 9 7v11h-6v-7H9v7H3Z" /></>,
   product: <><path d="m12 2 9 5v10l-9 5-9-5V7Zm0 10 9-5M12 12 3 7m9 5v10" /></>,
@@ -26,6 +26,8 @@ const paths: Record<IconName, React.ReactNode> = {
   info: <><circle cx="12" cy="12" r="10"/><path d="M12 11v7m0-12h.01"/></>,
   bulb: <><path d="M8 17a7 7 0 1 1 8 0l-1 3H9Zm2 6h4M12 1V0M2 4l2 2M22 4l-2 2M0 12h3m18 0h3"/></>,
   ban: <><circle cx="12" cy="12" r="10"/><path d="m5 5 14 14"/></>,
+  refresh: <><path d="M20 7a9 9 0 0 0-15-2L2 8m0-6v6h6M4 17a9 9 0 0 0 15 2l3-3m0 6v-6h-6"/></>,
+  "thumbs-up": <><path d="M8 21H3V10h5Zm0-11 4-7c2-1 3 1 2 4l-1 3h7a2 2 0 0 1 2 2l-2 8a2 2 0 0 1-2 1H8Z"/></>,
 };
 export default function Icon({ name, size = 20, style }: { name: IconName; size?: number; style?: CSSProperties }) {
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={style}>{paths[name]}</svg>;

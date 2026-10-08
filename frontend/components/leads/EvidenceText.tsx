@@ -1,7 +1,10 @@
+"use client";
 import type { LeadDetail } from "@/lib/api";
-import { groundedEvidence, textDirection } from "@/lib/lead-presentation";
+import { groundedEvidence } from "@/lib/lead-presentation";
+import { useMessageDirection } from "@/components/PreferencesProvider";
 export default function EvidenceText({ detail }: { detail: LeadDetail }) {
   const content = detail.message.content;
+  const direction = useMessageDirection();
   const spans = groundedEvidence(detail).filter(e => e.message_id === detail.message.id).map(e => ({ ...e, start: content.indexOf(e.quote), end: content.indexOf(e.quote) + e.quote.length })).sort((a, b) => a.start - b.start);
   let cursor = 0;
   const parts: React.ReactNode[] = [];
@@ -12,5 +15,5 @@ export default function EvidenceText({ detail }: { detail: LeadDetail }) {
     cursor = span.end;
   }
   parts.push(content.slice(cursor));
-  return <blockquote className="source-quote" dir={textDirection(content)}>{parts}</blockquote>;
+  return <blockquote className="source-quote" dir={direction(content)}>{parts}</blockquote>;
 }

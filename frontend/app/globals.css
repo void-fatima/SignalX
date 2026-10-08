@@ -33,6 +33,8 @@ th, td { padding: 14px 10px; border-bottom: 1px solid var(--line); text-align: l
 .sidebar nav a:hover { background: #ffffff06; color: white; }
 .sidebar nav a[aria-current] { color: white; background: linear-gradient(90deg, #6735b345, #52238627); box-shadow: inset 3px 0 #b16ffb; }
 .sidebar-footer { margin-top: auto; padding: 80px 8px 0; color: var(--muted); font-size: 12px; }
+.sidebar-settings { display: flex; align-items: center; gap: 15px; padding: 10px 4px; margin-bottom: 8px; border-radius: 6px; color: var(--muted); text-decoration: none; }
+.sidebar-settings[aria-current] { color: var(--text); background: linear-gradient(90deg, #6735b345, #52238627); box-shadow: inset 3px 0 #b16ffb; }
 .workspace-caption { display: block; margin-top: 22px; font-size: 11px; }
 .workspace-body { min-width: 0; }
 .topbar { height: 64px; display: flex; align-items: center; gap: 16px; padding: 0 28px; border-bottom: 1px solid var(--line); background: #101621aa; }

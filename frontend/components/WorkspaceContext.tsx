@@ -6,6 +6,7 @@ export type WorkspaceState = {
   products: Product[]; setProducts: Dispatch<SetStateAction<Product[]>>;
   selectedProductId: string; setSelectedProductId: Dispatch<SetStateAction<string>>;
   selectionLocked: boolean; setSelectionLocked: Dispatch<SetStateAction<boolean>>;
+  signOut: () => Promise<void>; signingOut: boolean; accountError: string;
 };
 export const WorkspaceContext = createContext<WorkspaceState | null>(null);
 export function useWorkspace() {
