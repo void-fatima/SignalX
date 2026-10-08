@@ -91,6 +91,9 @@ class RunOut(ORM):
     finished_at: datetime | None
     created_at: datetime
     config_snapshot: dict
+    # Optional in the public response for backwards-compatible generated clients;
+    # persisted runs always carry a positive attempt number.
+    attempt_no: int | None = Field(default=None, ge=1)
 
 
 from app.agents.contracts import Signals, Evidence
@@ -102,6 +105,7 @@ class AnalysisOut(ORM):
     run_id: UUID
     message_id: UUID
     status: Literal["completed", "failed"]
+    failure_category: str | None = None
     is_candidate: bool
     screening_reason: str
     signals: Signals | None

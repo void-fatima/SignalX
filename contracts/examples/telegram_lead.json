@@ -58,6 +58,9 @@
     "telegram_message_id": null,
     "failure_category": null,
     "delivery_uncertain": false,
-    "draft_busy": false
+    "draft_busy": false,
+    "approved_text": null,
+    "failure_http_status": null,
+    "retry_after_at": null
   }
 }

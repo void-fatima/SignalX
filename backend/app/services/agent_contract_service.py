@@ -1,4 +1,5 @@
 """Backend mapping, validation and persistence for the shared Agent contract."""
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.agents.contracts import (
@@ -95,16 +96,16 @@ def persist_agent_output(
     target_message_id: str,
     inputs: AgentInput,
     raw_output: AgentOutput | dict,
+    run_attempt_no: int = 1,
 ) -> Analysis:
     """Validate and persist the complete contract output plus API projection."""
     output = validate_agent_output(inputs, raw_output)
     qualification = output.qualification
     scoring = output.scoring
     decision = scoring.decision.value.lower() if scoring else ("ignore" if not output.screening.is_candidate else None)
-    analysis = Analysis(
-        run_id=run_id,
-        message_id=target_message_id,
+    values = dict(
         status="completed",
+        failure_category=None,
         is_candidate=output.screening.is_candidate,
         screening_reason=output.screening.reason,
         signals=(
@@ -136,12 +137,25 @@ def persist_agent_output(
         prompt_version=output.prompt_version,
         provider_mode=inputs.metadata.provider_mode,
     )
-    session.add(analysis)
+    analysis = session.scalar(select(Analysis).where(
+        Analysis.run_id == run_id, Analysis.message_id == target_message_id,
+    ).with_for_update())
+    if analysis is None:
+        analysis = Analysis(run_id=run_id, message_id=target_message_id, **values)
+        session.add(analysis)
+    elif analysis.status == "completed":
+        return analysis
+    else:
+        # Retry the failed/missing message in place so analysis IDs, feedback,
+        # responses and references to this lead stay stable.
+        for name, value in values.items():
+            setattr(analysis, name, value)
     session.flush()
     for event in output.usage:
         session.add(
             Usage(
                 run_id=run_id,
+                run_attempt_no=run_attempt_no,
                 message_id=target_message_id,
                 analysis_id=analysis.id,
                 stage=event.stage,

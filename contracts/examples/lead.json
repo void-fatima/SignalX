@@ -4,6 +4,7 @@
     "run_id": "72059a08-e457-4f04-b543-932be4087a1b",
     "message_id": "bd942785-4495-4de7-ba03-f012c076867c",
     "status": "completed",
+    "failure_category": null,
     "is_candidate": true,
     "screening_reason": "explicit_need",
     "signals": {

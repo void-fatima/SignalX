@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
@@ -44,6 +45,9 @@ class DeliveryOut(StrictModel):
     failure_category: str | None = None
     delivery_uncertain: bool = False
     draft_busy: bool = False
+    approved_text: str | None = None
+    failure_http_status: int | None = None
+    retry_after_at: datetime | None = None
 
 
 class TelegramLeadOut(StrictModel):

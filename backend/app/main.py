@@ -28,7 +28,8 @@ app.add_middleware(CORSMiddleware, allow_origins=[origin.strip() for origin in s
 
 @app.exception_handler(Exception)
 async def unexpected_error(request: Request, exc: Exception):
-    logging.getLogger(__name__).exception("Unexpected API error", exc_info=exc)
+    # Avoid writing provider bodies, credentials, user data or SQL parameters to logs.
+    logging.getLogger(__name__).error("Unexpected API error; sensitive exception details withheld")
     return JSONResponse(status_code=500, content={"error": {"code": "internal_error", "message": "An unexpected server error occurred", "details": []}})
 
 

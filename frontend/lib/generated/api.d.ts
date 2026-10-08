@@ -142,6 +142,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/analysis/runs/{id}/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Retry */
+        post: operations["retry_api_v1_analysis_runs__id__retry_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/leads": {
         parameters: {
             query?: never;
@@ -440,6 +457,8 @@ export interface components {
              * @enum {string}
              */
             status: "completed" | "failed";
+            /** Failure Category */
+            failure_category?: string | null;
             /** Is Candidate */
             is_candidate: boolean;
             /** Screening Reason */
@@ -636,6 +655,12 @@ export interface components {
              * @default false
              */
             draft_busy: boolean;
+            /** Approved Text */
+            approved_text?: string | null;
+            /** Failure Http Status */
+            failure_http_status?: number | null;
+            /** Retry After At */
+            retry_after_at?: string | null;
         };
         /** DraftRequest */
         DraftRequest: {
@@ -977,6 +1002,8 @@ export interface components {
             config_snapshot: {
                 [key: string]: unknown;
             };
+            /** Attempt No */
+            attempt_no?: number | null;
         };
         /** ScoringResult */
         ScoringResult: {
@@ -1753,12 +1780,73 @@ export interface operations {
             };
         };
     };
+    retry_api_v1_analysis_runs__id__retry_post: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Bad Gateway */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
     leads_api_v1_leads_get: {
         parameters: {
             query: {
                 run_id: string;
                 decision?: ("ignore" | "review" | "respond") | null;
                 min_score?: number | null;
+                status?: ("completed" | "failed") | null;
                 limit?: number;
                 offset?: number;
             };
@@ -2587,7 +2675,9 @@ export interface operations {
     approved_reply_api_v1_leads__lead_id__telegram_reply_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+            };
             path: {
                 lead_id: string;
             };
