@@ -48,10 +48,11 @@ export function useTelegramReview(id: string) {
   useEffect(() => { if (!cooldown) return; const timer = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(timer); }, [cooldown]);
   function edit(text: string | null) { setTelegramDrafts(previous => ({ ...previous, [id]: { ...draft, editingText: text } })); }
   function save() { if (draft.editingText?.trim() && Array.from(draft.editingText).length <= 4000) setTelegramDrafts(previous => ({ ...previous, [id]: { text: draft.editingText!, editingText: null } })); }
-  const definiteFailure = lead?.delivery.status === "failed" && lead.delivery.delivery_uncertain === false && ("failure_http_status" in lead.delivery || "approved_text" in lead.delivery);
+  const recoveryContract = !!lead && "approved_text" in lead.delivery && "failure_http_status" in lead.delivery && "retry_after_at" in lead.delivery;
+  const definiteFailure = recoveryContract && lead?.delivery.status === "failed" && lead.delivery.delivery_uncertain === false;
   const blocked = demo || !user || !lead || !!error || loading || busy !== null || !!lead.delivery.draft_busy || lead.delivery.status === "sent" || lead.delivery.status === "sending" || !!lead.delivery.delivery_uncertain || legacyBlocked;
   const unavailable = blocked || !!intent || cooldown || (lead?.delivery.status === "failed" && !definiteFailure);
-  const canCheck = !blocked && !!intent && typeof intent.text === "string" && (lead?.delivery.status === "not_sent" || definiteFailure);
+  const canCheck = recoveryContract && !blocked && !!intent && typeof intent.text === "string" && (lead?.delivery.status === "not_sent" || definiteFailure);
   async function send(check = false) {
     if (lock.current || (check ? !canCheck : unavailable) || (!check && draft.editingText !== null)) return;
     const next = check ? intent! : { key: crypto.randomUUID(), text: draft.text };

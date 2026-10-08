@@ -21,7 +21,7 @@ export class ApiError extends Error {
 const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 export async function request<T>(path: string, options: RequestInit = {}, endpoint = base): Promise<T> {
   const response = await fetch(`${endpoint}${path}`, { ...options, credentials: "include", cache: "no-store" });
-  if (response.status === 401 && !path.startsWith("/auth/") && typeof window !== "undefined") window.dispatchEvent(new Event("signalx:session-expired"));
+  if (response.status === 401 && !["/auth/login", "/auth/register", "/auth/me"].includes(path) && typeof window !== "undefined") window.dispatchEvent(new Event("signalx:session-expired"));
   if (response.status === 204) return undefined as T;
   const body = await response.json().catch(() => { throw new ApiError(`The server returned an unreadable response (${response.status}).`, [], response.status, "unreadable_response"); });
   if (!response.ok) throw new ApiError(body.error?.message || `Request failed (${response.status})`, body.error?.details || [], response.status, body.error?.code || "");

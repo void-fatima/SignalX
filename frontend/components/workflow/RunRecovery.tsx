@@ -30,6 +30,7 @@ export default function RunRecovery({ run, onRecovered }: { run: Run; onRecovere
   }
   return <section className="run-recovery" aria-label="Analysis recovery"><p>Attempt {run.attempt_no ?? "unavailable on this backend"}. Successful results and the original product snapshot are preserved.</p>
     {eligible && <><button disabled={demo || busy || !user} onClick={() => void retry()}>{busy ? "Requesting retry…" : intent ? "Check retry request" : "Retry failed analyses"}</button><p>{demo ? "Demo snapshot: recovery is not submitted." : intent ? "The previous retry is unconfirmed. Checking repeats its Idempotency-Key; it cannot enqueue a second attempt." : "Retries only failed or unfinished messages. Nothing is retried automatically."}</p></>}
+    {(error || intent) && !demo && <button className="secondary-button" disabled={busy} onClick={onRecovered}>Reload run status</button>}
     {error && <p role="alert">{error}</p>}
   </section>;
 }
