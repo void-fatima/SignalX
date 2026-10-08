@@ -2,7 +2,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Generic, TypeVar, Literal
 from uuid import UUID
-from pydantic import BaseModel, ConfigDict, Field, AwareDatetime
+from pydantic import BaseModel, ConfigDict, Field, AwareDatetime, field_validator
 
 
 class ORM(BaseModel):
@@ -19,6 +19,15 @@ class ProductInput(BaseModel):
     price: Decimal | None = Field(default=None, ge=0, max_digits=12, decimal_places=2)
     currency: str = Field(default="USD", pattern="^[A-Z]{3}$")
 
+    @field_validator("name", "description", "target_customer")
+    @classmethod
+    def reject_blank_profile_text(cls, value: str) -> str:
+        # ProductOut inherits these fields. Keep historical records readable;
+        # this new constraint applies to incoming create/update requests only.
+        if not issubclass(cls, ORM) and not value.strip():
+            raise ValueError("Profile text must contain a non-whitespace character")
+        return value
+
 
 class ProductOut(ProductInput, ORM):
     id: UUID
@@ -34,6 +43,14 @@ class ProductPatch(BaseModel):
     not_fit: list[str] | None = None
     price: Decimal | None = Field(default=None, ge=0, max_digits=12, decimal_places=2)
     currency: str | None = Field(default=None, pattern="^[A-Z]{3}$")
+
+    @field_validator("name", "description", "target_customer")
+    @classmethod
+    def reject_blank_profile_text(cls, value: str | None) -> str | None:
+        # Preserve omission and explicit null for the existing PATCH handler.
+        if value is not None and not value.strip():
+            raise ValueError("Profile text must contain a non-whitespace character")
+        return value
 
 
 class CSVRow(BaseModel):
