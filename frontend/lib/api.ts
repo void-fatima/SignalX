@@ -43,7 +43,7 @@ export async function allProducts(): Promise<Page<Product>> {
   }
 }
 export const api = {
-  login: (body: Credentials) => request<CurrentUser | SessionGrant>("/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }),
+  login: (body: Credentials) => request<SessionGrant>("/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }),
   register: (body: Credentials) => request<CurrentUser>("/auth/register", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }),
   me: () => request<CurrentUser>("/auth/me"),
   logout: () => request<void>("/auth/logout", { method: "POST" }),
