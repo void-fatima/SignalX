@@ -1,6 +1,8 @@
 import { test, expect } from "@playwright/test";
+import type { CurrentUser, SessionGrant } from "../lib/api";
 
-const user = { id: "ui-test-user", email: "person@example.test", created_at: "2026-10-07T00:00:00Z" };
+const user = { id: "ui-test-user", email: "person@example.test", created_at: "2026-10-07T00:00:00Z" } satisfies CurrentUser;
+const grant = { user, expires_at: "2026-10-09T00:00:00Z" } satisfies SessionGrant;
 
 test("sign-in validation and password visibility remain accessible", async ({ page }) => {
   let requests = 0;
@@ -24,7 +26,7 @@ test("sign in navigates only after the backend verifies a cookie session", async
   await page.route("**/api/v1/**", route => {
     const path = new URL(route.request().url()).pathname;
     methods.push(`${route.request().method()} ${path}`);
-    return route.fulfill({ json: path.endsWith("/auth/login") ? { user, expires_at: "2026-10-08T00:00:00Z" } : path.endsWith("/auth/me") ? user : { items: [], total: 0, limit: 100, offset: 0 } });
+    return route.fulfill({ json: path.endsWith("/auth/login") ? grant : path.endsWith("/auth/me") ? user : { items: [], total: 0, limit: 100, offset: 0 } });
   });
   await page.goto("/login");
   await page.getByLabel("Email", { exact: true }).fill(user.email);
@@ -34,6 +36,24 @@ test("sign in navigates only after the backend verifies a cookie session", async
   expect(methods).toContain("POST /api/v1/auth/login");
   expect(methods).toContain("GET /api/v1/auth/me");
   expect(await page.evaluate(() => Object.keys(localStorage).some(key => /password|token|session/i.test(key)))).toBe(false);
+});
+
+test("a login grant without a usable cookie session stays on sign in", async ({ page }) => {
+  const requests: string[] = [];
+  await page.route("**/api/v1/**", route => {
+    const path = new URL(route.request().url()).pathname;
+    requests.push(`${route.request().method()} ${path}`);
+    if (path.endsWith("/auth/login")) return route.fulfill({ json: grant });
+    return route.fulfill({ status: 401, json: { error: { message: "A valid login session is required" } } });
+  });
+  await page.goto("/login");
+  await page.getByLabel("Email", { exact: true }).fill(user.email);
+  await page.getByLabel("Password", { exact: true }).fill("demonstration-only");
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(page.getByRole("alert").filter({ hasText: "valid login session" })).toBeVisible();
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.getByRole("button", { name: "Sign in", exact: true })).toBeEnabled();
+  expect(requests).toEqual(["POST /api/v1/auth/login", "GET /api/v1/auth/me"]);
 });
 
 test("authentication errors remain errors and preserve an editable form", async ({ page }) => {
@@ -62,6 +82,8 @@ for (const viewport of [{ width: 1705, height: 1152 }, { width: 390, height: 844
 
 test("registration checks password confirmation without posting invalid input", async ({ page }) => {
   let posts = 0;
+  const authRequests: string[] = [];
+  page.on("request", request => { if (new URL(request.url()).pathname.startsWith("/api/v1/auth/")) authRequests.push(`${request.method()} ${new URL(request.url()).pathname}`); });
   await page.route("**/api/v1/auth/register", route => { posts++; return route.fulfill({ status: 201, json: user }); });
   await page.goto("/register");
   await page.getByLabel("Email", { exact: true }).fill(user.email);
@@ -77,6 +99,7 @@ test("registration checks password confirmation without posting invalid input", 
   await page.getByRole("button", { name: "Create account", exact: true }).click();
   await expect(page.getByRole("status")).toContainText("Account created. Sign in to continue.");
   expect(posts).toBe(1);
+  expect(authRequests).toEqual(["POST /api/v1/auth/register"]);
   await expect(page.getByLabel("Password", { exact: true })).toHaveValue("");
   await expect(page).toHaveURL(/\/register$/);
 });
