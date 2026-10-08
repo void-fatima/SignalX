@@ -1,5 +1,29 @@
 # Telegram frontend handoff
 
+## Integration update after push/merge authorization
+
+The user subsequently authorized pushing and merging all completed frontend
+work. `origin/main` at `c22b167` was merged into the final frontend branch without
+conflicts in commit `37e2277`, retaining the existing backend work and all stacked
+UI commits. The earlier inspection and verification record below describes the
+pre-integration checkout, not the final integrated backend state.
+
+The backend now includes database-backed Telegram session authentication,
+product ownership checks and Alembic revision `0006`. These code gaps from the
+original contract branch have been addressed in main. Applying migrations and
+verifying actual hosting, cookies, worker/provider and Telegram delivery remain
+deployment tasks; no deployment or real message sending is performed here.
+
+The existing frontend session bridge remains compatible with the backend's
+Bearer support. Updated OpenAPI TypeScript generation matches the committed
+contract, and frontend typecheck, production build and Docker Compose config
+validation passed after integration. Post-integration checks passed: 103
+frontend tests, 745 backend tests, Python OpenAPI export with no contract diff,
+TypeScript API generation with no generated diff, frontend typecheck/build and
+`docker compose config --quiet`. Backend tests used an ignored local Python 3.14
+virtual environment installed from the existing development lockfile. One
+upstream Starlette/httpx deprecation warning was reported.
+
 Implemented on 8 October 2026. The attached Telegram request superseded the older
 three-screen IDE selection; overview, import validation and analysis progress
 already exist in the UI base.
