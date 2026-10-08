@@ -7,6 +7,8 @@ function error(status: number, code: string, message: string) {
 /** Translate the existing HttpOnly backend session; never expose a token to JS. */
 export async function telegramProxy(request: NextRequest, path: string, operation: "read" | "suggest" | "send" = "read") {
   if (request.method !== (operation === "read" ? "GET" : "POST")) return error(405, "method_not_allowed", "This operation is not available.");
+  const key = operation === "send" ? request.headers.get("idempotency-key") : null;
+  if (key !== null && (!key.trim() || key.length > 200)) return error(422, "invalid_idempotency_key", "Use a nonblank Idempotency-Key of at most 200 characters.");
   let payload: string | undefined;
   if (operation !== "read") {
     const origin = request.headers.get("origin");
@@ -31,7 +33,7 @@ export async function telegramProxy(request: NextRequest, path: string, operatio
   try {
     const response = await fetch(`${base.replace(/\/$/, "")}${path}`, {
       method: request.method, body: payload,
-      headers: { Authorization: `Bearer ${token}`, ...(payload ? { "Content-Type": "application/json" } : {}) }, cache: "no-store", redirect: "error",
+      headers: { ...(key ? { "Idempotency-Key": key } : {}), Authorization: `Bearer ${token}`, ...(payload ? { "Content-Type": "application/json" } : {}) }, cache: "no-store", redirect: "error",
       signal: AbortSignal.timeout(operation === "read" ? 30_000 : 120_000),
     });
     const body = await response.json();
