@@ -7,6 +7,7 @@ import Dialog from "@/components/Dialog";
 import { useMessageDirection } from "@/components/PreferencesProvider";
 import Icon from "@/components/Icon";
 import Avatar from "./Avatar";
+import AnalysisFailure from "./AnalysisFailure";
 import DecisionBadge from "./DecisionBadge";
 
 export default function SignalAnalysisDialog({ detail, demo, open, onDismiss }: { detail: LeadDetail; demo: boolean; open: boolean; onDismiss: () => void }) {
@@ -17,6 +18,7 @@ export default function SignalAnalysisDialog({ detail, demo, open, onDismiss }: 
   const rows = [
     ["purchase_intent", "Purchase intent"], ["product_fit", "Product fit"], ["confidence", "Confidence"],
   ] as const;
+  if (analysis.status === "failed") return <Dialog open={open} onDismiss={onDismiss} title="Analysis failed" labelId="signal-dialog-title"><AnalysisFailure analysis={analysis}/><p dir="auto">{message.author}: {message.content}</p></Dialog>;
   const reference = demo && analysis.id === "demo-lead-1";
   return <Dialog open={open} onDismiss={onDismiss} title="Signal analysis" labelId="signal-dialog-title" footer={<footer className="dialog-footer"><Icon name="file" size={28}/><div className="dialog-footer-info"><strong>{metadata?.filename || `Batch ${message.batch_id.slice(0, 8)}`}</strong><span>Run {demo ? "024" : analysis.run_id.slice(0, 8)} · {analysis.provider_mode === "mock" ? "Mock data" : "Real provider"}</span></div><button type="button" className="button" onClick={onDismiss}><Icon name="arrow"/>Back to conversation</button></footer>}>
     <div className="dialog-meta"><Avatar name={message.author} small/><div className="dialog-source-meta"><strong><bdi>{message.author}</bdi></strong><span>·</span><span>{metadata?.community || message.conversation_id}</span><span>·</span><span>Message {message.external_id}</span><span className="badge">{analysis.provider_mode === "mock" ? "MOCK DATA" : "REAL PROVIDER"}</span></div></div>
