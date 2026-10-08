@@ -1,10 +1,16 @@
 import type { components } from "./generated/api";
+import type { components as handoff } from "./generated/failure-api";
 export type Product = components["schemas"]["ProductOut"];
 export type ProductInput = components["schemas"]["ProductInput"];
 export type ImportResult = components["schemas"]["ImportOut"];
-export type Run = components["schemas"]["RunOut"];
-export type Analysis = components["schemas"]["AnalysisOut"];
-export type LeadDetail = components["schemas"]["LeadDetail"];
+export type Run = components["schemas"]["RunOut"] & Partial<Pick<handoff["schemas"]["RunOut"], "attempt_no">>;
+export type Analysis = handoff["schemas"]["AnalysisOut"];
+export type LeadDetail = Omit<handoff["schemas"]["LeadDetail"], "source"> & { source?: "csv" | "telegram" } & Pick<components["schemas"]["LeadDetail"], "response_draft" | "feedback">;
+export type ResponseDraft = components["schemas"]["ResponseDraft"];
+export type ResponsePatch = components["schemas"]["ResponsePatch"];
+export type FeedbackInput = components["schemas"]["FeedbackInput"];
+export type FeedbackOut = components["schemas"]["FeedbackOut"];
+export type AnalyticsOverview = components["schemas"]["AnalyticsOverview"];
 export type Credentials = components["schemas"]["Credentials"];
 export type CurrentUser = components["schemas"]["CurrentUser"];
 export type SessionGrant = components["schemas"]["SessionGrant"];
@@ -15,22 +21,42 @@ export class ApiError extends Error {
 const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 export async function request<T>(path: string, options: RequestInit = {}, endpoint = base): Promise<T> {
   const response = await fetch(`${endpoint}${path}`, { ...options, credentials: "include", cache: "no-store" });
+  if (response.status === 401 && !["/auth/login", "/auth/register", "/auth/me"].includes(path) && typeof window !== "undefined") window.dispatchEvent(new Event("signalx:session-expired"));
   if (response.status === 204) return undefined as T;
   const body = await response.json().catch(() => { throw new ApiError(`The server returned an unreadable response (${response.status}).`, [], response.status, "unreadable_response"); });
   if (!response.ok) throw new ApiError(body.error?.message || `Request failed (${response.status})`, body.error?.details || [], response.status, body.error?.code || "");
   return body as T;
 }
+export async function allProducts(): Promise<Page<Product>> {
+  const items: Product[] = [];
+  let offset = 0;
+  for (;;) {
+    const page = await api.products(offset);
+    if (!Array.isArray(page.items)) throw new Error("Product list could not be read.");
+    const fresh = page.items.filter(item => !items.some(existing => existing.id === item.id));
+    items.push(...fresh);
+    const total = page.total ?? items.length;
+    if (items.length >= total) return { items, total, offset: 0, limit: items.length };
+    if (!fresh.length || !page.items.length) throw new Error("Product pagination did not advance. Retry loading your profiles.");
+    offset += page.items.length;
+  }
+}
 export const api = {
-  login: (body: Credentials) => request<SessionGrant>("/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }),
+  login: (body: Credentials) => request<CurrentUser | SessionGrant>("/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }),
   register: (body: Credentials) => request<CurrentUser>("/auth/register", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }),
   me: () => request<CurrentUser>("/auth/me"),
   logout: () => request<void>("/auth/logout", { method: "POST" }),
-  products: () => request<Page<Product>>("/products?limit=100"),
+  products: (offset = 0, limit = 100) => request<Page<Product>>(`/products?limit=${limit}&offset=${offset}`),
   product: (id: string) => request<Product>(`/products/${id}`),
   saveProduct: (body: ProductInput, id?: string) => request<Product>(id ? `/products/${id}` : "/products", { method: id ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }),
   importCSV: (data: FormData) => request<ImportResult>("/imports", { method: "POST", body: data }),
   startRun: (product_id: string, batch_id: string, key: string) => request<Run>("/analysis/runs", { method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": key }, body: JSON.stringify({ product_id, batch_id }) }),
   run: (id: string) => request<Run>(`/analysis/runs/${id}`),
-  leads: (run: string, decision: string, offset: number, minScore: string) => request<Page<Analysis>>(`/leads?run_id=${encodeURIComponent(run)}&offset=${offset}${decision ? `&decision=${decision}` : ""}${minScore ? `&min_score=${minScore}` : ""}`),
+  leads: (run: string, decision: string, offset: number, minScore: string, status = "") => request<Page<Analysis>>(`/leads?run_id=${encodeURIComponent(run)}&offset=${offset}${status === "failed" ? "&status=failed" : decision ? `&decision=${decision}` : ""}${status !== "failed" && minScore ? `&min_score=${minScore}` : ""}`),
+  retryRun: (id: string, key: string) => request<Run>(`/analysis/runs/${encodeURIComponent(id)}/retry`, { method: "POST", headers: { "Idempotency-Key": key } }),
+  generateResponse: (id: string, regenerate = false) => request<ResponseDraft>(`/leads/${encodeURIComponent(id)}/response?regenerate=${regenerate}`, { method: "POST" }),
+  patchResponse: (id: string, body: ResponsePatch) => request<ResponseDraft>(`/leads/${encodeURIComponent(id)}/response`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }),
+  feedback: (id: string, body: FeedbackInput) => request<FeedbackOut>(`/leads/${encodeURIComponent(id)}/feedback`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }),
+  analytics: (id: string) => request<AnalyticsOverview>(`/analytics/overview?run_id=${encodeURIComponent(id)}`),
   lead: (id: string) => request<LeadDetail>(`/leads/${id}`),
 };

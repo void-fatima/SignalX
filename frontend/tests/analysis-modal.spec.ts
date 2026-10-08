@@ -27,6 +27,7 @@ test("failed source loading keeps the modal closed until a successful retry", as
   const detail = demoDetails["demo-lead-1"];
   await page.route("**/api/v1/**", route => {
     const path = new URL(route.request().url()).pathname;
+    if (path.endsWith("/auth/me")) return route.fulfill({ json: { id: "owner", email: "owner@example.test" } });
     if (path.endsWith("/leads/demo-lead-1")) return route.fulfill(fail ? { status: 503, json: { error: { message: "Source unavailable" } } } : { json: detail });
     if (path.endsWith("/leads")) return route.fulfill({ json: { items: [detail.analysis], total: 1, offset: 0, limit: 20 } });
     if (path.includes("/analysis/runs/")) return route.fulfill({ json: demoRun });

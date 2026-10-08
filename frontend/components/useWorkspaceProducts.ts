@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { api } from "@/lib/api";
+import { allProducts, api } from "@/lib/api";
 import { demoProduct } from "@/lib/product-profile";
 import { useWorkspace } from "./WorkspaceContext";
 export function useWorkspaceProducts() {
@@ -11,10 +11,11 @@ export function useWorkspaceProducts() {
   useEffect(() => {
     let cancelled = false;
     setLoading(true); setError(""); setProducts([]); setSelectedProductId("");
-    const load = demo ? Promise.resolve({ items: [demoProduct] }) : api.products();
+    const load = demo ? Promise.resolve({ items: [demoProduct] }) : allProducts();
     load.then(page => {
       if (cancelled) return;
       const stored = demo ? "" : localStorage.getItem("product_id");
+      if (stored && !page.items.some(item => item.id === stored)) { localStorage.removeItem("product_id"); setError("The saved profile is unavailable. Choose one of your current profiles."); }
       setProducts(page.items);
       setSelectedProductId(page.items.find(p => p.id === stored)?.id || page.items[0]?.id || "");
     }).catch(reason => { if (!cancelled) setError(reason instanceof Error ? reason.message : "Could not load products."); })

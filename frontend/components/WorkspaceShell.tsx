@@ -1,8 +1,9 @@
 "use client";
 import Link from "next/link";
 import { usePathname, useSearchParams, useRouter } from "next/navigation";
-import { useEffect, useState, type FormEvent } from "react";
-import { api, type CurrentUser, type Product } from "@/lib/api";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { clearWorkspaceSelection, verifyWorkspaceAccount } from "@/lib/workspace-session";
+import { api, ApiError, type CurrentUser, type Product } from "@/lib/api";
 import { WorkspaceContext } from "./WorkspaceContext";
 import Brand from "./Brand";
 import Icon, { type IconName } from "./Icon";
@@ -18,6 +19,9 @@ export default function WorkspaceShell({ children }: { children: React.ReactNode
   const search = useSearchParams(), router = useRouter(), demo = search.get("demo") === "1";
   const [open, setOpen] = useState(false);
   const [user, setUser] = useState<CurrentUser | null>(null);
+  const sessionVersion = useRef(0);
+  const [verifiedPath, setVerifiedPath] = useState("");
+  const [sessionLoading, setSessionLoading] = useState(true), [sessionError, setSessionError] = useState(""), [sessionReload, setSessionReload] = useState(0);
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedProductId, setSelectedProductId] = useState("");
   const [selectionLocked, setSelectionLocked] = useState(false);
@@ -26,13 +30,36 @@ export default function WorkspaceShell({ children }: { children: React.ReactNode
   const [signingOut, setSigningOut] = useState(false);
   const current = navigation.find(item => pathname.startsWith(item.href) || (item.href === "/imports" && pathname.startsWith("/runs/")));
   const auth = pathname === "/login" || pathname === "/register";
+  const privatePage = navigation.some(item => pathname.startsWith(item.href)) || pathname.startsWith("/runs/") || pathname === "/settings";
   useEffect(() => {
     let cancelled = false;
-    setAccountError("");
-    if (demo || auth) { setUser(null); return; }
-    api.me().then(value => { if (!cancelled && typeof value.id === "string" && typeof value.email === "string") setUser(value); }).catch(() => { if (!cancelled) setUser(null); });
-    return () => { cancelled = true; };
-  }, [demo, auth, pathname]);
+    setAccountError(""); setSessionError("");
+    if (demo || auth || !privatePage) { setUser(null); setSessionLoading(false); return; }
+    setSessionLoading(true);
+    async function check() {
+      const version = ++sessionVersion.current;
+      try {
+        const value = await api.me();
+        if (cancelled || version !== sessionVersion.current) return;
+        if (typeof value.id !== "string" || typeof value.email !== "string") throw new Error("The server returned an invalid session.");
+        if (verifyWorkspaceAccount(value.id)) { setProducts([]); setSelectedProductId(""); setSelectionLocked(false); }
+        setUser(value); setVerifiedPath(pathname); setSessionError("");
+      } catch (reason) {
+        if (cancelled || version !== sessionVersion.current) return;
+        setUser(null); setProducts([]); setSelectedProductId(""); setSelectionLocked(false);
+        setSessionError(reason instanceof Error ? reason.message : "Session could not be verified.");
+        if (reason instanceof ApiError && reason.status === 401) clearWorkspaceSelection();
+      } finally { if (!cancelled && version === sessionVersion.current) setSessionLoading(false); }
+    }
+    function expire() {
+      ++sessionVersion.current;
+      setUser(null); setProducts([]); setSelectedProductId(""); setSelectionLocked(false); clearWorkspaceSelection();
+      setSessionError("Your session expired. Sign in to continue."); setSessionLoading(false);
+    }
+    void check();
+    window.addEventListener("focus", check); window.addEventListener("signalx:session-expired", expire);
+    return () => { cancelled = true; ++sessionVersion.current; window.removeEventListener("focus", check); window.removeEventListener("signalx:session-expired", expire); };
+  }, [demo, auth, privatePage, pathname, sessionReload]);
   useEffect(() => { setQuery(search.get("q") || ""); setOpen(false); }, [search]);
   function searchConversations(event: FormEvent) {
     event.preventDefault();
@@ -47,7 +74,7 @@ export default function WorkspaceShell({ children }: { children: React.ReactNode
     setSigningOut(true); setAccountError("");
     try {
       await api.logout(); setUser(null); setProducts([]); setSelectedProductId("");
-      try { localStorage.removeItem("product_id"); localStorage.removeItem("run_id"); } catch { /* The server session has already ended, even if storage is unavailable. */ }
+      clearWorkspaceSelection();
       router.push("/login");
     }
     catch { setAccountError("Sign out failed. Please try again."); }
@@ -71,10 +98,10 @@ export default function WorkspaceShell({ children }: { children: React.ReactNode
         <button className="icon-button mobile-menu" type="button" aria-label="Toggle workspace navigation" aria-expanded={open} onClick={() => setOpen(!open)}><Icon name="menu"/></button>
         <div className="breadcrumb"><span>Workspace</span><span>/</span><strong>{current?.label || (pathname === "/settings" ? "Settings" : auth ? "Account" : "Welcome")}</strong>{search.get("source") === "telegram" && <><span>/</span><strong>Telegram</strong></>}</div>
         <form className="topbar-search" onSubmit={searchConversations} role="search"><Icon name="search" size={17}/><input type="search" aria-label="Search workspace conversations" placeholder="Search conversations…" value={query} onChange={event => setQuery(event.target.value)}/><kbd>↵</kbd></form>
-        <select className="topbar-product" aria-label="Selected product" value={selectedProductId} onChange={event => setSelectedProductId(event.target.value)} disabled={selectionLocked || !products.length} title={selectionLocked ? "Save or cancel your changes before switching products." : undefined}><option value="">{products.length ? "New product" : "Choose a product"}</option>{products.map(product => <option key={product.id} value={product.id}>{product.name}</option>)}</select>
+        <select className="topbar-product" aria-label="Selected product" value={selectedProductId} onChange={event => setSelectedProductId(event.target.value)} disabled={selectionLocked || !products.length || (!demo && !user)} title={selectionLocked ? "Save or cancel your changes before switching products." : undefined}><option value="">{products.length ? "New product" : "Choose a product"}</option>{products.map(product => <option key={product.id} value={product.id}>{product.name}</option>)}</select>
         <span className="avatar avatar-small topbar-avatar" aria-label={demo ? "Demo profile" : name}>{initials}</span>
       </header>
-      <main id="main-content" className={pathname === "/leads" ? "inbox-main" : pathname.startsWith("/leads/") ? "review-main" : pathname === "/products" ? "product-main" : "page-main"}><ReviewSessionProvider scope={demo ? "demo" : user?.id || "guest"}>{children}</ReviewSessionProvider></main>
+      <main id="main-content" className={pathname === "/leads" ? "inbox-main" : pathname.startsWith("/leads/") ? "review-main" : pathname === "/products" ? "product-main" : "page-main"}><ReviewSessionProvider key={demo ? "demo" : user?.id || "guest"} scope={demo ? "demo" : user?.id || "guest"}>{!demo && privatePage && (!user || verifiedPath !== pathname) ? <section className="session-boundary" aria-live="polite">{sessionLoading || (!!user && verifiedPath !== pathname) ? <p role="status">Checking your session...</p> : <><h1>Sign in to your workspace</h1><p role="alert">{sessionError || "A verified session is required to view this page."}</p><Link href="/login">Sign in</Link> ? <Link href={`${pathname}?demo=1`}>Explore demo</Link><p><button onClick={() => { setSessionLoading(true); setSessionReload(value => value + 1); }}>Retry session check</button></p></>}</section> : children}</ReviewSessionProvider></main>
     </div>
   </div></WorkspaceContext.Provider>;
 }

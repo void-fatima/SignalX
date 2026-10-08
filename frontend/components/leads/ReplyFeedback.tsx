@@ -1,11 +1,16 @@
 "use client";
 import { useState } from "react";
+import type { FeedbackOut } from "@/lib/api";
+import PersistedFeedback from "./PersistedFeedback";
 import Icon, { type IconName } from "@/components/Icon";
 import { useReviewSession, type FeedbackChoice, type ReviewFeedback } from "./ReviewSession";
 const choices: { value: FeedbackChoice; label: string; icon: IconName }[] = [
   { value: "useful", label: "Useful", icon: "thumbs-up" }, { value: "needs_context", label: "Needs context", icon: "chat" }, { value: "off_topic", label: "Off-topic", icon: "ban" },
 ];
-export default function ReplyFeedback({ id, demo }: { id: string; demo: boolean }) {
+export default function ReplyFeedback({ id, demo, initial, eligible = true }: { id: string; demo: boolean; initial?: FeedbackOut | null; eligible?: boolean }) {
+  return demo ? <LocalFeedback id={id} demo={demo}/> : <PersistedFeedback id={id} initial={initial} eligible={eligible}/>;
+}
+function LocalFeedback({ id, demo }: { id: string; demo: boolean }) {
   const { feedback, setFeedback } = useReviewSession(), [notice, setNotice] = useState("");
   const value: ReviewFeedback = feedback[id] || { choice: demo ? "useful" : null, comment: demo ? "Keeps the reply relevant and asks a useful follow-up question." : "", saved: null };
   const saved = !!value.saved && value.saved.choice === value.choice && value.saved.comment === value.comment;

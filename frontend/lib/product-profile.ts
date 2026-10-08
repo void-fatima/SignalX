@@ -1,7 +1,7 @@
 import type { Product, ProductInput } from "./api";
 export type ProductDraft = Record<"name" | "description" | "target_customer" | "problems_solved" | "best_fit" | "not_fit" | "price" | "currency", string>;
 export type ProductErrors = Partial<Record<keyof ProductDraft, string>>;
-export const starterProduct: ProductInput = {
+const sampleProduct: ProductInput = {
   name: "Backend Academy",
   description: "A project-based backend course covering Python, FastAPI and databases.",
   target_customer: "Developers with basic Python knowledge who want to build real backend projects.",
@@ -10,8 +10,9 @@ export const starterProduct: ProductInput = {
   not_fit: ["People seeking a frontend-only course", "Advanced system design specialists"],
   price: null, currency: "USD",
 };
+export const starterProduct: ProductInput = { name: "", description: "", target_customer: "", problems_solved: [], best_fit: [], not_fit: [], price: null, currency: "USD" };
 // Synthetic fixture used only when the user explicitly selects ?demo=1.
-export const demoProduct: Product = { ...starterProduct, price: null, id: "demo-product-profile", created_at: "2026-10-07T00:00:00Z" };
+export const demoProduct: Product = { ...sampleProduct, price: null, id: "demo-product-profile", created_at: "2026-10-07T00:00:00Z" };
 export function toDraft(product: ProductInput): ProductDraft {
   return { name: product.name, description: product.description, target_customer: product.target_customer,
     problems_solved: (product.problems_solved || []).join("\n"), best_fit: (product.best_fit || []).join("\n"),

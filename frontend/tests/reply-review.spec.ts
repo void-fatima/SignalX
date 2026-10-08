@@ -35,7 +35,7 @@ test("mock regeneration is explicit and resets a reviewed draft", async ({ page 
   await expect(page.locator(".reply-notice")).toContainText("No provider was called");
 });
 
-test("connected source stays connected and generation remains unavailable", async ({ page }) => {
+test("connected source starts empty and requires explicit generation", async ({ page }) => {
   await page.route("**/api/v1/**", route => {
     const path = new URL(route.request().url()).pathname;
     if (path.endsWith("/leads/lead-1")) { const d = demoDetails["demo-lead-1"]; return route.fulfill({ json: { ...d, analysis: { ...d.analysis, id: "lead-1", provider_mode: "real" } } }); }
@@ -44,7 +44,7 @@ test("connected source stays connected and generation remains unavailable", asyn
   });
   await page.goto("/leads/lead-1");
   await expect(page.locator(".review-title .badge")).toHaveText("REAL PROVIDER");
-  await expect(page.getByRole("button", { name: "Generate again", exact: true })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Generate suggested reply", exact: true })).toBeEnabled();
   await expect(page.getByLabel("Reply draft")).toHaveValue("");
   await expect(page.getByRole("button", { name: "Approve draft", exact: true })).toBeDisabled();
 });
@@ -52,7 +52,7 @@ test("connected source stays connected and generation remains unavailable", asyn
 test("unknown demo and API errors never substitute another lead", async ({ page }) => {
   await page.goto("/leads/missing?demo=1");
   await expect(page.locator(".workflow-error")).toContainText("does not exist");
-  await page.route("**/api/v1/**", route => route.fulfill({ status: 503, json: { error: { message: "Source unavailable" } } }));
+  await page.route("**/api/v1/**", route => route.request().url().endsWith("/auth/me") ? route.fulfill({ json: { id: "owner", email: "owner@example.test" } }) : route.fulfill({ status: 503, json: { error: { message: "Source unavailable" } } }));
   await page.goto("/leads/lead-1");
   await expect(page.locator(".workflow-error")).toContainText("Source unavailable");
   await expect(page.locator(".review-identity")).toHaveCount(0);

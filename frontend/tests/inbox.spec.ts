@@ -103,7 +103,7 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 900, height: 1000 
 }
 
 test("API failures remain errors without a silent demo fallback", async ({ page }) => {
-  await page.route("http://localhost:8000/api/v1/**", route => route.fulfill({ status: 500, json: { error: { message: "Backend unavailable" } } }));
+  await page.route("http://localhost:8000/api/v1/**", route => route.request().url().endsWith("/auth/me") ? route.fulfill({ json: { id: "owner", email: "owner@example.test" } }) : route.fulfill({ status: 500, json: { error: { message: "Backend unavailable" } } }));
   await page.goto("/leads?run_id=live-run");
   await expect(page.getByRole("alert").filter({ hasText: "Backend unavailable" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Retry loading run" })).toBeVisible();
@@ -120,6 +120,7 @@ test("real results use their own signals and unavailable costs", async ({ page }
   detail.message.author = "Live user";
   await page.route("http://localhost:8000/api/v1/**", route => {
     const path = new URL(route.request().url()).pathname;
+    if (path.endsWith("/auth/me")) return route.fulfill({ json: { id: "owner", email: "owner@example.test" } });
     return route.fulfill({ json: path.endsWith("/analysis/runs/demo-run-024") ? demoRun : path.endsWith("/leads") ? { items: [detail.analysis], total: 1, limit: 20, offset: 0 } : detail });
   });
   await page.goto("/leads?run_id=demo-run-024");
@@ -145,16 +146,18 @@ test("search and score filters select only matching leads", async ({ page }) => 
   await expect(page.getByRole("button", { name: /Open signal analysis/ })).toHaveCount(0);
 });
 
-test("empty unconfigured workspace requires an explicit choice to enter demo", async ({ page }) => {
+test("authenticated empty workspace requires an explicit choice to enter demo", async ({ page }) => {
+  await page.route("**/api/v1/**", route => route.fulfill({ json: route.request().url().endsWith("/auth/me") ? { id: "owner", email: "owner@example.test" } : { items: [], total: 0 } }));
   await page.goto("/leads");
   await expect(page.getByText("Import messages to start an analysis.")).toBeVisible();
   await expect(page.getByRole("link", { name: "Explore the mock workspace ↗" })).toBeVisible();
   await expect(page.getByRole("button", { name: /Open signal analysis/ })).toHaveCount(0);
 });
 
-test("loading source state gives way to an honest failed-analysis dialog", async ({ page }) => {
+test("loading source state gives way to an honest failed-analysis explanation", async ({ page }) => {
   const detail = structuredClone(demoDetails["demo-lead-1"]);
   detail.analysis.status = "failed";
+  detail.analysis.failure_category = "provider_failure";
   detail.analysis.provider_mode = "real";
   detail.analysis.lead_score = null;
   detail.analysis.decision = null;
@@ -163,17 +166,16 @@ test("loading source state gives way to an honest failed-analysis dialog", async
   detail.analysis.reason = "Provider request failed.";
   await page.route("http://localhost:8000/api/v1/**", async route => {
     const path = new URL(route.request().url()).pathname;
+    if (path.endsWith("/auth/me")) return route.fulfill({ json: { id: "owner", email: "owner@example.test" } });
     if (path.includes("/leads/")) await new Promise(resolve => setTimeout(resolve, 500));
     await route.fulfill({ json: path.endsWith("/analysis/runs/demo-run-024") ? demoRun : path.endsWith("/leads") ? { items: [detail.analysis], total: 1, limit: 20, offset: 0 } : detail });
   });
   await page.goto("/leads?run_id=demo-run-024");
   await expect(page.getByText("Gathering the conversation")).toBeVisible();
-  await page.getByRole("button", { name: "Open signal analysis for Mina" }).click();
-  const dialog = page.getByRole("dialog");
-  await expect(dialog.locator(".dialog-score-value strong")).toHaveText("—");
-  await expect(dialog.getByRole("meter")).toHaveCount(0);
-  await expect(dialog.getByText("Signals are unavailable for this analysis.")).toBeVisible();
-  await expect(dialog.locator(".dialog-evidence blockquote")).toHaveCount(0);
+  await expect(page.locator(".conversation-panel")).toContainText("The provider could not complete this analysis.");
+  await expect(page.locator(".signal-card-score")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Approve draft" })).toHaveCount(0);
+  await expect(page.getByRole("dialog")).not.toBeVisible();
 });
 
 test("sign-in preview shares the brand without creating a pretend session", async ({ page }) => {

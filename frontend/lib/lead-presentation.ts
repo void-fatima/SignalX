@@ -8,6 +8,7 @@ export function textDirection(text: string): "rtl" | "ltr" {
 }
 /** Never highlight evidence from another conversation or a quote absent from its source. */
 export function groundedEvidence(detail: LeadDetail) {
+  if (detail.analysis.status === "failed") return [];
   const messages = [detail.message, ...detail.context];
   return detail.analysis.evidence.flatMap((evidence, index) => {
     const source = messages.find(message => message.id === evidence.message_id && message.batch_id === detail.message.batch_id && message.conversation_id === detail.message.conversation_id);
