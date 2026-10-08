@@ -18,7 +18,10 @@ export default function RunRecovery({ run, onRecovered }: { run: Run; onRecovere
       const next = intent || { key: crypto.randomUUID() };
       saveIntent(slot, next); setIntent(next);
       const value = await api.retryRun(run.id, next.key);
-      if (value.id !== run.id) throw new Error("Retry response does not match this run.");
+      if (!value || value.id !== run.id || !["queued", "running", "completed", "partial", "failed", "interrupted"].includes(value.status)
+        || (value.attempt_no != null && (!Number.isInteger(value.attempt_no) || value.attempt_no < 1))) {
+        throw new Error("Retry acknowledgement could not be verified. Reload the run or check the same request.");
+      }
       clearIntent(slot);
       if (active.current) { setIntent(null); onRecovered(); }
     } catch (reason) {
