@@ -8,6 +8,7 @@
     "start": "next start --hostname 0.0.0.0",
     "typecheck": "tsc --noEmit",
     "test": "playwright test",
+    "test:integration": "playwright test --config playwright.integration.config.ts",
     "generate:api": "openapi-typescript ../contracts/openapi.json -o lib/generated/api.d.ts",
     "generate:handoff": "openapi-typescript contracts/failure-handling.openapi.json -o lib/generated/failure-api.d.ts"
   },
