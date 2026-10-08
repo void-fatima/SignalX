@@ -37,6 +37,7 @@ export const telegramApi = {
   leads: (offset = 0) => request<Page<TelegramLead>>(`/integrations/telegram/leads?limit=20&offset=${offset}`, {}, endpoint),
   lead: (id: string) => request<TelegramLead>(`/leads/${encodeURIComponent(id)}/telegram`, {}, endpoint),
   suggest: (id: string, regenerate: boolean) => request<TelegramLead>(`/leads/${encodeURIComponent(id)}/telegram/suggested-reply`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ regenerate }) }, endpoint),
+  reply: (id: string, text: string) => request<TelegramLead>(`/leads/${encodeURIComponent(id)}/telegram/reply`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text }) }, endpoint),
 };
 export function verifyTelegramLead(value: TelegramLead, id: string): TelegramLead {
   if (value.id !== id || value.source !== "telegram" || value.original_message.source !== "telegram") throw new Error("Telegram source does not match this opportunity.");
