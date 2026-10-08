@@ -10,7 +10,9 @@ export function useTelegramReview(id: string) {
   const { user, demo } = useWorkspace(), scope = demo ? "demo" : user?.id || "guest";
   const { products, setSelectedProductId } = useWorkspaceProducts();
   const { telegramDrafts, setTelegramDrafts } = useReviewSession();
-  const [lead, setLead] = useState<TelegramLead | null>(null), [error, setError] = useState("");
+  const [snapshot, setSnapshot] = useState<{ lead: TelegramLead; scope: string } | null>(null), [error, setError] = useState("");
+  const lead = snapshot?.scope === scope && snapshot.lead.id === id ? snapshot.lead : null;
+  function setLead(value: TelegramLead | null) { setSnapshot(value ? { lead: value, scope } : null); }
   const [loading, setLoading] = useState(true), [busy, setBusy] = useState<"generate" | "send" | null>(null);
   const [actionError, setActionError] = useState("");
   const [unverified, setUnverified] = useState(false);
