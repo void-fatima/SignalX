@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useWorkspace } from "@/components/WorkspaceContext";
 import { useReviewSession } from "@/components/leads/ReviewSession";
+import { ApiError } from "@/lib/api";
 import { telegramApi, verifyTelegramLead, type TelegramLead } from "@/lib/telegram";
 
 export function useTelegramReview(id: string) {
@@ -10,6 +11,7 @@ export function useTelegramReview(id: string) {
   const [lead, setLead] = useState<TelegramLead | null>(null), [error, setError] = useState("");
   const [loading, setLoading] = useState(true), [busy, setBusy] = useState<"generate" | "send" | null>(null);
   const [actionError, setActionError] = useState("");
+  const [unverified, setUnverified] = useState(false);
   const identity = useRef({ id, scope }); identity.current = { id, scope };
   const alive = useRef(false), lock = useRef(false), loadVersion = useRef(0);
   function current() { return alive.current && identity.current.id === id && identity.current.scope === scope; }
@@ -25,6 +27,9 @@ export function useTelegramReview(id: string) {
   }
   useEffect(() => {
     alive.current = true; setLead(null); setBusy(null); setActionError(""); lock.current = false;
+    // A page reload cannot turn an ambiguous send into permission to send again.
+    try { setUnverified(sessionStorage.getItem(`telegram-send:${scope}:${id}`) === "blocked"); }
+    catch { setUnverified(false); }
     if (demo) { setLoading(false); setError("Telegram actions require a connected workspace. Exit demo and sign in."); }
     else void refresh();
     return () => { alive.current = false; loadVersion.current++; };
@@ -36,17 +41,27 @@ export function useTelegramReview(id: string) {
     if (!draft.editingText?.trim() || draft.editingText.length > 4000) return;
     setTelegramDrafts(previous => ({ ...previous, [id]: { ...draft, text: draft.editingText!, editingText: null } }));
   }
-  const unavailable = demo || !lead || !!error || loading || busy !== null || lead.delivery.draft_busy || lead.delivery.status === "sending" || lead.delivery.status === "sent" || lead.delivery.delivery_uncertain || !!draft.sendBlocked;
+  const unavailable = demo || !user || !lead || !!error || loading || busy !== null || lead.delivery.draft_busy || lead.delivery.status !== "not_sent" || lead.delivery.delivery_uncertain || !!draft.sendBlocked || unverified;
   async function approve() {
     if (lock.current || unavailable || draft.editingText !== null || !draft.text.trim() || draft.text.length > 4000) return;
     const text = draft.text;
     lock.current = true; setBusy("send"); setActionError(""); ++loadVersion.current;
+    setUnverified(true);
+    try { sessionStorage.setItem(`telegram-send:${scope}:${id}`, "blocked"); } catch { /* In-memory guard remains active. */ }
     setTelegramDrafts(previous => ({ ...previous, [id]: { ...draft, sendBlocked: true } }));
     try {
       const value = verifyTelegramLead(await telegramApi.reply(id, text), id);
-      if (current()) setLead(value);
+      if (current()) {
+        setLead(value);
+        if (value.delivery.status !== "sent") await refresh();
+      }
     } catch (reason) {
-      if (current()) setActionError(reason instanceof Error ? reason.message : "Delivery could not be confirmed. Check the original Telegram thread.");
+      if (current()) {
+        setActionError(reason instanceof Error ? reason.message : "Delivery could not be confirmed.");
+        // Read persisted state after 502, conflicts and all ambiguous transport
+        // failures. This is a GET only; never retry the reply POST.
+        await refresh();
+      }
     } finally { if (current()) { setBusy(null); lock.current = false; } }
   }
   async function generate(regenerate: boolean) {
@@ -59,8 +74,12 @@ export function useTelegramReview(id: string) {
       setTelegramDrafts(previous => ({ ...previous, [id]: { text: value.analysis.suggested_reply || "", editingText: null } }));
       if (!value.analysis.suggested_reply?.trim()) setActionError("The provider returned no draft. Nothing was sent.");
     } catch (reason) {
-      if (current()) { setActionError(reason instanceof Error ? reason.message : "Suggested reply generation failed. Nothing was sent."); await refresh(); }
+      if (current()) {
+        setActionError(reason instanceof Error ? reason.message : "Suggested reply generation failed. Nothing was sent.");
+        if (!(reason instanceof ApiError) || reason.status >= 500 || reason.status === 409) await refresh();
+      }
     } finally { if (current()) { setBusy(null); lock.current = false; } }
   }
-  return { lead, draft, error, loading, busy, actionError, refresh, edit, save, generate, approve, unavailable };
+  const deliveryUnverified = unverified || !!draft.sendBlocked;
+  return { lead, draft, error, loading, busy, actionError, refresh, edit, save, generate, approve, unavailable, deliveryUnverified };
 }
