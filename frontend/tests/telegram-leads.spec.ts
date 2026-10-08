@@ -11,6 +11,7 @@ test("Telegram inbox opens contract metadata and evidence without a shared Mock 
   await expect(page.locator(".telegram-original")).toContainText("09:00 UTC");
   await expect(page.locator(".telegram-score")).toContainText("76/100");
   await expect(page.locator(".telegram-evidence")).toContainText("Author states a need");
+  await expect(page.locator(".telegram-original mark")).toHaveText(lead.original_message.text);
   await expect(page.locator(".telegram-destination")).toContainText("Reply to Message 7 · Topic 3");
   await page.getByRole("button", { name: "View analysis", exact: true }).click();
   await expect(page.getByRole("dialog")).toContainText(lead.analysis.decision_reason!);

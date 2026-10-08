@@ -27,6 +27,8 @@ test("Save Cancel and regeneration preserve unsaved edits across refresh and nav
   await expect(page.getByLabel("Reply draft", { exact: true })).toHaveAttribute("dir", "rtl");
   await expect(page.getByRole("button", { name: "Generate again", exact: true })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Approve & Reply", exact: true })).toBeDisabled();
+  await page.getByRole("button", { name: "Refresh delivery status", exact: true }).click();
+  await expect(page.getByLabel("Reply draft", { exact: true })).toHaveValue("سلام! چه چیزی می‌خواهید یاد بگیرید؟");
   await page.getByRole("link", { name: "Back to inbox", exact: true }).click();
   await page.getByRole("link", { name: "Review lead", exact: true }).click();
   await expect(page.getByLabel("Reply draft", { exact: true })).toHaveValue("سلام! چه چیزی می‌خواهید یاد بگیرید؟");
