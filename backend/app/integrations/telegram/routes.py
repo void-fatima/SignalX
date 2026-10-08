@@ -93,5 +93,7 @@ def suggested_reply(lead_id: UUID, payload: DraftRequest, session: DB, user: Use
 @router.post("/leads/{lead_id}/telegram/reply", response_model=TelegramLeadOut,
     dependencies=[Depends(verify_origin)])
 def approved_reply(lead_id: UUID, payload: ApprovedReply, session: DB, user: User,
+                   idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key")] = None,
                    client=Depends(dependencies.telegram_client)):
-    return actions.send_reply(session, str(user.id), str(lead_id), payload.text, client)
+    return actions.send_reply(session, str(user.id), str(lead_id), payload.text, client,
+        idempotency_key=idempotency_key)

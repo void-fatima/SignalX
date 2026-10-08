@@ -1,8 +1,10 @@
 """Telegram persistence tables; migration 0006 adds their ownership FKs."""
-from sqlalchemy import BigInteger, Boolean, ForeignKey, String, Text, UniqueConstraint
+from datetime import datetime
+
+from sqlalchemy import BigInteger, Boolean, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.models import Base, Record, json_type
+from app.models import Base, Record, UTCDateTime, json_type
 
 
 class TelegramChatMapping(Record, Base):
@@ -36,5 +38,8 @@ class TelegramDelivery(Record, Base):
     approved_by: Mapped[str | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     sent_message_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     failure_category: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    failure_http_status: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    retry_after_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+    send_history: Mapped[list] = mapped_column(json_type, default=list)
     delivery_uncertain: Mapped[bool] = mapped_column(Boolean, default=False)
     draft_busy: Mapped[bool] = mapped_column(Boolean, default=False)

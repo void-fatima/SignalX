@@ -1,0 +1,10 @@
+{
+  "status": "failed",
+  "telegram_message_id": null,
+  "failure_category": "rate_limit",
+  "delivery_uncertain": false,
+  "draft_busy": false,
+  "approved_text": "Thanks for your interest. What is your current experience level?",
+  "failure_http_status": 429,
+  "retry_after_at": "2026-10-08T12:10:00Z"
+}

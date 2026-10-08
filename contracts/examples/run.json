@@ -15,5 +15,6 @@
     "provider_mode": "mock",
     "context_max_chars": 8000,
     "offline_context": true
-  }
+  },
+  "attempt_no": 1
 }

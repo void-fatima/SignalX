@@ -8,7 +8,8 @@ Errors are {"error":{"code":"...","message":"...","details":[]}}.
 
 Implemented endpoints: health/ready; POST/GET/PATCH products; POST imports;
 GET messages; POST analysis/runs (202, required Idempotency-Key);
-GET analysis/runs/{id}; GET leads (run_id required, decision/min_score filters);
+GET analysis/runs/{id}; POST analysis/runs/{id}/retry (requires Idempotency-Key);
+GET leads (run_id required, decision/min_score/status filters; status may be completed or failed);
 GET leads/{id}; POST/PATCH leads/{id}/response; PUT leads/{id}/feedback;
 GET analytics/overview (run_id required); POST /auth/register; POST /auth/login;
 POST /auth/logout; GET /auth/me. Authenticated product, import, message, run,
@@ -31,6 +32,18 @@ usage preserves unknown token counts and cost as null; missing telemetry is not
 inferred by the API.
 Prompt and scoring versions are nullable when their corresponding Agent stage
 did not run; Backend does not invent versions for screened-out messages.
+
+Only failed, partial, or interrupted runs can be retried. Retry preserves the run,
+successful analysis IDs, complete AgentOutput snapshots and existing usage; it
+requeues only failed or missing message results. The required Idempotency-Key is
+stored as a SHA-256 digest in retry history. Repeating a key returns the same run;
+a different key while a retry is active returns 409. A stale worker is fenced by
+the run attempt number and cannot overwrite newer results. Late provider usage is
+still attributed to its original attempt. Failed analyses can be listed with
+`GET /leads?run_id=<UUID>&status=failed`; failure_category is an allowlisted
+category and raw provider errors are not persisted. See
+[failure recovery](failure-recovery.md) for state transitions and Telegram send
+recovery behavior.
 
 Context is offline, limited to the same batch/conversation, up to three preceding
 and two following messages (parent prioritized), maximum five messages and 8000
