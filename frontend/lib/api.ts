@@ -10,14 +10,14 @@ export type CurrentUser = components["schemas"]["CurrentUser"];
 export type SessionGrant = components["schemas"]["SessionGrant"];
 export type Page<T> = { items: T[]; total: number; limit: number; offset: number };
 export class ApiError extends Error {
-  constructor(message: string, public details: { row?: number; field?: string; message?: string }[] = []) { super(message); }
+  constructor(message: string, public details: { row?: number; field?: string; message?: string }[] = [], public status = 0, public code = "") { super(message); }
 }
 const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
-async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const response = await fetch(`${base}${path}`, { ...options, credentials: "include", cache: "no-store" });
+export async function request<T>(path: string, options: RequestInit = {}, endpoint = base): Promise<T> {
+  const response = await fetch(`${endpoint}${path}`, { ...options, credentials: "include", cache: "no-store" });
   if (response.status === 204) return undefined as T;
-  const body = await response.json().catch(() => { throw new ApiError(`The server returned an unreadable response (${response.status}). Please try again.`); });
-  if (!response.ok) throw new ApiError(body.error?.message || `Request failed (${response.status})`, body.error?.details || []);
+  const body = await response.json().catch(() => { throw new ApiError(`The server returned an unreadable response (${response.status}).`, [], response.status, "unreadable_response"); });
+  if (!response.ok) throw new ApiError(body.error?.message || `Request failed (${response.status})`, body.error?.details || [], response.status, body.error?.code || "");
   return body as T;
 }
 export const api = {
