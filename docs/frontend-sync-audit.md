@@ -1,5 +1,9 @@
 # گزارش هماهنگی فرانت‌اند و API
 
+> Historical PR #6 audit: its branches have since been merged. The unified backend
+> arrived through PR #7 during the follow-up. Active types now use the unified
+> root contract; see [final Failure Handling evidence](frontend-failure-final-audit.md).
+
 تاریخ بررسی: ۸ اکتبر ۲۰۲۶. پایهٔ UI:
 `main@3078adfae2d1b299ec49d8b7015d1b274bf63485`.
 قرارداد بازیابی:
