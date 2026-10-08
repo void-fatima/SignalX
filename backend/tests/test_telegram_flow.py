@@ -1,5 +1,6 @@
 """SQLite + real Agent entry point + fake HTTP: no external calls or fake auth in production."""
 import json
+from datetime import timedelta
 from uuid import uuid4
 
 import httpx
@@ -13,7 +14,7 @@ from app.integrations.telegram.client import TelegramClient
 from app.integrations.telegram.config import TelegramSettings
 from app.integrations.telegram.models import TelegramChatMapping, TelegramDelivery, TelegramReceipt
 from app.main import app
-from app.models import Analysis, AnalysisRun, ImportBatch, Message, Product, Usage, User
+from app.models import Analysis, AnalysisRun, ImportBatch, Message, Product, Usage, User, utcnow
 from app.agents.providers.factory import real_provider_client
 from app.services.analysis_service import process_one
 
@@ -386,6 +387,52 @@ def test_api_failure_persists_delivery_status_without_changing_analysis(client, 
     detail = client.get(f"/api/v1/leads/{id}/telegram", headers=auth_headers(client)).json()
     assert detail["analysis"] == before and detail["delivery"]["status"] == "failed"
     assert detail["delivery"]["delivery_uncertain"] is (status == 500) and len(calls) == 1
+
+
+def test_send_idempotency_and_rate_limit_cooldown(client, factory, business, llm_http):
+    id = complete(client, factory)
+    calls = []
+
+    def retry_after_once(request):
+        calls.append(request)
+        if len(calls) == 1:
+            return httpx.Response(429, json=dict(ok=False, error_code=429, description="rate limited",
+                parameters=dict(retry_after=60)))
+        body = json.loads(request.content)
+        return httpx.Response(200, json=dict(ok=True, result=dict(message_id=99, chat=dict(id=body["chat_id"]))))
+
+    with httpx.Client(transport=httpx.MockTransport(retry_after_once)) as http:
+        app.dependency_overrides[dependencies.telegram_client] = lambda: TelegramClient(TelegramSettings(), client=http)
+        try:
+            path = f"/api/v1/leads/{id}/telegram/reply"
+            text = "Reviewed and approved reply"
+            first_headers = {**auth_headers(client), "Idempotency-Key": "telegram-send-attempt-1"}
+            first = client.post(path, headers=first_headers, json=dict(text=text))
+            assert first.status_code == 502
+            replay = client.post(path, headers=first_headers, json=dict(text=text))
+            assert replay.status_code == 200 and replay.json()["delivery"]["status"] == "failed"
+            conflict = client.post(path, headers=first_headers, json=dict(text="Changed text"))
+            assert conflict.status_code == 409
+            cooldown = client.post(path, headers={**auth_headers(client), "Idempotency-Key": "telegram-send-attempt-2"},
+                json=dict(text=text))
+            assert cooldown.status_code == 409 and len(calls) == 1
+
+            with factory() as session:
+                delivery = session.scalar(select(TelegramDelivery).where(TelegramDelivery.analysis_id == id))
+                assert delivery.failure_http_status == 429 and delivery.retry_after_at is not None
+                assert delivery.approved_text == text and len(delivery.send_history) == 1
+                assert "telegram-send-attempt-1" not in json.dumps(delivery.send_history)
+                delivery.retry_after_at = utcnow() - timedelta(seconds=1)
+                session.commit()
+
+            second_headers = {**auth_headers(client), "Idempotency-Key": "telegram-send-attempt-2"}
+            sent = client.post(path, headers=second_headers, json=dict(text=text))
+            assert sent.status_code == 200 and sent.json()["delivery"]["status"] == "sent"
+            assert len(calls) == 2
+            assert client.post(path, headers=second_headers, json=dict(text=text)).status_code == 200
+            assert len(calls) == 2
+        finally:
+            app.dependency_overrides.pop(dependencies.telegram_client, None)
 
 
 def test_failed_draft_preserves_actual_usage_and_no_qualification_rerun(client, factory, business, llm_http, telegram_http):

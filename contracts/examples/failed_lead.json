@@ -1,0 +1,23 @@
+{
+  "id": "a3da4adb-6b26-4844-9747-67f47dfa9aa2",
+  "run_id": "72059a08-e457-4f04-b543-932be4087a1b",
+  "message_id": "bd942785-4495-4de7-ba03-f012c076867c",
+  "status": "failed",
+  "failure_category": "provider_timeout",
+  "is_candidate": true,
+  "screening_reason": "processing_error",
+  "signals": null,
+  "intent": null,
+  "need": null,
+  "budget_signal": null,
+  "lead_score": null,
+  "decision": null,
+  "decision_reason": null,
+  "reason": "The AI provider timed out. Your message is saved; you can retry.",
+  "evidence": [],
+  "context_message_ids": [],
+  "limitations": [],
+  "scoring_version": null,
+  "prompt_version": null,
+  "provider_mode": "real"
+}

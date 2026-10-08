@@ -17,7 +17,7 @@ from app.schemas.response import ResponseDraft, ResponsePatch, FeedbackInput, Fe
 from app.schemas.analytics import AnalyticsOverview
 from app.core.errors import AppError
 from app.services.import_service import import_csv
-from app.services.analysis_service import create_run
+from app.services.analysis_service import create_run, retry_run
 from app.services.response_service import (
     feedback_out,
     generate_response,
@@ -134,12 +134,25 @@ def run(id: UUID, session: DB, current: Current):
     return find_owned(session, AnalysisRun, id, str(current.id))
 
 
+@router.post("/analysis/runs/{id}/retry", response_model=RunOut, status_code=202,
+    dependencies=[Depends(verify_origin)])
+def retry(id: UUID, session: DB, current: Current,
+          idempotency_key: Annotated[str, Header(alias="Idempotency-Key")]):
+    return retry_run(session, id, str(current.id), idempotency_key)
+
+
 @router.get("/leads", response_model=Page[AnalysisOut])
 def leads(run_id: UUID, session: DB, current: Current, decision: Literal["ignore", "review", "respond"] | None = None,
-          min_score: Annotated[int | None, Query(ge=0, le=100)] = None, limit: Limit = 20, offset: Offset = 0):
+          min_score: Annotated[int | None, Query(ge=0, le=100)] = None,
+          status: Literal["completed", "failed"] | None = None, limit: Limit = 20, offset: Offset = 0):
     find_owned(session, AnalysisRun, run_id, str(current.id))
     statement = select(Analysis).where(Analysis.run_id == str(run_id))
-    statement = statement.where(Analysis.decision == decision) if decision else statement.where(Analysis.decision.in_(["review", "respond"]))
+    if status:
+        statement = statement.where(Analysis.status == status)
+    if decision:
+        statement = statement.where(Analysis.decision == decision)
+    elif status != "failed":
+        statement = statement.where(Analysis.decision.in_(["review", "respond"]))
     if min_score is not None:
         statement = statement.where(Analysis.lead_score >= min_score)
     return page(session, statement.order_by(Analysis.lead_score.desc(), Analysis.id), limit, offset)

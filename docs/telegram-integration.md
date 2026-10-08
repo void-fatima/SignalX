@@ -37,17 +37,16 @@ adapter in production.
 
 The additive ORM tables are isolated in
 `backend/app/integrations/telegram/models.py` and are installed by Alembic
-revision `0006` after the existing Backend migrations. The PostgreSQL reference
-DDL is in [schema.sql](../backend/app/integrations/telegram/schema.sql); use
-Alembic, not manual SQL, to apply it. `/ready` checks the current Alembic head
-and queries the Telegram tables. One bot per deployment is supported; chat IDs
-are globally unique within that bot's mapping namespace.
+revision `0006` after the existing Backend migrations. Revision `0007` adds
+failure HTTP status, a Telegram retry cooldown timestamp and send history to the
+existing delivery row. It adds no new table and must follow `0006`. Use Alembic,
+not manual SQL, to apply it. `/ready` checks the current Alembic head and queries
+the Telegram tables. One bot per deployment is supported; chat IDs are globally
+unique within that bot's mapping namespace.
 
 Telegram-specific UI endpoints below return the frozen public AgentOutput.
-Existing shared `/api/v1/leads` schemas still restrict provider_mode to Mock;
-Backend must finish its broader real-output/nullable-version contract alignment.
-Legacy Analysis columns get `not_executed` for absent versions, whereas the
-authoritative Telegram AgentOutput snapshot keeps the true nullable versions.
+The shared `/api/v1/leads` schema accepts `mock` and `real`; nullable
+AgentOutput versions are preserved in the authoritative Telegram snapshot.
 Existing Usage rows store nullable costs; snapshot usage also preserves nullable
 model/price_version/latency. No unknown cost is converted to zero.
 
@@ -67,16 +66,18 @@ parse mode is used, and previews are disabled. These parameters and webhook
 secret verification follow the [official Bot API](https://core.telegram.org/bots/api#sendmessage).
 
 Delivery states are `not_sent`, `sending`, `sent`, `failed`. A row records the
-approving user, approved text, returned Telegram message ID and failure category.
-Repeated identical send after confirmed success returns the existing delivery;
-different text after success returns 409. A send is claimed/committed before HTTP,
-so concurrent requests cannot both send. Timeouts, malformed success responses,
-5xx or process interruption can leave delivery uncertain: never automatically
-retry. A human must check the original Telegram thread and Backend must reconcile
-the delivery row before explicitly allowing another send. A stuck draft_busy flag
-after process interruption likewise needs operator reconciliation. Telegram has
-no transaction with our DB; exactly-once external delivery cannot be guaranteed
-after a crash. There are no transport retries or automatic outreach.
+approving user, approved text, returned Telegram message ID, safe failure
+category, HTTP status, cooldown timestamp and send history. The optional
+`Idempotency-Key` on the reply POST is hashed before storage; the raw key and
+reply text are not copied into history. Reusing a key with the same text returns
+the recorded delivery without sending again; using it with different text
+returns 409. A new explicit retry needs a new key. A persisted Telegram 429
+cooldown blocks retry until `retry_after_at`. A send is claimed and committed
+before HTTP, so concurrent requests cannot both send. Uncertain sends remain
+blocked for human review; failed known-not-sent requests may be retried after
+cooldown. Telegram has no transaction with our DB, so exactly-once external
+delivery cannot be guaranteed after a crash. There are no transport retries or
+automatic outreach.
 
 ## Fatima's exact API contract
 
@@ -93,7 +94,7 @@ additive; UI implementation is out of scope.
 | `GET /api/v1/integrations/telegram/leads?limit=20&offset=0` | Authenticated owner | items/total/limit/offset; completed REVIEW/RESPOND leads only |
 | `GET /api/v1/leads/{lead_id}/telegram` | Authenticated owner | TelegramLeadOut, including original_message/analysis/delivery |
 | `POST /api/v1/leads/{lead_id}/telegram/suggested-reply` | `{"regenerate":false}` | TelegramLeadOut with draft and appended actual reply usage; nothing sent |
-| `POST /api/v1/leads/{lead_id}/telegram/reply` | `{"text":"Approved or edited reply"}` | TelegramLeadOut with delivery status and Telegram returned message ID |
+| `POST /api/v1/leads/{lead_id}/telegram/reply` | `{"text":"Approved or edited reply"}`; optional `Idempotency-Key` header | TelegramLeadOut with delivery status, safe HTTP status and cooldown |
 
 Synthetic response shape (values below are illustrative, not a live result):
 
@@ -123,7 +124,8 @@ Synthetic response shape (values below are illustrative, not a live result):
     "usage": [], "suggested_reply": null
   },
   "delivery": {"status":"not_sent","telegram_message_id":null,
-    "failure_category":null,"delivery_uncertain":false,"draft_busy":false}
+    "failure_category":null,"delivery_uncertain":false,"draft_busy":false,
+    "approved_text":null,"failure_http_status":null,"retry_after_at":null}
 }
 ```
 

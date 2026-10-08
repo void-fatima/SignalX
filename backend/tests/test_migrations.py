@@ -144,4 +144,73 @@ def test_telegram_migration_references_backend_users_for_mapping_and_approval(tm
     assert ("products", "product_id", "id") in mapping_fks
     assert ("users", "approved_by", "id") in delivery_fks
     assert {"telegram_chat_mappings", "telegram_receipts", "telegram_deliveries"} <= tables
-    assert revision == "0006"
+    assert revision == "0007"
+
+
+def test_failure_recovery_migration_preserves_rows_and_adds_only_seven_fields(tmp_path):
+    database = tmp_path / "failure-recovery.db"
+    env = {**os.environ, "DATABASE_URL": f"sqlite:///{database.as_posix()}"}
+    result = subprocess.run(
+        [sys.executable, "-m", "alembic", "upgrade", "0006"],
+        cwd=BACKEND_ROOT, env=env, text=True, capture_output=True,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+
+    with sqlite3.connect(database) as connection:
+        connection.execute("PRAGMA foreign_keys=OFF")
+        connection.execute(
+            "INSERT INTO analysis_runs (id, created_at, product_id, batch_id, product_snapshot, "
+            "config_snapshot, idempotency_key, status, total_count, processed_count, failed_count, error) "
+            "VALUES ('run', '2026-10-08T00:00:00', 'product', 'batch', '{}', '{}', 'key', 'failed', 1, 1, 1, 'safe prior error')"
+        )
+        connection.execute(
+            "INSERT INTO analyses (id, created_at, run_id, message_id, status, is_candidate, "
+            "screening_reason, reason, evidence, context_message_ids, limitations, scoring_version, "
+            "prompt_version, provider_mode) VALUES ('analysis', '2026-10-08T00:00:00', 'run', "
+            "'message', 'failed', 1, 'processing_error', 'safe prior error', '[]', '[]', '[]', "
+            "NULL, NULL, 'real')"
+        )
+        connection.execute(
+            "INSERT INTO llm_usage (id, created_at, run_id, message_id, analysis_id, stage, attempt_no, "
+            "provider_mode, cost_status, outcome) VALUES ('usage', '2026-10-08T00:00:00', 'run', "
+            "'message', 'analysis', 'qualification', 1, 'real', 'unknown', 'timeout')"
+        )
+        connection.execute(
+            "INSERT INTO telegram_deliveries (id, created_at, analysis_id, state, approved_text, "
+            "failure_category, delivery_uncertain, draft_busy) VALUES ('delivery', '2026-10-08T00:00:00', "
+            "'analysis', 'failed', 'Human-approved text', 'timeout', 1, 0)"
+        )
+        connection.commit()
+
+    result = subprocess.run(
+        [sys.executable, "-m", "alembic", "upgrade", "head"],
+        cwd=BACKEND_ROOT, env=env, text=True, capture_output=True,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    with sqlite3.connect(database) as connection:
+        run = connection.execute("SELECT attempt_no, retry_history, status, error FROM analysis_runs WHERE id='run'").fetchone()
+        analysis = connection.execute("SELECT failure_category, reason FROM analyses WHERE id='analysis'").fetchone()
+        usage = connection.execute("SELECT run_attempt_no, outcome FROM llm_usage WHERE id='usage'").fetchone()
+        delivery = connection.execute("SELECT failure_http_status, retry_after_at, send_history, approved_text, delivery_uncertain "
+            "FROM telegram_deliveries WHERE id='delivery'").fetchone()
+        revision = connection.execute("SELECT version_num FROM alembic_version").fetchone()[0]
+    assert run == (1, "[]", "failed", "safe prior error")
+    assert analysis == (None, "safe prior error")
+    assert usage == (1, "timeout")
+    assert delivery == (None, None, "[]", "Human-approved text", 1)
+    assert revision == "0007"
+
+    result = subprocess.run(
+        [sys.executable, "-m", "alembic", "downgrade", "0006"],
+        cwd=BACKEND_ROOT, env=env, text=True, capture_output=True,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    with sqlite3.connect(database) as connection:
+        columns = {table: {row[1] for row in connection.execute(f"PRAGMA table_info({table})")}
+            for table in ("analysis_runs", "analyses", "llm_usage", "telegram_deliveries")}
+        assert connection.execute("SELECT approved_text FROM telegram_deliveries WHERE id='delivery'").fetchone()[0] == "Human-approved text"
+    assert "attempt_no" not in columns["analysis_runs"]
+    assert "retry_history" not in columns["analysis_runs"]
+    assert "failure_category" not in columns["analyses"]
+    assert "run_attempt_no" not in columns["llm_usage"]
+    assert not {"failure_http_status", "retry_after_at", "send_history"}.intersection(columns["telegram_deliveries"])
