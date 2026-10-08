@@ -57,7 +57,7 @@ export function useTelegramReview(id: string) {
     try { sessionStorage.setItem(`telegram-send:${scope}:${id}`, "blocked"); } catch { /* In-memory guard remains active. */ }
     setTelegramDrafts(previous => ({ ...previous, [id]: { ...draft, sendBlocked: true } }));
     try {
-      const value = verifyTelegramLead(await telegramApi.reply(id, text), id);
+      const value = verifyTelegramLead(await telegramApi.reply(id, text, crypto.randomUUID()), id);
       if (current()) {
         setLead(value);
         if (value.delivery.status !== "sent") await refresh();

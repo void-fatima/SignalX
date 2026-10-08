@@ -1,10 +1,11 @@
 import type { components } from "./generated/api";
+import type { components as handoff } from "./generated/failure-api";
 export type Product = components["schemas"]["ProductOut"];
 export type ProductInput = components["schemas"]["ProductInput"];
 export type ImportResult = components["schemas"]["ImportOut"];
-export type Run = components["schemas"]["RunOut"];
-export type Analysis = components["schemas"]["AnalysisOut"];
-export type LeadDetail = components["schemas"]["LeadDetail"];
+export type Run = components["schemas"]["RunOut"] & Partial<Pick<handoff["schemas"]["RunOut"], "attempt_no">>;
+export type Analysis = handoff["schemas"]["AnalysisOut"];
+export type LeadDetail = Omit<handoff["schemas"]["LeadDetail"], "source"> & { source?: "csv" | "telegram" };
 export type Credentials = components["schemas"]["Credentials"];
 export type CurrentUser = components["schemas"]["CurrentUser"];
 export type SessionGrant = components["schemas"]["SessionGrant"];
@@ -21,16 +22,17 @@ export async function request<T>(path: string, options: RequestInit = {}, endpoi
   return body as T;
 }
 export const api = {
-  login: (body: Credentials) => request<SessionGrant>("/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }),
+  login: (body: Credentials) => request<CurrentUser | SessionGrant>("/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }),
   register: (body: Credentials) => request<CurrentUser>("/auth/register", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }),
   me: () => request<CurrentUser>("/auth/me"),
   logout: () => request<void>("/auth/logout", { method: "POST" }),
-  products: () => request<Page<Product>>("/products?limit=100"),
+  products: (offset = 0, limit = 100) => request<Page<Product>>(`/products?limit=${limit}&offset=${offset}`),
   product: (id: string) => request<Product>(`/products/${id}`),
   saveProduct: (body: ProductInput, id?: string) => request<Product>(id ? `/products/${id}` : "/products", { method: id ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }),
   importCSV: (data: FormData) => request<ImportResult>("/imports", { method: "POST", body: data }),
   startRun: (product_id: string, batch_id: string, key: string) => request<Run>("/analysis/runs", { method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": key }, body: JSON.stringify({ product_id, batch_id }) }),
   run: (id: string) => request<Run>(`/analysis/runs/${id}`),
-  leads: (run: string, decision: string, offset: number, minScore: string) => request<Page<Analysis>>(`/leads?run_id=${encodeURIComponent(run)}&offset=${offset}${decision ? `&decision=${decision}` : ""}${minScore ? `&min_score=${minScore}` : ""}`),
+  leads: (run: string, decision: string, offset: number, minScore: string, status = "") => request<Page<Analysis>>(`/leads?run_id=${encodeURIComponent(run)}&offset=${offset}${status === "failed" ? "&status=failed" : decision ? `&decision=${decision}` : ""}${status !== "failed" && minScore ? `&min_score=${minScore}` : ""}`),
+  retryRun: (id: string, key: string) => request<Run>(`/analysis/runs/${encodeURIComponent(id)}/retry`, { method: "POST", headers: { "Idempotency-Key": key } }),
   lead: (id: string) => request<LeadDetail>(`/leads/${id}`),
 };
