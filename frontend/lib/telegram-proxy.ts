@@ -10,7 +10,8 @@ export async function telegramProxy(request: NextRequest, path: string, operatio
   let payload: string | undefined;
   if (operation !== "read") {
     const origin = request.headers.get("origin");
-    if (!origin || origin !== (process.env.APP_ORIGIN || request.nextUrl.origin)) return error(403, "invalid_origin", "Request origin is not allowed.");
+    const appOrigin = process.env.APP_ORIGIN || `${request.nextUrl.protocol}//${request.headers.get("host")}`;
+    if (!origin || origin !== appOrigin) return error(403, "invalid_origin", "Request origin is not allowed.");
     try {
       const raw = await request.text();
       if (raw.length > 16_000) return error(413, "payload_too_large", "Reply request is too large.");
