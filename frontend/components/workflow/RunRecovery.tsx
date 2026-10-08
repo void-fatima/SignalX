@@ -24,7 +24,7 @@ export default function RunRecovery({ run, onRecovered }: { run: Run; onRecovere
     } catch (reason) {
       // Transport errors and server errors may follow a committed enqueue.
       // Keep the same key until an authoritative acknowledgement arrives.
-      if (reason instanceof ApiError && reason.status >= 400 && reason.status < 500 && reason.status !== 409) { clearIntent(slot); if (active.current) setIntent(null); }
+      if (reason instanceof ApiError && reason.code !== "unreadable_response" && reason.status >= 400 && reason.status < 500 && reason.status !== 409) { clearIntent(slot); if (active.current) setIntent(null); }
       if (active.current) setError(reason instanceof Error ? reason.message : "Analysis retry could not be confirmed.");
     } finally { locked.current = false; if (active.current) setBusy(false); }
   }
