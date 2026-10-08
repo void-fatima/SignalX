@@ -4,6 +4,12 @@ import type { components } from "./generated/failure-api";
 export type TelegramLead = components["schemas"]["TelegramLeadOut"];
 export type TelegramMessage = components["schemas"]["TelegramMessage"];
 export type TelegramEvidence = components["schemas"]["Evidence"];
+export function hasDeliveryRecovery(delivery: TelegramLead["delivery"]) {
+  return "approved_text" in delivery && "failure_http_status" in delivery && "retry_after_at" in delivery
+    && (delivery.approved_text === null || typeof delivery.approved_text === "string")
+    && (delivery.failure_http_status === null || (Number.isInteger(delivery.failure_http_status) && delivery.failure_http_status! >= 100 && delivery.failure_http_status! <= 599))
+    && (delivery.retry_after_at === null || (typeof delivery.retry_after_at === "string" && Number.isFinite(Date.parse(delivery.retry_after_at))));
+}
 // Use the same cookie-authenticated backend origin as products and sessions.
 export const telegramApi = {
   leads: (offset = 0) => request<Page<TelegramLead>>(`/integrations/telegram/leads?limit=20&offset=${offset}`),

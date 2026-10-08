@@ -5,7 +5,7 @@ import { useWorkspaceProducts } from "@/components/useWorkspaceProducts";
 import { useReviewSession } from "@/components/leads/ReviewSession";
 import { ApiError } from "@/lib/api";
 import { clearIntent, intentSlot, readIntent, saveIntent, type RecoveryIntent } from "@/lib/recovery-intent";
-import { telegramApi, verifyTelegramLead, type TelegramLead } from "@/lib/telegram";
+import { telegramApi, verifyTelegramLead, hasDeliveryRecovery, type TelegramLead } from "@/lib/telegram";
 
 export function useTelegramReview(id: string) {
   const { user, demo } = useWorkspace(), scope = demo ? "demo" : user?.id || "guest";
@@ -49,7 +49,7 @@ export function useTelegramReview(id: string) {
   useEffect(() => { if (!cooldown) return; const timer = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(timer); }, [cooldown]);
   function edit(text: string | null) { setTelegramDrafts(previous => ({ ...previous, [id]: { ...draft, editingText: text } })); }
   function save() { if (draft.editingText?.trim() && Array.from(draft.editingText).length <= 4000) setTelegramDrafts(previous => ({ ...previous, [id]: { text: draft.editingText!, editingText: null } })); }
-  const recoveryContract = !!lead && "approved_text" in lead.delivery && "failure_http_status" in lead.delivery && "retry_after_at" in lead.delivery;
+  const recoveryContract = !!lead && hasDeliveryRecovery(lead.delivery);
   const definiteFailure = recoveryContract && lead?.delivery.status === "failed" && lead.delivery.delivery_uncertain === false;
   const blocked = demo || !user || !lead || !!error || loading || busy !== null || !!lead.delivery.draft_busy || lead.delivery.status === "sent" || lead.delivery.status === "sending" || !!lead.delivery.delivery_uncertain || legacyBlocked;
   const unavailable = blocked || !!intent || cooldown || (lead?.delivery.status === "failed" && !definiteFailure);
@@ -67,7 +67,7 @@ export function useTelegramReview(id: string) {
       setLead(value);
       // A 200 is an HTTP acknowledgement, not proof that sending finished.
       // Preserve approved bytes/key through sending, uncertainty and not_sent.
-      if (value.delivery.status === "sent" || (value.delivery.status === "failed" && value.delivery.delivery_uncertain === false && "approved_text" in value.delivery && "failure_http_status" in value.delivery && "retry_after_at" in value.delivery)) {
+      if (value.delivery.status === "sent" || (value.delivery.status === "failed" && value.delivery.delivery_uncertain === false && hasDeliveryRecovery(value.delivery) && value.delivery.approved_text === next.text)) {
         clearIntent(slot); setIntent(null);
         setTelegramDrafts(previous => ({ ...previous, [id]: { text: next.text!, editingText: null } }));
       }
