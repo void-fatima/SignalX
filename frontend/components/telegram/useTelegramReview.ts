@@ -5,7 +5,7 @@ import { useWorkspaceProducts } from "@/components/useWorkspaceProducts";
 import { useReviewSession } from "@/components/leads/ReviewSession";
 import { ApiError } from "@/lib/api";
 import { clearIntent, intentSlot, readIntent, saveIntent, type RecoveryIntent } from "@/lib/recovery-intent";
-import { telegramApi, verifyTelegramLead, type TelegramLead } from "@/lib/telegram";
+import { telegramApi, verifyTelegramLead, hasDeliveryRecovery, type TelegramLead } from "@/lib/telegram";
 
 export function useTelegramReview(id: string) {
   const { user, demo } = useWorkspace(), scope = demo ? "demo" : user?.id || "guest";
@@ -23,7 +23,8 @@ export function useTelegramReview(id: string) {
     setSnapshot({ lead: value, scope });
     if (value.delivery.status === "sent") { clearIntent(slot); setIntent(null); setLegacyBlocked(false); try { sessionStorage.removeItem(legacySlot); } catch { /* Sent is authoritative. */ } }
   }
-  const draft = telegramDrafts[id] || { text: lead?.delivery.approved_text ?? lead?.analysis.suggested_reply ?? "", editingText: null };
+  const draft = intent && typeof intent.text === "string" ? { text: intent.text, editingText: null }
+    : telegramDrafts[id] || { text: lead?.delivery.approved_text ?? lead?.analysis.suggested_reply ?? "", editingText: null };
   useEffect(() => { if (lead && products.some(product => product.id === lead.product_id)) setSelectedProductId(lead.product_id); }, [lead, products, setSelectedProductId]);
   async function refresh() {
     if (demo) { setError("Telegram actions require a connected workspace. Exit demo and sign in."); return; }
@@ -48,7 +49,7 @@ export function useTelegramReview(id: string) {
   useEffect(() => { if (!cooldown) return; const timer = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(timer); }, [cooldown]);
   function edit(text: string | null) { setTelegramDrafts(previous => ({ ...previous, [id]: { ...draft, editingText: text } })); }
   function save() { if (draft.editingText?.trim() && Array.from(draft.editingText).length <= 4000) setTelegramDrafts(previous => ({ ...previous, [id]: { text: draft.editingText!, editingText: null } })); }
-  const recoveryContract = !!lead && "approved_text" in lead.delivery && "failure_http_status" in lead.delivery && "retry_after_at" in lead.delivery;
+  const recoveryContract = !!lead && hasDeliveryRecovery(lead.delivery);
   const definiteFailure = recoveryContract && lead?.delivery.status === "failed" && lead.delivery.delivery_uncertain === false;
   const blocked = demo || !user || !lead || !!error || loading || busy !== null || !!lead.delivery.draft_busy || lead.delivery.status === "sent" || lead.delivery.status === "sending" || !!lead.delivery.delivery_uncertain || legacyBlocked;
   const unavailable = blocked || !!intent || cooldown || (lead?.delivery.status === "failed" && !definiteFailure);
@@ -63,7 +64,13 @@ export function useTelegramReview(id: string) {
       saveIntent(slot, next); setIntent(next);
       const value = verifyTelegramLead(await telegramApi.reply(id, next.text, next.key), id);
       if (!current()) return;
-      setLead(value); clearIntent(slot); setIntent(null);
+      setLead(value);
+      // A 200 is an HTTP acknowledgement, not proof that sending finished.
+      // Preserve approved bytes/key through sending, uncertainty and not_sent.
+      if (value.delivery.status === "sent" || (value.delivery.status === "failed" && value.delivery.delivery_uncertain === false && hasDeliveryRecovery(value.delivery) && value.delivery.approved_text === next.text)) {
+        clearIntent(slot); setIntent(null);
+        setTelegramDrafts(previous => ({ ...previous, [id]: { text: next.text!, editingText: null } }));
+      }
       if (value.delivery.status !== "sent") await refresh();
     } catch (reason) {
       if (current()) { setActionError(reason instanceof Error ? reason.message : "Delivery could not be confirmed."); await refresh(); }

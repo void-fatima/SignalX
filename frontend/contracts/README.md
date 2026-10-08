@@ -1,36 +1,54 @@
 # Frontend contract sources
 
-`failure-handling.openapi.json` is an unchanged snapshot of
-`feat/failure-handling` at `96b7fa01da8dbadc1ba1af406938a218d7d351d2`.
-Run `npm.cmd run generate:handoff` from `frontend` to regenerate
-`lib/generated/failure-api.d.ts`. Do not hand-edit generated declarations.
+## Active unified contract
 
-The repository's `contracts/openapi.json` remains the source of
-`lib/generated/api.d.ts` (`npm.cmd run generate:api`). It describes the backend
-already integrated on main, including response review, feedback and analytics.
-The handoff adds run retries, failure categories, source metadata and delivery
-recovery; it does not include main's response/feedback/analytics endpoints.
-`lib/api.ts` is an explicit compatibility adapter over these two generated
-sources. Absent source/attempt metadata stays unavailable; it is not fabricated.
+All active API and Telegram client types now come from `contracts/openapi.json`
+through `lib/generated/api.d.ts`. The verified backend is
+`feature/backend-failure-recovery@072a4dc72cb634b8c1e86d0ba73a50be501c8f09`, merged
+by PR #7 into `origin/main@7629e1b59337c87e3b98875ad2a87ac45c4fe1ee`.
+Its backend tree is unchanged by this frontend work. It includes analysis retry,
+failure categories, server attempts, approved Telegram text and recovery metadata,
+while retaining response, feedback and analytics endpoints.
 
-This snapshot does not install or merge a backend. Main and the handoff diverge
-after `bea8e58af1bccf889698c9a4b6cf24852f279d18`, with incompatible migration
-histories and different ownership/auth implementations. Backend reconciliation
-belongs to Roham. A unified backend contract must be exported and these clients
-regenerated when that work is integrated. Do not overwrite root OpenAPI with the
-handoff snapshot: doing so would discard documented main endpoints.
+Regenerate from repository root with the backend Python and
+`scripts/export_openapi.py`, then run `npm.cmd run generate:api` from `frontend`.
+The export normalizes the Python-dependent HTTP 422 description. Runtime/export
+and generated-type equality were checked. Do not hand-edit generated declarations.
 
-All active browser clients use `NEXT_PUBLIC_API_URL` and `credentials: include`.
-No session token is stored by frontend JavaScript. The handoff cookie name is
-`signalx_session`; main's current cookie is `singnalx_session`. The retained
-same-origin Telegram proxy is a legacy server adapter. If explicitly used with
-the handoff, configure its `BACKEND_SESSION_COOKIE` to the appropriate cookie
-name; the active browser client no longer depends on that bridge. The proxy
-forwards an incoming Idempotency-Key unchanged.
+Generic LeadDetail does not declare a source discriminator in the unified schema.
+The client keeps optional legacy source metadata without fabricating it. The
+separate Telegram endpoint explicitly identifies its source. Nullable attempt or
+recovery metadata stays unavailable; no default attempt is invented.
 
-Actual CORS, trusted Origin, cookie Secure/SameSite and HTTPS settings must match
-the chosen frontend/backend hosts. This work does not change deployment settings.
-Recovery against a backend missing the handoff endpoints reports an error.
-Telegram recovery additionally requires the new delivery metadata before an
-unconfirmed request can be replayed. There is no fallback to demo, no automatic
-retry, and no browser call to Telegram Bot API.
+## Archived handoff
+
+`failure-handling.openapi.json` remains an unchanged historical snapshot of
+`feat/failure-handling@96b7fa01da8dbadc1ba1af406938a218d7d351d2`.
+`npm.cmd run generate:handoff` reproduces `lib/generated/failure-api.d.ts`, which
+is retained for historical comparison and is no longer imported by active clients.
+That older branch lacked main's response/feedback/analytics endpoints and had a
+different migration/ownership history. Never overwrite the unified export with it.
+The final backend uses mainline migration 0007; the old handoff migration 0004 was
+not imported.
+
+## Sessions and delivery
+
+Browser clients use `NEXT_PUBLIC_API_URL` and `credentials: include`. JavaScript
+stores no session token. Main's HttpOnly cookie is `singnalx_session`; the archived
+handoff used `signalx_session`. The retained same-origin Telegram proxy is a
+legacy server adapter. Configure `BACKEND_SESSION_COOKIE` if deliberately using
+that adapter with a different cookie name. It forwards Idempotency-Key unchanged.
+
+Only validated `delivery.status === "sent"` displays Sent. Sending and uncertainty
+block new delivery. Pending scoped sessionStorage intents retain the exact approved
+text and key. Explicit checks replay that key; definitive acknowledgement permits
+another deliberate retry with a fresh key. Failed acknowledgements must contain
+valid recovery metadata and the matching approved text before clearing an intent.
+Cooldown expiry only enables a control. Reconciliation remains an operator action,
+without a new automatic endpoint. No browser calls Telegram's Bot API directly.
+
+See [the final Failure Handling audit](../../docs/frontend-failure-final-audit.md)
+for connected local HTTP tests and release limitations. Browser acceptance tests
+use actual FastAPI routes with isolated SQLite and controlled provider/Telegram
+transports. Production PostgreSQL, HTTPS, CORS/Origin/cookie configuration and live
+worker/deployment checks remain separate release gates.

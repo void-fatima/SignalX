@@ -1,11 +1,12 @@
 import type { components } from "./generated/api";
-import type { components as handoff } from "./generated/failure-api";
 export type Product = components["schemas"]["ProductOut"];
 export type ProductInput = components["schemas"]["ProductInput"];
 export type ImportResult = components["schemas"]["ImportOut"];
-export type Run = components["schemas"]["RunOut"] & Partial<Pick<handoff["schemas"]["RunOut"], "attempt_no">>;
-export type Analysis = handoff["schemas"]["AnalysisOut"];
-export type LeadDetail = Omit<handoff["schemas"]["LeadDetail"], "source"> & { source?: "csv" | "telegram" } & Pick<components["schemas"]["LeadDetail"], "response_draft" | "feedback">;
+export type Run = components["schemas"]["RunOut"];
+export type Analysis = components["schemas"]["AnalysisOut"];
+// The unified generic detail does not declare source. Preserve optional legacy
+// source metadata; Telegram's dedicated endpoint declares its source explicitly.
+export type LeadDetail = components["schemas"]["LeadDetail"] & { source?: "csv" | "telegram" };
 export type ResponseDraft = components["schemas"]["ResponseDraft"];
 export type ResponsePatch = components["schemas"]["ResponsePatch"];
 export type FeedbackInput = components["schemas"]["FeedbackInput"];

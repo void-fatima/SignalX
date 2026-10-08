@@ -59,3 +59,69 @@ test("an omitted estimated cost remains unavailable", async ({ page }) => {
   await expect(page.getByLabel("Provider usage")).toContainText("Cost unavailable");
   await expect(page.getByLabel("Provider usage")).not.toContainText("undefined");
 });
+
+for (const outcome of ["sent", "failed", "sending", "uncertain", "not_sent", "unknown", "contradictory"] as const) test(`HTTP 200 delivery ${outcome} requires documented state and preserves approved text`, async ({ page }) => {
+  const approved = "  Exact edited reply\nwith preserved whitespace  ";
+  const initial: TelegramLead = { ...draft, delivery: { ...draft.delivery, approved_text: null, failure_http_status: null, retry_after_at: null } };
+  await mockTelegram(page, initial);
+  const keys: string[] = [], texts: string[] = [];
+  let current = initial;
+  await page.route("**/leads/*/telegram", route => route.fulfill({ json: current }));
+  await page.route("**/telegram/reply", route => {
+    keys.push(route.request().headers()["idempotency-key"]); texts.push(route.request().postDataJSON().text);
+    const status = outcome === "uncertain" ? "failed" : outcome === "contradictory" ? "sent" : outcome;
+    const result = { ...initial, delivery: { ...initial.delivery, status, approved_text: approved, delivery_uncertain: outcome === "uncertain" || outcome === "contradictory", telegram_message_id: status === "sent" ? 91 : null } };
+    // Invalid acknowledgements must retain the last verified state and intent.
+    if (outcome !== "unknown" && outcome !== "contradictory") current = result as TelegramLead;
+    return route.fulfill({ json: result });
+  });
+  await page.goto(`/leads/${lead.id}?source=telegram`);
+  await page.getByRole("button", { name: "Edit reply", exact: true }).click();
+  await page.getByLabel("Reply draft", { exact: true }).fill(approved);
+  await page.getByRole("button", { name: "Save reply", exact: true }).click();
+  await page.getByRole("button", { name: "Approve & Reply", exact: true }).click();
+  const label = outcome === "sent" ? "Sent" : outcome === "failed" ? "Failed" : outcome === "sending" ? "Sending" : "Delivery uncertain";
+  await expect(page.locator(".telegram-delivery-label")).toHaveText(label);
+  const slot = `signalx:intent:telegram:owner:${lead.id}`;
+  const intent = await page.evaluate(slot => JSON.parse(sessionStorage.getItem(slot) || "null"), slot);
+  if (outcome === "sent" || outcome === "failed") expect(intent).toBeNull();
+  else { expect(intent.key).toBe(keys[0]); expect(intent.text).toBe(approved); }
+  await page.reload();
+  await expect(page.locator(".telegram-reply-text")).toHaveText(approved);
+  await expect(page.locator(".telegram-delivery-label")).toHaveText(label);
+  expect(texts).toEqual([approved]);
+  if (outcome === "not_sent" || outcome === "unknown" || outcome === "contradictory") {
+    await expect(page.getByRole("button", { name: "Approve & Reply", exact: true })).toBeDisabled();
+    await page.getByRole("button", { name: "Check send request" }).click();
+    await expect.poll(() => keys.length).toBe(2);
+    expect(keys[1]).toBe(keys[0]); expect(texts[1]).toBe(approved);
+  }
+  if (outcome === "sending" || outcome === "uncertain") await expect(page.getByRole("button", { name: "Check send request" })).toBeDisabled();
+  if (outcome === "failed") await expect(page.getByRole("button", { name: "Approve & Retry" })).toBeEnabled();
+});
+
+test("unknown delivery response fails closed instead of allowing a new send", async ({ page }) => {
+  let sends = 0;
+  await mockTelegram(page, { ...draft, delivery: { ...draft.delivery, status: "unexpected" } } as unknown as TelegramLead);
+  await page.route("**/telegram/reply", route => { sends++; return route.fulfill({ json: draft }); });
+  await page.goto(`/leads/${lead.id}?source=telegram`);
+  await expect(page.locator(".workflow-error[role=alert]")).toContainText("delivery state could not be verified");
+  await expect(page.getByRole("button", { name: "Approve & Reply", exact: true })).toHaveCount(0);
+  expect(sends).toBe(0);
+});
+
+test("a failed acknowledgement with another approved text retains the original request", async ({ page }) => {
+  const initial: TelegramLead = { ...draft, delivery: { ...draft.delivery, approved_text: null, failure_http_status: null, retry_after_at: null } };
+  const other: TelegramLead = { ...failed, delivery: { ...failed.delivery, approved_text: "Different request text" } };
+  await mockTelegram(page, initial);
+  let submitted = false;
+  await page.route("**/leads/*/telegram", route => route.fulfill({ json: submitted ? other : initial }));
+  await page.route("**/telegram/reply", route => { submitted = true; return route.fulfill({ json: other }); });
+  await page.goto(`/leads/${lead.id}?source=telegram`);
+  await page.getByRole("button", { name: "Approve & Reply", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Check send request" })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Approve & Retry" })).toBeDisabled();
+  await page.reload();
+  await expect(page.locator(".telegram-reply-text")).toHaveText("Exact approved reply");
+  expect(await page.evaluate(id => JSON.parse(sessionStorage.getItem(`signalx:intent:telegram:owner:${id}`)!).text, lead.id)).toBe("Exact approved reply");
+});

@@ -17,7 +17,7 @@ export default function LeadQueue({ items, details, selected, onSelect, demo, lo
       return <section key={decision || "other"} aria-label={decision || "Unqualified results"}><div className="queue-group-title"><span>{decision === "respond" ? "Ready to respond" : decision === "review" ? "Needs review" : decision === "ignore" ? "Screened out" : group.every(item => item.status === "failed") ? "Analysis failed" : "Other results"}</span><i/></div>
         {(decision === "review" && !expanded ? group.slice(0, Math.max(2, group.findIndex(item => item.id === selected) + 1)) : group).map(item => {
           const detail = details[item.id], author = detail?.message.author || "Source unavailable";
-          const preview = detail?.message.content || item.reason;
+          const preview = detail?.message.content || (item.status === "failed" ? "Analysis failed. Source details unavailable." : item.reason);
           return <button type="button" key={item.id} className={`queue-row ${selected === item.id ? "is-selected" : ""}`} aria-pressed={selected === item.id} onClick={() => onSelect(item.id)}>
             <Avatar name={author} index={demo ? Number(item.id.split("-").at(-1)) - 1 : items.indexOf(item)}/>
             <span className="queue-row-content"><span className="queue-row-top"><strong><bdi>{author}</bdi></strong><b>{item.status === "failed" ? "\u2014" : item.lead_score ?? "\u2014"}</b><DecisionBadge analysis={item} compact/></span>
