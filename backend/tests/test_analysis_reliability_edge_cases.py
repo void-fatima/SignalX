@@ -1,17 +1,20 @@
 """Offline regressions for missing safeguards from the original failure handling."""
 from contextlib import closing
+import hashlib
 import sqlite3
 from types import SimpleNamespace
 
 import pytest
+from fastapi.testclient import TestClient
 from sqlalchemy import func, select
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, OperationalError
 
 from app.agents.contracts import RunConfig
 from app.agents.providers.base import ProviderError
 from app.core.config import settings
 from app.core.errors import AppError
-from app.models import AnalysisRun, ImportBatch, Message, Product, User, utcnow
+from app.main import app
+from app.models import Analysis, AnalysisRun, ImportBatch, Message, Product, Usage, User, utcnow
 from app.schemas.api import ProductOut, RunInput
 from app.services import analysis_service as service
 
@@ -218,3 +221,123 @@ def test_existing_run_replay_keeps_id_even_when_provider_config_is_unavailable(c
     response = client.post("/api/v1/analysis/runs", json=sources.payload.model_dump(mode="json"),
                            headers={"Idempotency-Key": "existing-run-key"})
     assert response.status_code == 202 and response.json()["id"] == run_id
+
+
+@pytest.mark.parametrize("field,value", [
+    ("product_snapshot", {"invalid": PRIVATE_MARKER}),
+    ("product_snapshot", None), ("product_snapshot", [PRIVATE_MARKER]),
+    ("config_snapshot", {"context_max_chars": PRIVATE_MARKER}),
+    ("config_snapshot", None), ("config_snapshot", [PRIVATE_MARKER]),
+])
+def test_malformed_snapshot_records_safe_visible_failures_without_provider(factory, sources, monkeypatch, field, value):
+    with factory() as session:
+        run_id = make_run(session, sources, "bad-snapshot")
+        setattr(session.get(AnalysisRun, run_id), field, value)
+        session.commit()
+    monkeypatch.setattr(service, "get_provider", lambda _: pytest.fail("Malformed snapshots must not reach a provider"))
+    assert service.process_one(factory)
+    assert service.process_one(factory) is False
+    with factory() as session:
+        run = session.get(AnalysisRun, run_id)
+        rows = session.scalars(select(Analysis).where(Analysis.run_id == run_id)).all()
+        assert run.status == "failed" and run.processed_count == run.failed_count == run.total_count == 2
+        assert len(rows) == 2 and all(row.failure_category == "internal_analysis_failure" for row in rows)
+        assert all(row.status == "failed" and row.lead_score is None and row.decision is None for row in rows)
+        assert PRIVATE_MARKER not in run.error and all(PRIVATE_MARKER not in row.reason for row in rows)
+        assert session.scalar(select(func.count()).select_from(Message)) == 2
+        assert session.scalar(select(func.count()).select_from(Usage)) == 0
+
+
+def test_factory_failure_preserves_saved_sources_and_never_selects_another_provider(factory, sources, monkeypatch):
+    with factory() as session:
+        run_id = make_run(session, sources, "worker-provider-failure")
+        session.get(AnalysisRun, run_id).config_snapshot = RunConfig(provider_mode="real").model_dump()
+        session.commit()
+    calls = []
+    def unavailable(mode):
+        calls.append(mode)
+        raise ProviderError(PRIVATE_MARKER, [])
+    monkeypatch.setattr(service, "get_provider", unavailable)
+    assert service.process_one(factory)
+    with factory() as session:
+        assert session.get(AnalysisRun, run_id).status == "failed"
+        rows = session.scalars(select(Analysis).where(Analysis.run_id == run_id)).all()
+        assert len(rows) == 2 and all(row.provider_mode == "real" and row.failure_category == "provider_failure" for row in rows)
+        assert all(PRIVATE_MARKER not in row.reason for row in rows)
+        assert session.scalar(select(func.count()).select_from(Message)) == 2
+        assert session.scalar(select(func.count()).select_from(Usage)) == 0
+    assert calls == ["real"]
+
+
+def test_replayed_retry_key_never_requeues_a_later_failure_and_stays_private(client, factory, sources):
+    with factory() as session:
+        run_id = make_run(session, sources, "retry-replay")
+        session.get(AnalysisRun, run_id).status = "failed"
+        session.commit()
+    path = f"/api/v1/analysis/runs/{run_id}/retry"
+    headers = {"Idempotency-Key": "manual-retry"}
+    assert client.post(path, headers=headers).json()["attempt_no"] == 2
+    with factory() as session:
+        session.get(AnalysisRun, run_id).status = "failed"
+        session.commit()
+    replay = client.post(path, headers=headers)
+    assert replay.status_code == 202 and replay.json()["status"] == "failed"
+    assert replay.json()["attempt_no"] == 2
+    with TestClient(app) as other:
+        assert other.post(path, headers=headers).status_code == 401
+        credentials = {"email": "retry-other@example.test", "password": "offline-test-password"}
+        assert other.post("/api/v1/auth/register", json=credentials).status_code == 201
+        assert other.post("/api/v1/auth/login", json=credentials).status_code == 200
+        assert other.post(path, headers=headers).status_code == 404
+    with factory() as session:
+        run = session.get(AnalysisRun, run_id)
+        assert run.attempt_no == 2 and len(run.retry_history) == 1
+        assert run.retry_history[0]["key_hash"] == hashlib.sha256(b"manual-retry").hexdigest()
+
+
+def test_stale_competing_retry_is_rejected_without_overwriting_history(factory, sources):
+    with factory() as session:
+        run_id = make_run(session, sources, "stale-retry")
+        session.get(AnalysisRun, run_id).status = "failed"
+        session.commit()
+    with factory() as first, factory() as stale:
+        stale_run = stale.get(AnalysisRun, run_id)  # Keep the stale ORM snapshot alive.
+        assert service.retry_run(first, run_id, sources.owner, "first-intent").attempt_no == 2
+        with pytest.raises(AppError) as caught:
+            service.retry_run(stale, run_id, sources.owner, "second-intent")
+        assert caught.value.status == 409 and caught.value.code == "retry_conflict"
+        assert stale_run.id == run_id
+    with factory() as session:
+        run = session.get(AnalysisRun, run_id)
+        assert run.attempt_no == 2 and run.status == "queued" and len(run.retry_history) == 1
+
+
+@pytest.mark.parametrize("failure_stage", ["processing", "recovery"])
+def test_worker_database_outage_pauses_with_sanitized_log(monkeypatch, caplog, failure_stage):
+    from app import worker
+    class StopWorker(Exception):
+        pass
+    class OfflineSession:
+        def __enter__(self):
+            return self
+        def __exit__(self, *args):
+            pass
+        def commit(self):
+            pass
+    calls = []
+    def unavailable(*args, **kwargs):
+        calls.append(failure_stage)
+        raise OperationalError(PRIVATE_MARKER, {}, RuntimeError(PRIVATE_MARKER))
+    def stop(_delay):
+        calls.append("pause")
+        raise StopWorker()
+    monkeypatch.setattr(worker, "SessionLocal", OfflineSession)
+    monkeypatch.setattr(worker, "cleanup_stale_sessions", lambda *_: 0)
+    monkeypatch.setattr(worker, "get_provider", lambda _: None)
+    monkeypatch.setattr(worker, "process_one", unavailable if failure_stage == "processing" else lambda *args, **kwargs: False)
+    monkeypatch.setattr(worker, "recover_interrupted", unavailable if failure_stage == "recovery" else lambda *_: None)
+    monkeypatch.setattr(worker.time, "sleep", stop)
+    with pytest.raises(StopWorker):
+        worker.main()
+    assert calls == [failure_stage, "pause"]
+    assert "database unavailable" in caplog.text and PRIVATE_MARKER not in caplog.text
