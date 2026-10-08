@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { api, type Product } from "@/lib/api";
+import { allProducts, api, type Product } from "@/lib/api";
 import { demoProduct, starterProduct, toDraft, toProductInput, validateProduct, type ProductDraft, type ProductErrors } from "@/lib/product-profile";
 import { useWorkspace } from "../WorkspaceContext";
 export function useProductEditor() {
@@ -18,12 +18,13 @@ export function useProductEditor() {
     let cancelled = false;
     setLoading(true); setBusy(false); setError(""); setNotice(""); setErrors({}); setTotal(null);
     setProducts([]); setSelectedProductId(""); selection.current = null;
-    const load = demo ? Promise.resolve({ items: [structuredClone(demoProduct)], total: 1 }) : api.products();
+    const load = demo ? Promise.resolve({ items: [structuredClone(demoProduct)], total: 1 }) : allProducts();
     load.then(page => {
       if (cancelled || version.current !== current) return;
       const stored = demo ? "" : localStorage.getItem("product_id");
       const product = page.items.find(item => item.id === stored) || page.items[0];
       const initial = toDraft(product || starterProduct);
+      if (stored && !page.items.some(item => item.id === stored)) { localStorage.removeItem("product_id"); setNotice("The saved profile is unavailable. Choose one of your current profiles."); }
       setProducts(page.items); setTotal(page.total); setSelectedProductId(product?.id || "");
       selection.current = product?.id || ""; setDraft(initial); setBaseline(initial);
     }).catch(reason => { if (!cancelled) setError(reason instanceof Error ? reason.message : "Could not load products."); })

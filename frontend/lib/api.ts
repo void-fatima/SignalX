@@ -16,10 +16,25 @@ export class ApiError extends Error {
 const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 export async function request<T>(path: string, options: RequestInit = {}, endpoint = base): Promise<T> {
   const response = await fetch(`${endpoint}${path}`, { ...options, credentials: "include", cache: "no-store" });
+  if (response.status === 401 && !path.startsWith("/auth/") && typeof window !== "undefined") window.dispatchEvent(new Event("signalx:session-expired"));
   if (response.status === 204) return undefined as T;
   const body = await response.json().catch(() => { throw new ApiError(`The server returned an unreadable response (${response.status}).`, [], response.status, "unreadable_response"); });
   if (!response.ok) throw new ApiError(body.error?.message || `Request failed (${response.status})`, body.error?.details || [], response.status, body.error?.code || "");
   return body as T;
+}
+export async function allProducts(): Promise<Page<Product>> {
+  const items: Product[] = [];
+  let offset = 0;
+  for (;;) {
+    const page = await api.products(offset);
+    if (!Array.isArray(page.items)) throw new Error("Product list could not be read.");
+    const fresh = page.items.filter(item => !items.some(existing => existing.id === item.id));
+    items.push(...fresh);
+    const total = page.total ?? items.length;
+    if (items.length >= total) return { items, total, offset: 0, limit: items.length };
+    if (!fresh.length || !page.items.length) throw new Error("Product pagination did not advance. Retry loading your profiles.");
+    offset += page.items.length;
+  }
 }
 export const api = {
   login: (body: Credentials) => request<CurrentUser | SessionGrant>("/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }),
