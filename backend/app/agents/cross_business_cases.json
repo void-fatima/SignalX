@@ -1,0 +1,39 @@
+{
+  "products": [
+    {
+      "id": "python_course",
+      "name": "Python Starter Course",
+      "description": "Beginner-friendly Python programming course with practical exercises.",
+      "target_customer": "People with little or no programming experience who want to learn Python."
+    },
+    {
+      "id": "veterinary_clinic",
+      "name": "PawCare Veterinary Clinic",
+      "description": "Veterinary clinic providing consultations, diagnostics and orthopedic treatment for dogs and cats.",
+      "target_customer": "Pet owners seeking veterinary care for their dogs or cats."
+    },
+    {
+      "id": "accounting_saas",
+      "name": "LedgerFlow",
+      "description": "Cloud accounting and invoicing software for small and medium businesses, including expense tracking, invoices and financial reporting.",
+      "target_customer": "Small-business owners and finance teams looking for accounting software."
+    }
+  ],
+  "messages": [
+    {
+      "id": "message_1",
+      "content": "من تازه می‌خوام پایتون یاد بگیرم و دنبال یه دوره مناسب مبتدی‌ها هستم.\nقیمت دوره چقدره؟",
+      "expected_business_id": "python_course"
+    },
+    {
+      "id": "message_2",
+      "content": "سگم مشکل زانو پیدا کرده و دامپزشک گفته شاید نیاز به عمل داشته باشه.\nهزینه معاینه و جراحی حدوداً چقدره؟",
+      "expected_business_id": "veterinary_clinic"
+    },
+    {
+      "id": "message_3",
+      "content": "We're a 12-person company and need software for invoices, expenses and\nmonthly financial reports. Does your system support that and what does it cost?",
+      "expected_business_id": "accounting_saas"
+    }
+  ]
+}
