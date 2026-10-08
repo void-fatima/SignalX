@@ -5,7 +5,12 @@ export type ProductInput = components["schemas"]["ProductInput"];
 export type ImportResult = components["schemas"]["ImportOut"];
 export type Run = components["schemas"]["RunOut"] & Partial<Pick<handoff["schemas"]["RunOut"], "attempt_no">>;
 export type Analysis = handoff["schemas"]["AnalysisOut"];
-export type LeadDetail = Omit<handoff["schemas"]["LeadDetail"], "source"> & { source?: "csv" | "telegram" };
+export type LeadDetail = Omit<handoff["schemas"]["LeadDetail"], "source"> & { source?: "csv" | "telegram" } & Pick<components["schemas"]["LeadDetail"], "response_draft" | "feedback">;
+export type ResponseDraft = components["schemas"]["ResponseDraft"];
+export type ResponsePatch = components["schemas"]["ResponsePatch"];
+export type FeedbackInput = components["schemas"]["FeedbackInput"];
+export type FeedbackOut = components["schemas"]["FeedbackOut"];
+export type AnalyticsOverview = components["schemas"]["AnalyticsOverview"];
 export type Credentials = components["schemas"]["Credentials"];
 export type CurrentUser = components["schemas"]["CurrentUser"];
 export type SessionGrant = components["schemas"]["SessionGrant"];
@@ -49,5 +54,9 @@ export const api = {
   run: (id: string) => request<Run>(`/analysis/runs/${id}`),
   leads: (run: string, decision: string, offset: number, minScore: string, status = "") => request<Page<Analysis>>(`/leads?run_id=${encodeURIComponent(run)}&offset=${offset}${status === "failed" ? "&status=failed" : decision ? `&decision=${decision}` : ""}${status !== "failed" && minScore ? `&min_score=${minScore}` : ""}`),
   retryRun: (id: string, key: string) => request<Run>(`/analysis/runs/${encodeURIComponent(id)}/retry`, { method: "POST", headers: { "Idempotency-Key": key } }),
+  generateResponse: (id: string, regenerate = false) => request<ResponseDraft>(`/leads/${encodeURIComponent(id)}/response?regenerate=${regenerate}`, { method: "POST" }),
+  patchResponse: (id: string, body: ResponsePatch) => request<ResponseDraft>(`/leads/${encodeURIComponent(id)}/response`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }),
+  feedback: (id: string, body: FeedbackInput) => request<FeedbackOut>(`/leads/${encodeURIComponent(id)}/feedback`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }),
+  analytics: (id: string) => request<AnalyticsOverview>(`/analytics/overview?run_id=${encodeURIComponent(id)}`),
   lead: (id: string) => request<LeadDetail>(`/leads/${id}`),
 };
