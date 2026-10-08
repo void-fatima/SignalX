@@ -62,12 +62,17 @@ test("real product PATCH preserves typed lists, zero price and persistence feedb
 test("empty API results create a product only after successful POST", async ({ page }) => {
   let body: ProductInput | undefined;
   await page.route("**/api/v1/**", route => {
+    if (route.request().url().endsWith("/auth/me")) return route.fulfill({ json: { id: "user-1", email: "owner@example.test" } });
     if (route.request().method() === "POST") { body = route.request().postDataJSON(); return route.fulfill({ status: 201, json: { ...realProduct, ...body } }); }
     return route.fulfill({ json: { items: [], total: 0 } });
   });
   await page.goto("/products");
   await expect(page.getByText(/No saved products yet/)).toBeVisible();
   await expect(page.locator(".saved-count strong")).toHaveText("00");
+  await expect(page.getByLabel("Product name")).toHaveValue("");
+  await page.getByLabel("Product name").fill("New profile");
+  await page.getByLabel("Description", { exact: true }).fill("Profile description");
+  await page.getByLabel("Target customer").fill("Profile customer");
   await page.getByRole("button", { name: "Save product" }).click();
   await expect(page.getByRole("status")).toHaveText("Product saved.");
   expect(body?.price).toBeNull();
@@ -76,9 +81,10 @@ test("empty API results create a product only after successful POST", async ({ p
 
 test("failed saves keep unsaved edits and never report success", async ({ page }) => {
   await page.route("**/api/v1/**", async route => {
+    if (route.request().url().endsWith("/auth/me")) return route.fulfill({ json: { id: "user-1", email: "owner@example.test" } });
     if (route.request().method() === "PATCH") {
       await new Promise(resolve => setTimeout(resolve, 300));
-      return route.fulfill({ status: 401, json: { error: { message: "Session expired. Sign in again." } } });
+      return route.fulfill({ status: 503, json: { error: { message: "Save temporarily unavailable." } } });
     }
     return route.fulfill({ json: { items: [realProduct], total: 1 } });
   });
@@ -87,7 +93,7 @@ test("failed saves keep unsaved edits and never report success", async ({ page }
   await page.getByLabel("Product name").fill("Unsaved name");
   await page.getByRole("button", { name: "Save product" }).click();
   await expect(page.getByLabel("Product name")).toBeDisabled();
-  await expect(page.getByRole("alert").filter({ hasText: "Session expired" })).toBeVisible();
+  await expect(page.getByRole("alert").filter({ hasText: "Save temporarily unavailable" })).toBeVisible();
   await expect(page.getByLabel("Product name")).toHaveValue("Unsaved name");
   await expect(page.getByRole("button", { name: "Save product" })).toBeEnabled();
   await expect(page.locator(".product-save-state")).toHaveText("Changes not saved");
@@ -97,6 +103,7 @@ test("failed saves keep unsaved edits and never report success", async ({ page }
 test("loading and errors do not silently substitute a mock product", async ({ page }) => {
   let attempts = 0;
   await page.route("**/api/v1/**", async route => {
+    if (route.request().url().endsWith("/auth/me")) return route.fulfill({ json: { id: "user-1", email: "owner@example.test" } });
     if (!route.request().url().includes("/products")) return route.fulfill({ status: 401, json: { error: { message: "Sign in required" } } });
     attempts++;
     await new Promise(resolve => setTimeout(resolve, 300));
@@ -124,7 +131,7 @@ test("workspace search opens the existing filtered opportunity inbox", async ({ 
 
 test("saved product selection protects edits and offers a separate new draft", async ({ page }) => {
   const second = { ...realProduct, id: "a310f932-0000-4000-8000-000000000002", name: "Second product", description: "Another saved description" };
-  await page.route("**/api/v1/**", route => route.fulfill({ json: { items: [realProduct, second], total: 2 } }));
+  await page.route("**/api/v1/**", route => route.fulfill({ json: route.request().url().endsWith("/auth/me") ? { id: "user-1", email: "owner@example.test" } : { items: [realProduct, second], total: 2 } }));
   await page.goto("/products");
   const selector = page.getByLabel("Selected product");
   await expect(selector).toBeEnabled();

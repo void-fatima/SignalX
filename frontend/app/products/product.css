@@ -16,3 +16,9 @@
 
 .saved-product-row > span:first-child { flex: 1; }.saved-product-row button { padding-block: 0; font-size: 11px; }.product-field-currency input { text-transform: uppercase; }
 @media (min-width: 701px) { .workspace-products .sidebar { position: sticky; top: 0; height: 100dvh; overflow-y: auto; } }
+
+.product-details { padding: 24px; }
+.product-details dl > div { padding: 12px 0; border-bottom: 1px solid var(--border); }
+.product-details dt { color: var(--muted); }
+.product-details dd { margin: 8px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.saved-product-row { flex-wrap: wrap; }
