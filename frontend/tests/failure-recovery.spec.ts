@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import { demoAnalyses, demoDetails, demoRun } from "../lib/demo-inbox";
 const failed = { ...demoRun, id: "run-recovery", status: "partial", failed_count: 2, attempt_no: 1 };
 
-test("uncertain run retry reuses its key across reload and stops after acknowledgement", async ({ page }) => {
+for (const outcome of ["server error", "unreadable response"]) test(`uncertain run retry (${outcome}) reuses its key across reload`, async ({ page }) => {
   const keys: string[] = [];
   let recovered = false;
   await page.route("**/api/v1/**", route => {
@@ -11,7 +11,7 @@ test("uncertain run retry reuses its key across reload and stops after acknowled
     if (path.endsWith("/retry")) {
       keys.push(request.headers()["idempotency-key"]);
       expect(request.postData()).toBeNull();
-      if (keys.length === 1) return route.fulfill({ status: 502, json: { error: { message: "Retry acknowledgement lost" } } });
+      if (keys.length === 1) return outcome === "server error" ? route.fulfill({ status: 502, json: { error: { message: "Retry acknowledgement lost" } } }) : route.fulfill({ status: 422, contentType: "text/html", body: "<p>Unreadable gateway response</p>" });
       recovered = true; return route.fulfill({ status: 202, json: { ...failed, status: "queued", attempt_no: 2 } });
     }
     if (path.includes("/analysis/runs/")) return route.fulfill({ json: recovered ? { ...failed, status: "completed", failed_count: 0, attempt_no: 2 } : failed });
@@ -19,7 +19,7 @@ test("uncertain run retry reuses its key across reload and stops after acknowled
   });
   await page.goto("/runs/run-recovery");
   await page.getByRole("button", { name: "Retry failed analyses" }).click();
-  await expect(page.locator(".run-recovery [role=alert]")).toContainText("acknowledgement lost");
+  await expect(page.locator(".run-recovery [role=alert]")).toContainText(outcome === "server error" ? "acknowledgement lost" : "unreadable response");
   expect(keys).toHaveLength(1);
   await page.reload();
   await page.getByRole("button", { name: "Check retry request" }).click();

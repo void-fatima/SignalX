@@ -21,7 +21,7 @@ test("overview demo preserves mock mode and does not call the API", async ({ pag
 });
 
 test("connected overview uses API totals and never invents feedback", async ({ page }) => {
-  await page.addInitScript(() => localStorage.setItem("run_id", "run-1"));
+  await page.addInitScript(() => { localStorage.setItem("signalx:account", "owner"); localStorage.setItem("run_id", "run-1"); });
   await page.route("**/api/v1/**", route => {
     const url = new URL(route.request().url());
     if (url.pathname.endsWith("/analysis/runs/run-1")) return route.fulfill({ json: { ...demoRun, id: "run-1", processed_count: 15 } });
@@ -31,7 +31,7 @@ test("connected overview uses API totals and never invents feedback", async ({ p
   });
   await page.goto("/dashboard");
   await expect(page.locator(".overview-metric strong")).toHaveText(["15", "5", "—", "$0.00"]);
-  await expect(page.getByText("No persisted feedback available.")).toBeVisible();
+  await expect(page.getByText("Review a conversation to view its saved feedback.")).toBeVisible();
 });
 
 test("overview mobile reflows and exposes navigation and table actions", async ({ page }) => {

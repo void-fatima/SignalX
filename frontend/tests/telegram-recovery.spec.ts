@@ -52,3 +52,10 @@ test("uncertain delivery requires reconciliation even with a persisted intent", 
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: "test-results/telegram-uncertain-mobile.png", fullPage: true });
 });
+
+test("an omitted estimated cost remains unavailable", async ({ page }) => {
+  await mockTelegram(page, { ...draft, analysis: { ...draft.analysis, usage: [{ stage: "reply", attempt_no: 1, provider_mode: "real", cost_status: "known", outcome: "success" }] } });
+  await page.goto(`/leads/${lead.id}?source=telegram`);
+  await expect(page.getByLabel("Provider usage")).toContainText("Cost unavailable");
+  await expect(page.getByLabel("Provider usage")).not.toContainText("undefined");
+});

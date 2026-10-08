@@ -37,7 +37,8 @@ test("all owned profile pages support saved selection and keyboard details", asy
   await page.getByRole("button", { name: "View Second profile", exact: true }).focus();
   await page.keyboard.press("Enter");
   await expect(page.getByRole("dialog")).toContainText("0 USD");
-  await page.screenshot({ path: "test-results/profile-details-mobile.png", fullPage: true });
+  await expect(page.locator(".skip-link")).not.toBeInViewport();
+  await page.screenshot({ path: "test-results/profile-details-mobile.png" });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.keyboard.press("Escape");
   await expect(page.getByRole("button", { name: "View Second profile", exact: true })).toBeFocused();
@@ -53,4 +54,16 @@ test("account change clears saved run and profile before mounting new account", 
   await page.evaluate(() => window.dispatchEvent(new Event("focus")));
   await expect(page.getByLabel("Product name")).toHaveValue("second profile");
   expect(await page.evaluate(() => localStorage.getItem("run_id"))).toBeNull();
+});
+
+test("an unverified session cannot fetch private data", async ({ page }) => {
+  let privateReads = 0;
+  await page.route("**/api/v1/**", async route => {
+    if (route.request().url().endsWith("/auth/me")) { await new Promise(resolve => setTimeout(resolve, 300)); return route.fulfill({ status: 401, json: { error: { message: "Sign in required" } } }); }
+    privateReads++; return route.fulfill({ json: { items: [], total: 0 } });
+  });
+  await page.goto("/products");
+  await expect(page.getByText("Checking your session...")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Sign in to your workspace" })).toBeVisible();
+  expect(privateReads).toBe(0);
 });
