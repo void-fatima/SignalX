@@ -1,12 +1,14 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useWorkspace } from "@/components/WorkspaceContext";
+import { useWorkspaceProducts } from "@/components/useWorkspaceProducts";
 import { useReviewSession } from "@/components/leads/ReviewSession";
 import { ApiError } from "@/lib/api";
 import { telegramApi, verifyTelegramLead, type TelegramLead } from "@/lib/telegram";
 
 export function useTelegramReview(id: string) {
   const { user, demo } = useWorkspace(), scope = demo ? "demo" : user?.id || "guest";
+  const { products, setSelectedProductId } = useWorkspaceProducts();
   const { telegramDrafts, setTelegramDrafts } = useReviewSession();
   const [lead, setLead] = useState<TelegramLead | null>(null), [error, setError] = useState("");
   const [loading, setLoading] = useState(true), [busy, setBusy] = useState<"generate" | "send" | null>(null);
@@ -16,7 +18,11 @@ export function useTelegramReview(id: string) {
   const alive = useRef(false), lock = useRef(false), loadVersion = useRef(0);
   function current() { return alive.current && identity.current.id === id && identity.current.scope === scope; }
   const draft = telegramDrafts[id] || { text: lead?.analysis.suggested_reply || "", editingText: null };
+  useEffect(() => {
+    if (lead && products.some(product => product.id === lead.product_id)) setSelectedProductId(lead.product_id);
+  }, [lead, products, setSelectedProductId]);
   async function refresh() {
+    if (demo) { setError("Telegram actions require a connected workspace. Exit demo and sign in."); return; }
     const version = ++loadVersion.current;
     setLoading(true); setError("");
     try {
@@ -34,7 +40,6 @@ export function useTelegramReview(id: string) {
     else void refresh();
     return () => { alive.current = false; loadVersion.current++; };
     // Scope changes invalidate outstanding responses without crossing accounts.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, scope, demo]);
   function edit(text: string | null) { setTelegramDrafts(previous => ({ ...previous, [id]: { ...draft, editingText: text } })); }
   function save() {

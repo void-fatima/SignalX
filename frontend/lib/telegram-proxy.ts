@@ -35,6 +35,7 @@ export async function telegramProxy(request: NextRequest, path: string, operatio
       signal: AbortSignal.timeout(operation === "read" ? 30_000 : 120_000),
     });
     const body = await response.json();
+    if (response.status === 404 && !body.error) return error(503, "telegram_feature_unavailable", "Telegram endpoints are unavailable on this backend. The Telegram contract and authentication adapters must be integrated first.");
     return NextResponse.json(body, { status: response.status, headers: { "Cache-Control": "no-store" } });
   } catch {
     return error(502, "telegram_backend_unavailable", "Telegram backend could not be reached or returned an unreadable response.");
