@@ -1,6 +1,6 @@
 import { request, type Page } from "./api";
 
-import type { components } from "./generated/failure-api";
+import type { components } from "./generated/api";
 export type TelegramLead = components["schemas"]["TelegramLeadOut"];
 export type TelegramMessage = components["schemas"]["TelegramMessage"];
 export type TelegramEvidence = components["schemas"]["Evidence"];
