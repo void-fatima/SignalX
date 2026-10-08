@@ -1,4 +1,5 @@
 import hashlib
+import sqlite3
 from datetime import timedelta
 
 from sqlalchemy import func, select, update
@@ -100,6 +101,21 @@ def failure_details(exc):
     return "provider_failure", "The AI provider is unavailable or rejected the request. Check configuration and retry explicitly."
 
 
+def _is_run_key_conflict(exc: IntegrityError) -> bool:
+    """Recognize only the run's user-scoped unique key, never other constraints."""
+    original = exc.orig
+    if isinstance(original, sqlite3.IntegrityError):
+        return (
+            getattr(original, "sqlite_errorcode", None) == sqlite3.SQLITE_CONSTRAINT_UNIQUE
+            and str(original) == "UNIQUE constraint failed: analysis_runs.user_id, analysis_runs.idempotency_key"
+        )
+    return (
+        getattr(original, "sqlstate", None) == "23505"
+        and getattr(getattr(original, "diag", None), "constraint_name", None)
+        == "uq_runs_user_idempotency_key"
+    )
+
+
 def create_run(session, payload, key: str, user_id: str, *, commit: bool = True):
     if not key.strip() or len(key) > 200:
         raise AppError("invalid_idempotency_key", "Idempotency-Key must contain 1–200 characters")
@@ -118,7 +134,10 @@ def create_run(session, payload, key: str, user_id: str, *, commit: bool = True)
     ))
     if product is None or batch is None:
         raise AppError("not_found", "Product or batch does not exist", 404)
-    get_provider(settings().provider_mode)
+    try:
+        get_provider(settings().provider_mode)
+    except (ProviderError, ValueError):
+        raise AppError("provider_configuration_unavailable", "AI provider configuration is unavailable", 503) from None
     snapshot = ProductOut.model_validate(product).model_dump(mode="json", exclude={"created_at"})
     run = AnalysisRun(
         user_id=user_id,
@@ -137,9 +156,19 @@ def create_run(session, payload, key: str, user_id: str, *, commit: bool = True)
         return run
     try:
         session.commit()
-    except IntegrityError:
+    except IntegrityError as exc:
         session.rollback()
-        return create_run(session, payload, key, user_id)
+        if not _is_run_key_conflict(exc):
+            raise
+        # Resolve one unique-key race without another insert or recursive retry.
+        existing = session.scalar(select(AnalysisRun).where(
+            AnalysisRun.user_id == user_id, AnalysisRun.idempotency_key == key,
+        ))
+        if existing is None:
+            raise AppError("run_conflict", "Run could not be created; reload before trying again", 409) from None
+        if existing.product_id != str(payload.product_id) or existing.batch_id != str(payload.batch_id):
+            raise AppError("idempotency_conflict", "Key was used with a different payload", 409) from None
+        return existing
     return run
 
 
