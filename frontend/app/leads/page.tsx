@@ -14,6 +14,7 @@ import { useReviewSession } from "@/components/leads/ReviewSession";
 import useInbox from "@/components/leads/useInbox";
 import { demoMetadata } from "@/lib/demo-inbox";
 import { filterLeads } from "@/lib/lead-presentation";
+import TelegramInbox from "@/components/telegram/TelegramInbox";
 
 function Inbox() {
   const search = useSearchParams(), demo = search.get("demo") === "1";
@@ -64,4 +65,5 @@ function Inbox() {
     {detail && <SignalAnalysisDialog detail={detail} demo={demo} open={analysisOpen} onDismiss={dismissAnalysis}/>}
   </>;
 }
-export default function Leads() { return <Suspense fallback={<p className="loading-state" role="status">Loading workspace…</p>}><Inbox/></Suspense>; }
+function LeadSource() { const search = useSearchParams(); return search.get("source") === "telegram" ? <TelegramInbox/> : <><Link className="telegram-entry" href="/leads?source=telegram">Telegram opportunities ↗</Link><Inbox/></>; }
+export default function Leads() { return <Suspense fallback={<p className="loading-state" role="status">Loading workspace…</p>}><LeadSource/></Suspense>; }

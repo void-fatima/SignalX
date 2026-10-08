@@ -1,6 +1,8 @@
 "use client";
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import TelegramReview from "@/components/telegram/TelegramReview";
 import { useMessageDirection } from "@/components/PreferencesProvider";
 import Icon from "@/components/Icon";
 import Avatar from "@/components/leads/Avatar";
@@ -19,8 +21,12 @@ import "@/app/workflow.css";
 import "./review.css";
 
 export default function ReviewReply({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params), search = useSearchParams();
+  return search.get("source") === "telegram" ? <TelegramReview key={id} id={id}/> : <CsvReview id={id}/>;
+}
+function CsvReview({ id }: { id: string }) {
   const direction = useMessageDirection();
-  const { id } = use(params), { demo } = useWorkspaceProducts();
+  const { demo } = useWorkspaceProducts();
   const { detail, run, loading, error, runError, retry } = useLeadReview(id, demo);
   const { drafts, setDrafts } = useReviewSession();
   const [analysisOpen, setAnalysisOpen] = useState(false), [context, setContext] = useState<RunContext | null>(null);

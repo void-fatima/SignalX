@@ -37,6 +37,7 @@ export default function WorkspaceShell({ children }: { children: React.ReactNode
   function searchConversations(event: FormEvent) {
     event.preventDefault();
     const params = new URLSearchParams({ q: query });
+    if (search.get("source") === "telegram") params.set("source", "telegram");
     if (demo) params.set("demo", "1");
     router.push(`/leads?${params}`);
   }
@@ -68,7 +69,7 @@ export default function WorkspaceShell({ children }: { children: React.ReactNode
     <div className="workspace-body">
       <header className="topbar">
         <button className="icon-button mobile-menu" type="button" aria-label="Toggle workspace navigation" aria-expanded={open} onClick={() => setOpen(!open)}><Icon name="menu"/></button>
-        <div className="breadcrumb"><span>Workspace</span><span>/</span><strong>{current?.label || (pathname === "/settings" ? "Settings" : auth ? "Account" : "Welcome")}</strong></div>
+        <div className="breadcrumb"><span>Workspace</span><span>/</span><strong>{current?.label || (pathname === "/settings" ? "Settings" : auth ? "Account" : "Welcome")}</strong>{search.get("source") === "telegram" && <><span>/</span><strong>Telegram</strong></>}</div>
         <form className="topbar-search" onSubmit={searchConversations} role="search"><Icon name="search" size={17}/><input type="search" aria-label="Search workspace conversations" placeholder="Search conversations…" value={query} onChange={event => setQuery(event.target.value)}/><kbd>↵</kbd></form>
         <select className="topbar-product" aria-label="Selected product" value={selectedProductId} onChange={event => setSelectedProductId(event.target.value)} disabled={selectionLocked || !products.length} title={selectionLocked ? "Save or cancel your changes before switching products." : undefined}><option value="">{products.length ? "New product" : "Choose a product"}</option>{products.map(product => <option key={product.id} value={product.id}>{product.name}</option>)}</select>
         <span className="avatar avatar-small topbar-avatar" aria-label={demo ? "Demo profile" : name}>{initials}</span>
