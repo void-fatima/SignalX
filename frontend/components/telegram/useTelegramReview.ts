@@ -23,7 +23,8 @@ export function useTelegramReview(id: string) {
     setSnapshot({ lead: value, scope });
     if (value.delivery.status === "sent") { clearIntent(slot); setIntent(null); setLegacyBlocked(false); try { sessionStorage.removeItem(legacySlot); } catch { /* Sent is authoritative. */ } }
   }
-  const draft = telegramDrafts[id] || { text: lead?.delivery.approved_text ?? lead?.analysis.suggested_reply ?? "", editingText: null };
+  const draft = intent && typeof intent.text === "string" ? { text: intent.text, editingText: null }
+    : telegramDrafts[id] || { text: lead?.delivery.approved_text ?? lead?.analysis.suggested_reply ?? "", editingText: null };
   useEffect(() => { if (lead && products.some(product => product.id === lead.product_id)) setSelectedProductId(lead.product_id); }, [lead, products, setSelectedProductId]);
   async function refresh() {
     if (demo) { setError("Telegram actions require a connected workspace. Exit demo and sign in."); return; }
@@ -63,7 +64,13 @@ export function useTelegramReview(id: string) {
       saveIntent(slot, next); setIntent(next);
       const value = verifyTelegramLead(await telegramApi.reply(id, next.text, next.key), id);
       if (!current()) return;
-      setLead(value); clearIntent(slot); setIntent(null);
+      setLead(value);
+      // A 200 is an HTTP acknowledgement, not proof that sending finished.
+      // Preserve approved bytes/key through sending, uncertainty and not_sent.
+      if (value.delivery.status === "sent" || (value.delivery.status === "failed" && value.delivery.delivery_uncertain === false && "approved_text" in value.delivery && "failure_http_status" in value.delivery && "retry_after_at" in value.delivery)) {
+        clearIntent(slot); setIntent(null);
+        setTelegramDrafts(previous => ({ ...previous, [id]: { text: next.text!, editingText: null } }));
+      }
       if (value.delivery.status !== "sent") await refresh();
     } catch (reason) {
       if (current()) { setActionError(reason instanceof Error ? reason.message : "Delivery could not be confirmed."); await refresh(); }

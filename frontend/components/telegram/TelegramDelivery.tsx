@@ -6,9 +6,9 @@ export function deliveryLabel(review: ReturnType<typeof useTelegramReview>) {
   const delivery = review.lead?.delivery;
   if (review.busy === "send") return "Sending";
   if (delivery?.status === "sent") return "Sent";
+  if (delivery?.delivery_uncertain || (review.deliveryUnverified && delivery?.status !== "sending")) return "Delivery uncertain";
   if (delivery?.status === "failed") return "Failed";
   if (delivery?.status === "sending") return "Sending";
-  if (delivery?.delivery_uncertain || review.deliveryUnverified) return "Delivery uncertain";
   return "Not sent";
 }
 export default function TelegramDelivery({ review }: { review: ReturnType<typeof useTelegramReview> }) {
