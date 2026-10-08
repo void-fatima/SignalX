@@ -82,4 +82,7 @@ test("overview uses persisted relevance rates and identifies incomplete provider
   await expect(page.locator(".overview-feedback")).toContainText("Feedback coverage: 50%");
   await expect(page.locator(".overview-metric").last()).toContainText("known portion");
   await expect(page.locator(".overview-feedback")).toContainText("1 usage records have unknown cost");
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: "test-results/analytics-mobile.png", fullPage: true });
 });

@@ -45,3 +45,7 @@
 @media (max-width: 1050px) { .workflow-heading { flex-wrap: wrap; }.overview-metric { gap: 10px; padding-inline: 12px; }.overview-metric > svg { width: 24px; }.overview-columns { grid-template-columns: 1fr; } }
 @media (max-width: 700px) { .overview-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 0; padding: 16px; }.overview-metric { padding-inline: 12px; }.overview-metric:first-child { padding-left: 12px; }.overview-metric:nth-child(2) { border: 0; }.overview-metric strong { font-size: 27px; }.workflow-actions { width: 100%; }.workflow-heading time { display: block; margin: 8px 0; }.workflow-table-scroll table { min-width: 600px; }.workflow-panel { padding: 14px; }.review-list .workflow-status { font-size: 10px; }.review-list { gap: 9px; } }
 @media (prefers-reduced-motion: reduce) { .workflow-page * { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
+
+.overview-metric > div { min-width: 0; }
+.overview-metric strong { overflow-wrap: anywhere; }
+.feedback-cost { flex-wrap: wrap; }
