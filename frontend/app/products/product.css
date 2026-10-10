@@ -22,3 +22,10 @@
 .product-details dt { color: var(--muted); }
 .product-details dd { margin: 8px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 .saved-product-row { flex-wrap: wrap; }
+.product-field input { height: 42px; min-height: 42px; border-color: var(--control-border); border-radius: 9px; background: var(--control-surface); }
+.product-field textarea { min-height: 76px; border-color: var(--control-border); border-radius: 9px; background: var(--control-surface); }
+.product-field-description textarea { min-height: 96px; }
+.product-field-target_customer textarea { height: 76px; }
+.product-field-problems_solved textarea, .product-field-best_fit textarea, .product-field-not_fit textarea { height: 82px; }
+.product-preview { border-radius: 12px; box-shadow: var(--panel-shadow); transition: border-color 200ms ease, box-shadow 220ms ease, background-color 220ms ease; }
+.product-guidance { border-color: var(--panel-border); border-radius: 12px; box-shadow: var(--panel-shadow); }

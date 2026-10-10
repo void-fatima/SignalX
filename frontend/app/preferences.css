@@ -1,5 +1,5 @@
 /* Preferences change the existing token palette; page structure stays shared. */
-:root[data-theme="light"] { color-scheme: light; --ink: #f4f3fa; --surface: #fff; --surface-raised: #eeedf6; --line: #cdd0e0; --text: #1c2333; --muted: #605b78; --violet: #7039be; --mint: #08765b; --amber: #8c5708; }
+:root[data-theme="light"] { color-scheme: light; --ink: #f4f3fa; --surface: #fff; --surface-raised: #eeedf6; --line: #cdd0e0; --text: #1c2333; --muted: #605b78; --violet: #7039be; --mint: #08765b; --amber: #8c5708; --control-surface: #fff; --control-border: #c8cbd9; --control-hover-border: #9d87c0; --control-focus: #7540c6; --control-grip: #a49ab5; --panel-border: #d8d9e5; --panel-shadow: 0 12px 30px #24183b0d; }
 :root[data-theme="light"] textarea { scrollbar-color: #aaa0bf #eeedf6; }
 :root[data-theme="light"] ::-webkit-scrollbar-thumb { background: #aaa0bf; background-clip: padding-box; }
 :root[data-theme="light"] ::-webkit-scrollbar-thumb:hover { background: #817397; background-clip: padding-box; }
@@ -33,3 +33,6 @@
 :root[data-density="compact"] .context-message { padding-block: 7px; }
 :root[data-message-direction="ltr"] :is(.source-quote, .reply-text, .context-message p, .dialog-evidence blockquote) { text-align: left; }
 :root[data-message-direction="rtl"] :is(.source-quote, .reply-text, .context-message p, .dialog-evidence blockquote) { text-align: right; }
+:root[data-theme="light"] :is(.topbar-search input, .queue-search input, .auth-input input) { background: transparent; border: 0; color: var(--text); }
+:root[data-theme="light"] :is(.product-field input, .product-field textarea, .settings-row select, .queue-filters input, .queue-filters select, .import-fields input:not(.csv-file-input), .import-fields select, .reply-text, .reply-feedback textarea, .demo-state-controls select) { border-color: var(--control-border); background: var(--control-surface); color: var(--text); }
+:root[data-theme="light"] :is(.product-preview, .product-guidance) { border-color: var(--panel-border); }
