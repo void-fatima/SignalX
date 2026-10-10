@@ -75,3 +75,20 @@ def test_timeout_transport_malformed_and_size_budget(response,code,configured):
     p,requests=provider("brave",response)
     with pytest.raises(DiscoveryError) as error: p.search(inputs())
     assert error.value.code==code and len(requests)==1 and "secret" not in str(error.value)
+
+@pytest.mark.parametrize("payload", [{}, {"web":[]}, {"type":"search","web":[]}])
+def test_malformed_web_envelope_rejected(monkeypatch,payload):
+    monkeypatch.setenv("BRAVE_SEARCH_API_KEY","offline-search-key")
+    monkeypatch.setenv("DISCOVERY_BRAVE_STORAGE_ALLOWED","true")
+    fake=httpx.Client(transport=httpx.MockTransport(lambda request:httpx.Response(200,json=payload)))
+    with pytest.raises(DiscoveryError):
+        PublicAPIProvider("brave",client=fake).search(SearchInput(product_id="11111111-1111-1111-1111-111111111111",source="brave",keywords="finance"))
+
+
+def test_upstream_credential_echo_rejected(monkeypatch):
+    monkeypatch.setenv("BRAVE_SEARCH_API_KEY","offline-search-key")
+    monkeypatch.setenv("DISCOVERY_BRAVE_STORAGE_ALLOWED","true")
+    fake=httpx.Client(transport=httpx.MockTransport(lambda request:httpx.Response(200,json={"web":{"results":[{"title":"offline-search-key"}]}})))
+    with pytest.raises(DiscoveryError) as error:
+        PublicAPIProvider("brave",client=fake).search(SearchInput(product_id="11111111-1111-1111-1111-111111111111",source="brave",keywords="finance"))
+    assert "offline-search-key" not in str(error.value)

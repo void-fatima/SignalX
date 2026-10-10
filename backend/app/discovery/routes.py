@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, Header, Query
 from sqlalchemy import select
 from app.auth.dependencies import get_current_user, verify_origin
 from app.auth.contracts import CurrentUser
+from app.schemas.api import ErrorOut
 from app.db.session import get_session
 from sqlalchemy.orm import Session
 from app.discovery.models import DiscoverySearch, DiscoveryProspect
@@ -11,7 +12,7 @@ from app.discovery.schemas import SearchInput, SearchOut, SaveInput, ProspectOut
 from app.discovery.providers import source_status
 from app.discovery.service import owned, perform_search, search_out, save_prospects
 
-router=APIRouter(prefix="/discovery",tags=["Discovery"])
+router=APIRouter(prefix="/discovery",tags=["Discovery"],responses={status:{"model":ErrorOut} for status in (401,403,429,503,504)})
 DB=Annotated[Session,Depends(get_session)]
 Current=Annotated[CurrentUser,Depends(get_current_user)]
 
@@ -39,3 +40,8 @@ def save(payload:SaveInput,session:DB,current:Current):
 @router.get("/prospects",response_model=list[ProspectOut])
 def prospects(session:DB,current:Current,limit:Annotated[int,Query(ge=1,le=50)]=20,offset:Annotated[int,Query(ge=0)]=0):
     return session.scalars(select(DiscoveryProspect).where(DiscoveryProspect.user_id==str(current.id)).order_by(DiscoveryProspect.created_at.desc(),DiscoveryProspect.id).limit(limit).offset(offset)).all()
+
+@router.post("/prospects/{id}/qualify",response_model=ProspectOut,dependencies=[Depends(verify_origin)])
+def qualify(id:UUID,session:DB,current:Current,key:Annotated[str,Header(alias="Idempotency-Key")]):
+    from app.discovery.qualification import qualify_prospect
+    return qualify_prospect(session,str(current.id),str(id),key)

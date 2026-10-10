@@ -82,7 +82,7 @@ def perform_search(session, user_id, inputs, key):
         if len(results)>inputs.limit or len({r.source_id for r in results}) != len(results):
             raise DiscoveryError("source_invalid_output","Source result budget or IDs are invalid",502,1)
         for result in results:
-            if result.source != inputs.source or public_url(result.url) != result.url:
+            if result.source != inputs.source or result.signal != "not_evaluated" or public_url(result.url) != result.url:
                 raise DiscoveryError("source_invalid_output","Source attribution or URL is invalid",502,1)
         row.results=[item.model_dump() for item in results]; row.status="completed"; row.request_count=1
     except DiscoveryError as exc:

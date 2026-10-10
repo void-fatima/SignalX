@@ -80,7 +80,12 @@ class PublicAPIProvider:
                 for chunk in response.iter_bytes():
                     data.extend(chunk)
                     if len(data)>MAX_BODY_BYTES: raise DiscoveryError("source_response_too_large","Source response exceeded the bounded search budget.",502,1)
-                return json.loads(data)
+                body = json.loads(data)
+                for name in ("BRAVE_SEARCH_API_KEY", "GOOGLE_PLACES_API_KEY"):
+                    secret = os.getenv(name, "").strip()
+                    if secret and secret in data.decode("utf-8", errors="replace"):
+                        raise DiscoveryError("source_invalid_output", "Source response contains unsafe data.", 502, 1)
+                return body
         except DiscoveryError: raise
         except httpx.TimeoutException:
             raise DiscoveryError("source_timeout","Discovery source timed out. No automatic retry was made.",504,1) from None
@@ -100,7 +105,8 @@ class PublicAPIProvider:
                 params={"q":" ".join(filter(None,[inputs.keywords,inputs.industry,inputs.location])),"count":inputs.limit,"safesearch":"strict"}
                 if inputs.country: params["country"]=inputs.country
                 body=self._request(client,"GET","https://api.search.brave.com/res/v1/web/search",headers={"X-Subscription-Token":key,"Accept":"application/json"},params=params)
-                if not isinstance(body,dict) or not isinstance(body.get("web",{}),dict): raise DiscoveryError("source_invalid_output","Web result envelope is invalid.",502,1)
+                if not isinstance(body,dict) or ("web" in body and not isinstance(body["web"],dict)) or ("web" not in body and body.get("type") != "search"):
+                    raise DiscoveryError("source_invalid_output","Web result envelope is invalid.",502,1)
                 items=body.get("web",{}).get("results",[])
             elif self.source == "greenhouse":
                 body=self._request(client,"GET",f"https://boards-api.greenhouse.io/v1/boards/{inputs.board_slug}/jobs",params={"content":"true"})

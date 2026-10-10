@@ -66,6 +66,22 @@ export default function Discover() {
     catch (reason) { if (alive.current) setError(reason instanceof Error ? reason.message : "Prospects could not be saved."); }
     finally { lock.current = false; if (alive.current) setBusy(false); }
   }
+  async function qualify(item: Prospect) {
+    if (lock.current || demo || !user || item.source === "places") return;
+    const keyName = `signalx:discovery-evaluation:${user.id}:${item.id}`;
+    let key: string;
+    try { key = sessionStorage.getItem(keyName) || crypto.randomUUID(); sessionStorage.setItem(keyName, key); }
+    catch { setError("Evaluation requires local request-key storage to avoid duplicate charges. Enable session storage before continuing."); return; }
+    lock.current = true; setBusy(true); setError("");
+    try {
+      const value = await discoveryApi.qualify(item.id, key);
+      if (!alive.current) return;
+      setSaved(previous => previous.map(row => row.id === value.id ? value : row));
+      if (value.qualification_status === "failed") setError(value.qualification_error || "Evaluation failed.");
+      else setNotice(value.qualification_status === "pending" ? "Evaluation remains pending. Check explicitly with the same key." : "Source evaluation recorded. Buying intent is unverified; no outreach occurred.");
+    } catch (reason) { if (alive.current) setError(reason instanceof Error ? reason.message : "Evaluation could not be confirmed. Check using the same action and key; no automatic retry occurs."); }
+    finally { lock.current = false; if (alive.current) setBusy(false); }
+  }
   if (demo) return <section className="card"><h1>Discover Leads</h1><p>Discovery uses configured public sources in your signed-in workspace. Demo mode does not search or fabricate results.</p><Link href="/discover">Use your connected workspace</Link></section>;
   return <div className="discovery-page"><header><span className="eyebrow">Public-source discovery</span><h1>Discover Leads</h1><p>Find prospects without CSV. Preview the source before deciding whether to save or evaluate it.</p></header>
     {loading && <p role="status">Loading profiles and discovery sources…</p>}{error && <p className="discovery-error" role="alert">{error}</p>}{notice && <p role="status">{notice}</p>}
@@ -85,7 +101,9 @@ export default function Discover() {
       {active.status === "completed" && !active.results.length && <p>No results within this source and bounded first page. No results were invented.</p>}
       <div className="discovery-results">{active.results.map(item => { const href = discoveryLink(item.url); return <article key={item.source_id}><div className="discovery-result-heading"><input type="checkbox" aria-label={`Select ${item.title}`} disabled={busy || !href} checked={selected.includes(item.source_id)} onChange={e => setSelected(previous => e.target.checked ? [...previous, item.source_id] : previous.filter(id => id !== item.source_id))}/><h3 dir="auto">{item.title}</h3></div><span className="discovery-signal">Not AI evaluated</span><p dir="auto">{item.excerpt}</p><p className="discovery-note">{item.explanation}</p>{item.location && <p>{item.location}</p>}{href ? <a href={href} target="_blank" rel="noopener noreferrer">Open original source</a> : <p className="discovery-error">Source link is unavailable or unsafe.</p>}</article>; })}</div>
       <button disabled={busy || !selected.length || active.status !== "completed"} onClick={() => void save()}>Save selected prospects</button></section>}
-    <section className="card" aria-label="Saved prospects"><h2>Saved prospects</h2><p className="discovery-note">Separate from message leads. Company relevance and hiring activity do not confirm buying intent.</p>{!saved.length && <p>No saved prospects yet.</p>}{saved.map(item => <article className="discovery-saved" key={item.id}><h3 dir="auto">{item.title}</h3><p>{item.explanation}</p><span>{item.qualification_status === "not_requested" ? "AI evaluation not requested" : item.qualification_status}</span></article>)}</section>
+    <section className="card" aria-label="Saved prospects"><h2>Saved prospects</h2><p className="discovery-note">Separate from message leads. Company relevance and hiring activity do not confirm buying intent.</p>{!saved.length && <p>No saved prospects yet.</p>}{saved.map(item => <article className="discovery-saved" key={item.id}><h3 dir="auto">{item.title}</h3><p>{item.explanation}</p><span>{item.qualification_status === "not_requested" ? "AI evaluation not requested" : `${item.qualification_status} · ${item.signal.replaceAll("_", " ")}`}</span>
+      {item.source === "places" ? <p className="discovery-note">ID-only listings have no retained source excerpt for AI evaluation.</p> : (item.qualification_status === "not_requested" || item.qualification_status === "pending") && <><p className="discovery-note">Optional paid AvalAI evaluation of one excerpt, at most two provider attempts including repair. No outreach.</p><button disabled={busy || !item.excerpt.trim()} onClick={() => void qualify(item)}>{item.qualification_status === "pending" ? "Check requested evaluation" : "Evaluate this prospect with AvalAI (paid)"}</button></>}
+      {!!item.qualification_usage.length && <ul>{item.qualification_usage.map((usage, index) => <li key={index}>{usage.stage} · {usage.model || "unknown model"} · input {usage.input_tokens ?? "unknown"} / output {usage.output_tokens ?? "unknown"} tokens · estimated USD {usage.estimated_cost ?? "unknown"} · {usage.cost_status} · {usage.outcome}</li>)}</ul>}</article>)}</section>
     <details className="card"><summary>Recent search history ({history.length}, latest 20)</summary>{history.map(item => <button className="discovery-history" key={item.id} disabled={busy} onClick={() => { setActive(item); setSelected([]); }}><span>{labels[item.source]} · {item.status}</span><span>{item.results.length} results · {item.request_count} request(s) · cost unknown</span></button>)}</details>
   </div>;
 }

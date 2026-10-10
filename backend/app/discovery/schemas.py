@@ -1,3 +1,4 @@
+from app.agents.contracts import UsageInfo
 from datetime import datetime
 from typing import Literal
 from uuid import UUID
@@ -88,7 +89,7 @@ class ProspectOut(BaseModel):
     signal: Signal
     explanation: str
     qualification_status: str
-    qualification_usage: list[dict]
+    qualification_usage: list[UsageInfo]
     qualification_error: str | None
     created_at: datetime
 

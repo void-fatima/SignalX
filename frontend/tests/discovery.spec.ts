@@ -32,6 +32,8 @@ for (const width of [1440, 390]) test(`explicit search preview and save need no 
   await expect(page.getByRole("heading", { name: "Discover Leads", exact: true })).toBeVisible();
   await expect(page.getByLabel("Product", { exact: true })).toHaveValue(product.id);
   expect(writes).toHaveLength(0);
+  await expect(page.getByLabel("Search source")).toContainText("Web search \u00b7 Brave");
+  await expect(page.locator(".discovery-page")).not.toContainText("\u00c2");
   await page.getByLabel("Keywords", { exact: true }).fill("finance operations");
   await page.getByRole("button", { name: "Search prospects" }).click();
   await expect(page.getByRole("region", { name: "Discovery results" })).toContainText("Acme finance");
@@ -88,4 +90,26 @@ test("demo does not search or invent results", async ({ page }) => {
   await page.goto("/discover?demo=1");
   await expect(page.getByText("Demo mode does not search or fabricate results.", { exact: false })).toBeVisible();
   expect(writes).toHaveLength(0);
+});
+
+
+test("paid evaluation requires its own action and preserves unknown usage", async ({ page }) => {
+  const writes = await setup(page);
+  await page.route("**/api/v1/discovery/prospects/prospect-1/qualify", async route => {
+    writes.push({ path: new URL(route.request().url()).pathname, body: null, key: route.request().headers()["idempotency-key"] });
+    await route.fulfill({ json: { ...result, id: "prospect-1", product_id: product.id, search_id: search.id, qualification_status: "completed", signal: "possible_need", explanation: "Possible need; buying intent is unverified.", qualification_error: null, created_at: product.created_at, qualification_usage: [{ stage: "qualification", attempt_no: 1, provider_mode: "real", model: "offline-model", input_tokens: 120, output_tokens: 40, estimated_cost: null, cost_status: "unknown", price_version: null, latency_ms: 20, outcome: "success" }] } });
+  });
+  await page.goto("/discover");
+  await page.getByLabel("Keywords", { exact: true }).fill("finance");
+  await page.getByRole("button", { name: "Search prospects" }).click();
+  await page.getByRole("checkbox", { name: "Select Acme finance" }).check();
+  await page.getByRole("button", { name: "Save selected prospects" }).click();
+  const evaluate = page.getByRole("button", { name: "Evaluate this prospect with AvalAI (paid)" });
+  await expect(evaluate).toBeVisible(); expect(writes).toHaveLength(2);
+  await evaluate.click();
+  await expect(page.getByRole("region", { name: "Saved prospects" })).toContainText("completed \u00b7 possible need");
+  await expect(page.getByRole("region", { name: "Saved prospects" })).toContainText("estimated USD unknown");
+  expect(writes).toHaveLength(3); expect(writes[2].key).toBeTruthy();
+  await expect(evaluate).toHaveCount(0);
+  expect(writes.filter(write => /analysis|telegram|send/.test(write.path))).toHaveLength(0);
 });

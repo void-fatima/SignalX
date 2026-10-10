@@ -5,6 +5,7 @@ export type SearchOut = components["schemas"]["SearchOut"];
 export type Prospect = components["schemas"]["ProspectOut"];
 export type SourceStatus = components["schemas"]["SourceStatus"];
 export const discoveryApi = {
+  qualify: (id: string, key: string) => request<Prospect>(`/discovery/prospects/${id}/qualify`, { method: "POST", headers: { "Idempotency-Key": key } }),
   sources: () => request<components["schemas"]["SourcesOut"]>("/discovery/sources"),
   history: () => request<SearchOut[]>("/discovery/searches?limit=20"),
   prospects: () => request<Prospect[]>("/discovery/prospects?limit=20"),

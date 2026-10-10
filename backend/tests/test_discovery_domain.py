@@ -26,3 +26,22 @@ def test_discovery_tables_keep_owner_product_and_source_constraints(factory):
         inspector=inspect(session.bind)
         assert {"discovery_searches","discovery_prospects","discovery_budgets"} <= set(inspector.get_table_names())
         assert {row["referred_table"] for row in inspector.get_foreign_keys("discovery_prospects")} == {"users","products","discovery_searches"}
+
+
+def test_additive_migration_preserves_existing_profiles(tmp_path):
+    import os, sqlite3, subprocess, sys
+    from pathlib import Path
+    database=tmp_path/"discovery-migration.db"
+    env={**os.environ,"DATABASE_URL":f"sqlite:///{database.as_posix()}"}
+    def migrate(operation,revision):
+        result=subprocess.run([sys.executable,"-m","alembic",operation,revision],cwd=Path(__file__).parents[1],env=env,capture_output=True,text=True)
+        assert result.returncode==0,result.stderr
+    migrate("upgrade","0007")
+    with sqlite3.connect(database) as db:
+        db.execute("INSERT INTO products (id,created_at,name,description,target_customer,problems_solved,best_fit,not_fit,currency) VALUES ('retained','2026-10-10','Profile','Original description','Owners','[]','[]','[]','USD')")
+    for operation,revision in (("upgrade","0008"),("downgrade","0007")):
+        migrate(operation,revision)
+        with sqlite3.connect(database) as db:
+            assert db.execute("SELECT description FROM products WHERE id='retained'").fetchone()==('Original description',)
+            tables={row[0] for row in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+            assert ("discovery_prospects" in tables)==(revision=="0008")
