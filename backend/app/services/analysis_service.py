@@ -12,23 +12,15 @@ from app.core.config import settings
 from app.core.errors import AppError
 from app.models import Analysis, AnalysisRun, ImportBatch, Message, Product, Usage, utcnow
 from app.schemas.api import ProductOut
-from app.services.agent_contract_service import build_agent_input, persist_agent_output
+from app.services.agent_contract_service import (
+    build_agent_input, persist_agent_output, persist_analysis_usage, project_intent,
+)
 from app.services.context_service import load_messages
 
 
 def validate_key(key: str):
     if not key.strip() or len(key) > 200:
         raise AppError("invalid_idempotency_key", "Idempotency-Key must contain 1–200 characters")
-
-
-def _usage_row(run_id: str, message_id: str, analysis_id: str | None, attempt: int, event) -> Usage:
-    values = event.model_dump() if hasattr(event, "model_dump") else dict(event)
-    if "estimated_cost" in values:
-        values["cost_usd"] = values.pop("estimated_cost")
-    values.pop("request_id", None)
-    values.pop("run_attempt_no", None)
-    return Usage(run_id=run_id, message_id=message_id, analysis_id=analysis_id,
-        run_attempt_no=attempt, **values)
 
 
 def retry_run(session, run_id, user_id: str, key: str):
@@ -212,6 +204,7 @@ def _persist_result(session, *, run_id: str, attempt: int, message_id: str,
     if analysis is not None and analysis.status == "completed":
         return analysis
     values = result.model_dump(mode="json")
+    values["intent"] = project_intent(values.get("intent"))
     if result.status == "failed":
         # Qualification/scoring did not complete, so do not attach model defaults
         # that could be mistaken for executed-stage metadata.
@@ -224,8 +217,8 @@ def _persist_result(session, *, run_id: str, attempt: int, message_id: str,
             setattr(analysis, name, value)
     analysis.failure_category = failure_category
     session.flush()
-    for event in usage:
-        session.add(_usage_row(run_id, message_id, analysis.id, attempt, event))
+    persist_analysis_usage(session, run_id=run_id, message_id=message_id,
+        run_attempt_no=attempt, events=usage, analysis_id=analysis.id)
     return analysis
 
 
@@ -234,8 +227,8 @@ def _save_late_usage(session, run_id: str, attempt: int, message_id: str, usage)
     previous = session.scalar(select(Analysis).where(
         Analysis.run_id == run_id, Analysis.message_id == message_id,
     ))
-    for event in usage:
-        session.add(_usage_row(run_id, message_id, previous.id if previous else None, attempt, event))
+    persist_analysis_usage(session, run_id=run_id, message_id=message_id,
+        run_attempt_no=attempt, events=usage, analysis_id=previous.id if previous else None)
 
 
 def process_one(factory, provider_override=None, agent_orchestrator=None) -> bool:
@@ -333,27 +326,52 @@ def process_one(factory, provider_override=None, agent_orchestrator=None) -> boo
                     screening_reason="processing_error", decision=None, reason=failure_reason,
                     provider_mode=config.provider_mode)
 
-            with factory() as session:
-                if not _lease(session, run_id, attempt):
-                    _save_late_usage(session, run_id, attempt, str(target.id), usage)
+            # Commit actual attempt accounting before the fallible Analysis
+            # transaction. No model call or automatic retry happens here.
+            with factory() as usage_session:
+                _save_late_usage(usage_session, run_id, attempt, str(target.id), usage)
+                usage_session.commit()
+
+            try:
+                with factory() as session:
+                    if not _lease(session, run_id, attempt):
+                        _save_late_usage(session, run_id, attempt, str(target.id), usage)
+                        session.commit()
+                        return True
+                    if output is not None:
+                        analysis = persist_agent_output(session, run_id=run_id,
+                            target_message_id=str(target.id), inputs=telegram_input if telegram_run else agent_input,
+                            raw_output=output, run_attempt_no=attempt)
+                        if telegram_run:
+                            receipt = session.scalar(select(TelegramReceipt).where(TelegramReceipt.run_id == run_id))
+                            if receipt is None:
+                                raise AppError("invalid_telegram_job", "Telegram receipt is missing", 503)
+                            receipt.agent_output = output.model_dump(mode="json")
+                    else:
+                        analysis = _persist_result(session, run_id=run_id, attempt=attempt,
+                            message_id=str(target.id), result=result, usage=usage,
+                            failure_category=failure_category)
+                    current = session.get(AnalysisRun, run_id)
+                    _counts(session, current)
                     session.commit()
-                    return True
-                if output is not None:
-                    analysis = persist_agent_output(session, run_id=run_id,
-                        target_message_id=str(target.id), inputs=telegram_input if telegram_run else agent_input,
-                        raw_output=output, run_attempt_no=attempt)
-                    if telegram_run:
-                        receipt = session.scalar(select(TelegramReceipt).where(TelegramReceipt.run_id == run_id))
-                        if receipt is None:
-                            raise AppError("invalid_telegram_job", "Telegram receipt is missing", 503)
-                        receipt.agent_output = output.model_dump(mode="json")
-                else:
-                    analysis = _persist_result(session, run_id=run_id, attempt=attempt,
-                        message_id=str(target.id), result=result, usage=usage,
-                        failure_category=failure_category)
-                current = session.get(AnalysisRun, run_id)
-                _counts(session, current)
-                session.commit()
+            except Exception as exc:
+                # The failed Session is closed/rolled back by its context manager.
+                # Use a fresh transaction for this message only; other successes
+                # and independently committed usage must remain untouched.
+                category, reason = failure_details(exc)
+                with factory() as failed_session:
+                    if not _lease(failed_session, run_id, attempt):
+                        failed_session.rollback()
+                        return True
+                    failed_result = AnalysisResult(status="failed", is_candidate=True,
+                        screening_reason="processing_error", decision=None, reason=reason,
+                        provider_mode=config.provider_mode)
+                    _persist_result(failed_session, run_id=run_id, attempt=attempt,
+                        message_id=str(target.id), result=failed_result, usage=usage,
+                        failure_category=category)
+                    current = failed_session.get(AnalysisRun, run_id)
+                    _counts(failed_session, current)
+                    failed_session.commit()
 
         with factory() as session:
             if not _lease(session, run_id, attempt):
