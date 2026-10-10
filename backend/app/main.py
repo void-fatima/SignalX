@@ -4,6 +4,7 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from app.discovery import models as discovery_models  # noqa: F401
 from app.core.config import settings
 from app.core.errors import AppError
 from app.agents.pipeline import get_provider
