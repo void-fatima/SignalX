@@ -13,6 +13,7 @@ const navigation: { href: string; label: string; icon: IconName }[] = [
   { href: "/products", label: "Products", icon: "product" },
   { href: "/imports", label: "Imports", icon: "file" },
   { href: "/leads", label: "Leads", icon: "leads" },
+  { href: "/discover", label: "Discover Leads", icon: "search" },
 ];
 export default function WorkspaceShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
