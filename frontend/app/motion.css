@@ -10,7 +10,8 @@
       opacity 180ms ease, filter 180ms ease, text-decoration-color 180ms ease;
   }
 
-  .workspace :is(.auth-input, .topbar-search, .queue-search) {
+  .workspace :is(.auth-input, .topbar-search, .queue-search),
+  .auth-main .auth-input {
     transition: border-color 180ms ease, background-color 200ms ease, box-shadow 200ms ease;
   }
 
@@ -107,6 +108,17 @@
   .workspace .score-meter i,
   .workspace .signal-track span {
     transition: width 420ms cubic-bezier(.2, .8, .2, 1);
+  }
+
+  .workspace .analysis-stages li,
+  .workspace .analysis-stages li > span,
+  .workspace .analysis-stages li > span i,
+  .workspace .import-steps li,
+  .workspace .import-steps li::after,
+  .workspace .import-steps li > span,
+  .workspace .density-options span {
+    transition: color 180ms ease, background-color 220ms ease, border-color 200ms ease,
+      box-shadow 220ms ease, opacity 180ms ease, transform 200ms cubic-bezier(.2, .8, .2, 1);
   }
 
   .workspace .run-state:not(.terminal):not(.attention)::before {
