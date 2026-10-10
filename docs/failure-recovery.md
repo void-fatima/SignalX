@@ -45,7 +45,14 @@ prevents concurrent sends.
 HTTP 429 stores the HTTP status and `retry_after_at`; another send is blocked
 until that time. Confirmed failures can then be retried with a new key. Uncertain
 sends stay blocked for human review because Telegram and PostgreSQL cannot share
-a transaction. There is no automatic resend or automatic message sending.
+a transaction. Revision `0008` leases draft and send operations. Expired drafts
+are released; an expired send becomes `failed` with
+`delivery_uncertain=true`, never an automatic retry. The lead owner records a
+manual result through `POST /api/v1/leads/{lead_id}/telegram/reconcile`, after
+checking the Telegram thread. A confirmed send requires the Telegram message ID;
+a confirmed non-send clears uncertainty and allows a new explicit send with a
+fresh key. The endpoint records the decision and does not contact Telegram. A
+late result cannot overwrite a reconciliation or a newer operation.
 
 ## Migration 0007
 
@@ -69,3 +76,10 @@ To run the PostgreSQL check, set `TEST_POSTGRES_URL` to a dedicated database
 whose name contains `test`; the test creates and removes only a unique schema
 inside that database. Do not point it at a production or shared development
 database.
+
+## Migration 0008
+
+Revision `0008` follows `0007` and adds nullable `operation_started_at` and
+`operation_token` columns to `telegram_deliveries`. Existing in-flight rows get
+a fresh timestamp during upgrade so they are not immediately declared stale.
+No table or business data is removed.

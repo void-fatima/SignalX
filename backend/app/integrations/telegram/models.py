@@ -43,3 +43,5 @@ class TelegramDelivery(Record, Base):
     send_history: Mapped[list] = mapped_column(json_type, default=list)
     delivery_uncertain: Mapped[bool] = mapped_column(Boolean, default=False)
     draft_busy: Mapped[bool] = mapped_column(Boolean, default=False)
+    operation_started_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+    operation_token: Mapped[str | None] = mapped_column(String(36), nullable=True)
