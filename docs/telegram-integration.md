@@ -39,8 +39,10 @@ The additive ORM tables are isolated in
 `backend/app/integrations/telegram/models.py` and are installed by Alembic
 revision `0006` after the existing Backend migrations. Revision `0007` adds
 failure HTTP status, a Telegram retry cooldown timestamp and send history to the
-existing delivery row. It adds no new table and must follow `0006`. Use Alembic,
-not manual SQL, to apply it. `/ready` checks the current Alembic head and queries
+existing delivery row. Revision `0008` adds a lease timestamp and opaque
+operation token to that same row so interrupted drafts and sends can be
+recovered. Neither revision creates a table; apply both in order with Alembic,
+not manual SQL. `/ready` checks the current Alembic head and queries
 the Telegram tables. One bot per deployment is supported; chat IDs are globally
 unique within that bot's mapping namespace.
 
@@ -73,9 +75,18 @@ reply text are not copied into history. Reusing a key with the same text returns
 the recorded delivery without sending again; using it with different text
 returns 409. A new explicit retry needs a new key. A persisted Telegram 429
 cooldown blocks retry until `retry_after_at`. A send is claimed and committed
-before HTTP, so concurrent requests cannot both send. Uncertain sends remain
-blocked for human review; failed known-not-sent requests may be retried after
-cooldown. Telegram has no transaction with our DB, so exactly-once external
+before HTTP, so concurrent requests cannot both send. Every draft/send claim has
+a lease bounded by `HEARTBEAT_TIMEOUT_SECONDS`. A stale draft claim is released.
+A stale send is marked failed with `delivery_uncertain=true`; it is never resent
+automatically. The owner can inspect the original Telegram thread, then
+explicitly reconcile with `POST /api/v1/leads/{lead_id}/telegram/reconcile`.
+Use `{"outcome":"sent","telegram_message_id":123}` only after confirming the
+bot reply, or `{"outcome":"not_sent"}` only after confirming it was not sent.
+This authenticated, Origin-checked operation records the owner and outcome; it
+does not call Telegram. A confirmed not-send permits a later explicit retry with
+a fresh `Idempotency-Key`. A result arriving late can resolve its own still-
+unreconciled operation, but cannot overwrite a reconciliation or newer
+operation. Telegram has no transaction with our DB, so exactly-once external
 delivery cannot be guaranteed after a crash. There are no transport retries or
 automatic outreach.
 
@@ -95,6 +106,7 @@ additive; UI implementation is out of scope.
 | `GET /api/v1/leads/{lead_id}/telegram` | Authenticated owner | TelegramLeadOut, including original_message/analysis/delivery |
 | `POST /api/v1/leads/{lead_id}/telegram/suggested-reply` | `{"regenerate":false}` | TelegramLeadOut with draft and appended actual reply usage; nothing sent |
 | `POST /api/v1/leads/{lead_id}/telegram/reply` | `{"text":"Approved or edited reply"}`; optional `Idempotency-Key` header | TelegramLeadOut with delivery status, safe HTTP status and cooldown |
+| `POST /api/v1/leads/{lead_id}/telegram/reconcile` | `{"outcome":"sent","telegram_message_id":123}` or `{"outcome":"not_sent"}` | TelegramLeadOut with human-reconciled delivery state; never sends a message |
 
 Synthetic response shape (values below are illustrative, not a live result):
 

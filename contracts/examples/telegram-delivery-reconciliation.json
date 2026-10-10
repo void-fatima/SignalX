@@ -1,0 +1,28 @@
+{
+  "endpoint": "POST /api/v1/leads/{lead_id}/telegram/reconcile",
+  "confirmed_sent": {
+    "request": {
+      "outcome": "sent",
+      "telegram_message_id": 123
+    },
+    "delivery": {
+      "status": "sent",
+      "telegram_message_id": 123,
+      "failure_category": null,
+      "delivery_uncertain": false,
+      "draft_busy": false
+    }
+  },
+  "confirmed_not_sent": {
+    "request": {
+      "outcome": "not_sent"
+    },
+    "delivery": {
+      "status": "failed",
+      "telegram_message_id": null,
+      "failure_category": "confirmed_not_sent",
+      "delivery_uncertain": false,
+      "draft_busy": false
+    }
+  }
+}

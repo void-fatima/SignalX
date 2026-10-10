@@ -2122,6 +2122,97 @@
         }
       }
     },
+    "/api/v1/leads/{lead_id}/telegram/reconcile": {
+      "post": {
+        "tags": [
+          "Telegram user actions"
+        ],
+        "summary": "Reconcile Delivery",
+        "operationId": "reconcile_delivery_api_v1_leads__lead_id__telegram_reconcile_post",
+        "security": [
+          {
+            "BackendSession": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "lead_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Lead Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeliveryReconciliation"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelegramLeadOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          }
+        }
+      }
+    },
     "/integrations/telegram/webhook": {
       "post": {
         "tags": [
@@ -2924,6 +3015,37 @@
         "additionalProperties": false,
         "type": "object",
         "title": "DeliveryOut"
+      },
+      "DeliveryReconciliation": {
+        "properties": {
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "sent",
+              "not_sent"
+            ],
+            "title": "Outcome"
+          },
+          "telegram_message_id": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMaximum": 9.223372036854776e+18,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Telegram Message Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "outcome"
+        ],
+        "title": "DeliveryReconciliation"
       },
       "DraftRequest": {
         "properties": {

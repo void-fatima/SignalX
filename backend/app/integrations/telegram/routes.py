@@ -18,7 +18,8 @@ from app.integrations.telegram.ingestion import ingest
 from app.integrations.telegram.models import TelegramChatMapping, TelegramReceipt
 from app.integrations.telegram.normalization import normalize_update
 from app.integrations.telegram.schemas import (
-    ApprovedReply, ChatMappingInput, ChatMappingOut, DraftRequest, TelegramLeadOut, TelegramLeadPage, WebhookOut,
+    ApprovedReply, ChatMappingInput, ChatMappingOut, DeliveryReconciliation, DraftRequest,
+    TelegramLeadOut, TelegramLeadPage, WebhookOut,
 )
 from app.models import Analysis
 
@@ -97,3 +98,10 @@ def approved_reply(lead_id: UUID, payload: ApprovedReply, session: DB, user: Use
                    client=Depends(dependencies.telegram_client)):
     return actions.send_reply(session, str(user.id), str(lead_id), payload.text, client,
         idempotency_key=idempotency_key)
+
+
+@router.post("/leads/{lead_id}/telegram/reconcile", response_model=TelegramLeadOut,
+    dependencies=[Depends(verify_origin)])
+def reconcile_delivery(lead_id: UUID, payload: DeliveryReconciliation, session: DB, user: User):
+    return actions.reconcile_delivery(session, str(user.id), str(lead_id),
+        outcome=payload.outcome, telegram_message_id=payload.telegram_message_id)
