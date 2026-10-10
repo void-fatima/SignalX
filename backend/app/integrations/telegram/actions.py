@@ -11,6 +11,7 @@ from app.agents.contracts import AgentInput, AgentOutput
 from app.agents.providers.base import ProviderError
 from app.agents.providers.real import _legacy_usage
 from app.agents.reply import generate_suggested_reply
+from app.core.config import settings
 from app.core.errors import AppError
 from app.integrations.telegram.client import TelegramError
 from app.integrations.telegram.models import TelegramChatMapping, TelegramDelivery, TelegramReceipt
@@ -58,6 +59,96 @@ def _delivery(session, analysis_id):
     return delivery
 
 
+def _finish_send(delivery, operation_token, *, status=None, telegram_message_id=None):
+    history = list(delivery.send_history or [])
+    index = None if operation_token is None else next(
+        (i for i in range(len(history) - 1, -1, -1)
+         if history[i].get("operation_id") == operation_token), None)
+    if index is None and operation_token is None and history and history[-1].get("status") == "sending":
+        # Recover pre-0008 sends that have no operation token yet.
+        index = len(history) - 1
+    if index is None:
+        return False
+    event = {**history[index], "status": status or delivery.state,
+        "finished_at": utcnow().isoformat(), "failure_category": delivery.failure_category,
+        "http_status": delivery.failure_http_status,
+        "retry_after_at": delivery.retry_after_at.isoformat() if delivery.retry_after_at else None,
+        "delivery_uncertain": delivery.delivery_uncertain}
+    if telegram_message_id is not None:
+        event["telegram_message_id"] = telegram_message_id
+    history[index] = event
+    delivery.send_history = history
+    return True
+
+
+def _recover_stale_delivery(delivery, *, now=None):
+    """Release abandoned draft leases; keep abandoned sends blocked for review."""
+    if delivery is None:
+        return False
+    if not delivery.draft_busy and delivery.state != "sending":
+        return False
+    now = now or utcnow()
+    started = delivery.operation_started_at
+    stale_after = timedelta(seconds=settings().heartbeat_timeout_seconds)
+    if started is not None and now - started < stale_after:
+        return False
+
+    token = delivery.operation_token
+    if delivery.state == "sending":
+        delivery.state = "failed"
+        delivery.failure_category = "delivery_uncertain"
+        delivery.failure_http_status = None
+        delivery.retry_after_at = None
+        delivery.delivery_uncertain = True
+        delivery.draft_busy = False
+        _finish_send(delivery, token, status="uncertain")
+    else:
+        delivery.draft_busy = False
+    delivery.operation_started_at = None
+    delivery.operation_token = None
+    return True
+
+
+def _recover_and_refresh(session, analysis_id, delivery):
+    if _recover_stale_delivery(delivery):
+        session.commit()
+        session.expire_all()
+        return session.scalar(select(TelegramDelivery).where(
+            TelegramDelivery.analysis_id == analysis_id).with_for_update())
+    return delivery
+
+
+def _apply_send_result(session, analysis_id, operation_token, *, state, failure_category=None,
+                       http_status=None, retry_after=None, uncertain=False, sent_message_id=None):
+    delivery = session.scalar(select(TelegramDelivery).where(
+        TelegramDelivery.analysis_id == analysis_id).with_for_update())
+    if delivery is None:
+        return False
+    current_operation = delivery.operation_token == operation_token and delivery.state == "sending"
+    late_but_unreconciled = (delivery.state == "failed" and delivery.delivery_uncertain
+        and bool(delivery.send_history)
+        and delivery.send_history[-1].get("operation_id") == operation_token
+        and delivery.send_history[-1].get("status") == "uncertain")
+    if not current_operation and not late_but_unreconciled:
+        session.rollback()
+        return False
+
+    delivery.state = state
+    delivery.failure_category = failure_category
+    delivery.failure_http_status = http_status
+    delivery.retry_after_at = retry_after
+    delivery.delivery_uncertain = uncertain
+    if state == "sent":
+        delivery.sent_message_id = sent_message_id
+    delivery.operation_started_at = None
+    delivery.operation_token = None
+    late_status = "late_sent" if state == "sent" else "late_failed"
+    _finish_send(delivery, operation_token, status=late_status if late_but_unreconciled else state,
+        telegram_message_id=sent_message_id)
+    session.commit()
+    return True
+
+
 def _source(session, receipt):
     try:
         source = TelegramMessage.model_validate_json(json.dumps(receipt.source_metadata))
@@ -74,7 +165,13 @@ def _source(session, receipt):
 
 def lead_view(session, user_id, analysis_id):
     analysis, receipt, run = owned(session, user_id, analysis_id)
-    delivery = session.scalar(select(TelegramDelivery).where(TelegramDelivery.analysis_id == analysis.id))
+    delivery = session.scalar(select(TelegramDelivery).where(
+        TelegramDelivery.analysis_id == analysis.id).with_for_update())
+    if _recover_stale_delivery(delivery):
+        session.commit()
+        analysis, receipt, run = owned(session, user_id, analysis_id)
+        delivery = session.scalar(select(TelegramDelivery).where(
+            TelegramDelivery.analysis_id == analysis.id))
     state = DeliveryOut() if delivery is None else DeliveryOut(status=delivery.state,
         telegram_message_id=delivery.sent_message_id, failure_category=delivery.failure_category,
         delivery_uncertain=delivery.delivery_uncertain, draft_busy=delivery.draft_busy,
@@ -93,11 +190,14 @@ def draft_reply(session, user_id, analysis_id, *, regenerate=False):
         raise AppError("reply_not_eligible", "A qualified REVIEW or RESPOND lead is required for drafting", 409)
     if output.suggested_reply is not None and not regenerate:
         return lead_view(session, user_id, analysis_id)
-    delivery = _delivery(session, analysis_id)
+    delivery = _recover_and_refresh(session, analysis_id, _delivery(session, analysis_id))
     if delivery.draft_busy or delivery.state == "sending":
         raise AppError("reply_busy", "A reply operation is already in progress", 409)
+    operation_token = str(uuid4())
+    operation_started_at = utcnow()
     claimed = session.execute(update(TelegramDelivery).where(TelegramDelivery.id == delivery.id,
-        TelegramDelivery.draft_busy.is_(False), TelegramDelivery.state != "sending").values(draft_busy=True),
+        TelegramDelivery.draft_busy.is_(False), TelegramDelivery.state != "sending").values(
+            draft_busy=True, operation_started_at=operation_started_at, operation_token=operation_token),
         execution_options={"synchronize_session": False}).rowcount
     if not claimed:
         session.rollback()
@@ -110,22 +210,44 @@ def draft_reply(session, user_id, analysis_id, *, regenerate=False):
         # Existing grounded Agent entry point; no qualification rerun or new prompt.
         generated = generate_suggested_reply(inputs, output)
     except Exception as exc:
-        delivery = session.scalar(select(TelegramDelivery).where(TelegramDelivery.analysis_id == analysis_id))
-        delivery.draft_busy = False
+        delivery = session.scalar(select(TelegramDelivery).where(
+            TelegramDelivery.analysis_id == analysis_id).with_for_update())
+        owns_claim = delivery is not None and delivery.operation_token == operation_token
         if isinstance(exc, ProviderError):
-            _save_usage(session, analysis_id, inputs.metadata.run_id, inputs.message.id, exc.usage[prior:])
+            new_usage = exc.usage[prior:]
             receipt = session.get(TelegramReceipt, receipt_id)
-            receipt.agent_output = output.model_copy(update={"usage": exc.usage}).model_dump(mode="json")
+            current_output = AgentOutput.model_validate(receipt.agent_output)
+            receipt.agent_output = current_output.model_copy(update={
+                "usage": [*current_output.usage, *new_usage]}).model_dump(mode="json")
+            _save_usage(session, analysis_id, inputs.metadata.run_id, inputs.message.id, new_usage)
+        if owns_claim:
+            delivery.draft_busy = False
+            delivery.operation_started_at = None
+            delivery.operation_token = None
         session.commit()
+        if not owns_claim:
+            raise AppError("reply_operation_expired", "Draft operation expired; reload the lead and review its current state", 409) from None
         if isinstance(exc, ValueError):
             raise AppError("reply_not_eligible", "Stored analysis is not eligible for grounded drafting", 409) from None
         raise AppError("reply_generation_failed", "Suggested reply generation failed; nothing was sent", 502) from None
-    receipt = session.get(TelegramReceipt, receipt_id)
-    receipt.agent_output = generated.model_dump(mode="json")
-    delivery = session.scalar(select(TelegramDelivery).where(TelegramDelivery.analysis_id == analysis_id))
-    delivery.draft_busy = False
-    _save_usage(session, analysis_id, inputs.metadata.run_id, inputs.message.id, generated.usage[prior:])
+    delivery = session.scalar(select(TelegramDelivery).where(
+        TelegramDelivery.analysis_id == analysis_id).with_for_update())
+    receipt = session.scalar(select(TelegramReceipt).where(TelegramReceipt.id == receipt_id).with_for_update())
+    new_usage = generated.usage[prior:]
+    current_output = AgentOutput.model_validate(receipt.agent_output)
+    owns_claim = delivery is not None and delivery.operation_token == operation_token
+    if owns_claim:
+        receipt.agent_output = generated.model_dump(mode="json")
+        delivery.draft_busy = False
+        delivery.operation_started_at = None
+        delivery.operation_token = None
+    else:
+        receipt.agent_output = current_output.model_copy(update={
+            "usage": [*current_output.usage, *new_usage]}).model_dump(mode="json")
+    _save_usage(session, analysis_id, inputs.metadata.run_id, inputs.message.id, new_usage)
     session.commit()
+    if not owns_claim:
+        raise AppError("reply_operation_expired", "Draft operation expired; reload the lead and review its current state", 409)
     return lead_view(session, user_id, analysis_id)
 
 
@@ -143,7 +265,7 @@ def send_reply(session, user_id, analysis_id, text, client, *, idempotency_key=N
     text_hash = hashlib.sha256(text.encode()).hexdigest()
     _, receipt, _ = owned(session, user_id, analysis_id)
     source = _source(session, receipt)
-    delivery = _delivery(session, analysis_id)
+    delivery = _recover_and_refresh(session, analysis_id, _delivery(session, analysis_id))
     for attempt in delivery.send_history or []:
         if attempt.get("key_hash") == key_hash:
             if attempt.get("text_hash") != text_hash:
@@ -157,8 +279,11 @@ def send_reply(session, user_id, analysis_id, text, client, *, idempotency_key=N
         raise AppError("delivery_requires_review", "Delivery is in progress or uncertain; verify it before another send", 409)
     if delivery.retry_after_at and delivery.retry_after_at > utcnow():
         raise AppError("telegram_retry_after", "Telegram rate limit is still active; wait before retrying", 409)
-    history = [*(delivery.send_history or []), {"key_hash": key_hash, "text_hash": text_hash,
-        "started_at": utcnow().isoformat(), "status": "sending"}]
+    operation_token = str(uuid4())
+    operation_started_at = utcnow()
+    history = [*(delivery.send_history or []), {"operation_id": operation_token,
+        "key_hash": key_hash, "text_hash": text_hash,
+        "started_at": operation_started_at.isoformat(), "status": "sending"}]
     # The compare-and-swap claim keeps concurrent approvals from sending twice.
     claimed = session.execute(update(TelegramDelivery).where(
         TelegramDelivery.id == delivery.id,
@@ -167,7 +292,8 @@ def send_reply(session, user_id, analysis_id, text, client, *, idempotency_key=N
         TelegramDelivery.draft_busy.is_(False),
     ).values(state="sending", approved_text=text, approved_by=user_id,
         failure_category=None, failure_http_status=None, retry_after_at=None,
-        send_history=history), execution_options={"synchronize_session": False}).rowcount
+        send_history=history, operation_started_at=operation_started_at,
+        operation_token=operation_token), execution_options={"synchronize_session": False}).rowcount
     if not claimed:
         session.rollback()
         session.expire_all()
@@ -181,41 +307,66 @@ def send_reply(session, user_id, analysis_id, text, client, *, idempotency_key=N
         sent_id = client.send_message(chat_id=source.chat_id, message_id=source.message_id,
             text=text, thread_id=source.message_thread_id)
     except TelegramError as exc:
-        session.expire_all()
-        delivery = session.scalar(select(TelegramDelivery).where(TelegramDelivery.analysis_id == analysis_id))
-        delivery.state, delivery.failure_category = "failed", exc.category
-        delivery.failure_http_status = exc.http_status
-        delivery.delivery_uncertain = exc.delivery_uncertain
+        retry_after_at = None
         if exc.retry_after:
             try:
-                delivery.retry_after_at = utcnow() + timedelta(seconds=exc.retry_after)
+                retry_after_at = utcnow() + timedelta(seconds=exc.retry_after)
             except OverflowError:
-                delivery.retry_after_at = datetime.max.replace(tzinfo=timezone.utc)
-        _finish_send(delivery)
-        session.commit()
+                retry_after_at = datetime.max.replace(tzinfo=timezone.utc)
+        _apply_send_result(session, analysis_id, operation_token, state="failed",
+            failure_category=exc.category, http_status=exc.http_status,
+            retry_after=retry_after_at, uncertain=exc.delivery_uncertain)
         raise exc from None
     except Exception:
-        session.expire_all()
-        delivery = session.scalar(select(TelegramDelivery).where(TelegramDelivery.analysis_id == analysis_id))
-        delivery.state, delivery.failure_category, delivery.delivery_uncertain = "failed", "local_failure", True
-        _finish_send(delivery)
-        session.commit()
+        _apply_send_result(session, analysis_id, operation_token, state="failed",
+            failure_category="local_failure", uncertain=True)
         raise AppError("telegram_delivery_failed", "Delivery could not be confirmed; verify before another send", 502) from None
-    session.expire_all()
-    delivery = session.scalar(select(TelegramDelivery).where(TelegramDelivery.analysis_id == analysis_id))
-    delivery.state, delivery.sent_message_id = "sent", sent_id
-    _finish_send(delivery)
-    session.commit()
+    applied = _apply_send_result(session, analysis_id, operation_token, state="sent",
+        sent_message_id=sent_id)
+    if not applied:
+        raise AppError("delivery_requires_review", "Send completed after its operation was reconciled; inspect the delivery history before acting", 409)
     return lead_view(session, user_id, analysis_id)
 
 
-def _finish_send(delivery):
+def reconcile_delivery(session, user_id, analysis_id, *, outcome, telegram_message_id=None):
+    owned(session, user_id, analysis_id)
+    delivery = _recover_and_refresh(session, analysis_id, _delivery(session, analysis_id))
     history = list(delivery.send_history or [])
-    if not history:
-        return
-    history[-1] = {**history[-1], "status": delivery.state,
-        "finished_at": utcnow().isoformat(), "failure_category": delivery.failure_category,
-        "http_status": delivery.failure_http_status,
-        "retry_after_at": delivery.retry_after_at.isoformat() if delivery.retry_after_at else None,
-        "delivery_uncertain": delivery.delivery_uncertain}
-    delivery.send_history = history
+    latest = history[-1] if history else {}
+
+    if outcome == "sent" and delivery.state == "sent" and latest.get("status") == "reconciled_sent":
+        if delivery.sent_message_id == telegram_message_id:
+            return lead_view(session, user_id, analysis_id)
+        raise AppError("delivery_reconciliation_conflict", "Delivery was already reconciled with a different message ID", 409)
+    if (outcome == "not_sent" and delivery.state == "failed" and not delivery.delivery_uncertain
+            and delivery.failure_category == "confirmed_not_sent"
+            and latest.get("status") == "reconciled_not_sent"):
+        return lead_view(session, user_id, analysis_id)
+    if delivery.state != "failed" or not delivery.delivery_uncertain:
+        raise AppError("delivery_not_reconcilable", "Only an uncertain failed delivery can be reconciled", 409)
+
+    reconciled_at = utcnow()
+    if outcome == "sent":
+        delivery.state = "sent"
+        delivery.sent_message_id = telegram_message_id
+        delivery.failure_category = None
+        delivery.failure_http_status = None
+        delivery.retry_after_at = None
+        delivery.delivery_uncertain = False
+        status = "reconciled_sent"
+    else:
+        delivery.state = "failed"
+        delivery.sent_message_id = None
+        delivery.failure_category = "confirmed_not_sent"
+        delivery.failure_http_status = None
+        delivery.retry_after_at = None
+        delivery.delivery_uncertain = False
+        status = "reconciled_not_sent"
+    delivery.draft_busy = False
+    delivery.operation_started_at = None
+    delivery.operation_token = None
+    delivery.send_history = [*history, {"status": status,
+        "reconciled_at": reconciled_at.isoformat(), "reconciled_by": user_id,
+        "telegram_message_id": telegram_message_id}]
+    session.commit()
+    return lead_view(session, user_id, analysis_id)

@@ -398,6 +398,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/leads/{lead_id}/telegram/reconcile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reconcile Delivery */
+        post: operations["reconcile_delivery_api_v1_leads__lead_id__telegram_reconcile_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/integrations/telegram/webhook": {
         parameters: {
             query?: never;
@@ -748,6 +765,16 @@ export interface components {
             failure_http_status?: number | null;
             /** Retry After At */
             retry_after_at?: string | null;
+        };
+        /** DeliveryReconciliation */
+        DeliveryReconciliation: {
+            /**
+             * Outcome
+             * @enum {string}
+             */
+            outcome: "sent" | "not_sent";
+            /** Telegram Message Id */
+            telegram_message_id?: number | null;
         };
         /** DiscoveryResult */
         DiscoveryResult: {
@@ -2957,6 +2984,68 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ApprovedReply"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TelegramLeadOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Bad Gateway */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    reconcile_delivery_api_v1_leads__lead_id__telegram_reconcile_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lead_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeliveryReconciliation"];
             };
         };
         responses: {

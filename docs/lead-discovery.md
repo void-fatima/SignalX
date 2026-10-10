@@ -4,7 +4,7 @@ Discovery is separate from CSV imports and conversation leads. Search, preview a
 
 ## Deployment and credentials
 
-Apply additive migration `0008` **after `0007`**, using the existing backend Alembic deployment procedure (`python -m alembic upgrade head`). It creates only `discovery_searches`, `discovery_prospects` and `discovery_budgets`; existing records and migration history remain unchanged. Deploy the migration before the new API; readiness checks require the new tables. Downgrading removes discovery records only. No application or production database migration was executed during implementation; PostgreSQL tests use their own unique schemas in an isolated test database.
+Apply additive migration `0009` **after Telegram recovery `0008`**, using the existing backend Alembic deployment procedure (`python -m alembic upgrade head`). It creates only `discovery_searches`, `discovery_prospects` and `discovery_budgets`; existing records and migration history remain unchanged. Deploy the migration before the new API; readiness checks require the new tables. Downgrading removes discovery records only. No application or production database migration was executed during implementation; PostgreSQL tests use their own unique schemas in an isolated test database.
 
 Set secrets on the backend, never in Next.js variables:
 

@@ -144,7 +144,7 @@ def test_telegram_migration_references_backend_users_for_mapping_and_approval(tm
     assert ("products", "product_id", "id") in mapping_fks
     assert ("users", "approved_by", "id") in delivery_fks
     assert {"telegram_chat_mappings", "telegram_receipts", "telegram_deliveries"} <= tables
-    assert revision == "0008"
+    assert revision == "0009"
 
 
 def test_failure_recovery_migration_preserves_rows_and_adds_only_seven_fields(tmp_path):
@@ -198,7 +198,7 @@ def test_failure_recovery_migration_preserves_rows_and_adds_only_seven_fields(tm
     assert analysis == (None, "safe prior error")
     assert usage == (1, "timeout")
     assert delivery == (None, None, "[]", "Human-approved text", 1)
-    assert revision == "0008"
+    assert revision == "0009"
 
     result = subprocess.run(
         [sys.executable, "-m", "alembic", "downgrade", "0006"],

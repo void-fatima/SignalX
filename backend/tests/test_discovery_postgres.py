@@ -83,3 +83,51 @@ def test_postgres_concurrent_cache_receipts_replay_after_expiry(postgres_factory
     with factory() as session:
         assert len(session.scalars(select(DiscoverySearch)).all())==2
         assert session.get(DiscoveryBudget,"brave").request_count==1
+
+
+def test_postgres_forward_0007_to_0009_preserves_existing_data(postgres_factory):
+    import os
+    import subprocess
+    import sys
+    from pathlib import Path
+    from sqlalchemy import inspect, text
+    from app.models import Analysis, AnalysisRun, ImportBatch, Message, utcnow
+
+    factory = postgres_factory
+    with factory() as session:
+        engine = session.get_bind()
+    env = {**os.environ, "DATABASE_URL": engine.url.render_as_string(hide_password=False)}
+    root = Path(__file__).resolve().parents[1]
+    def migrate(*args):
+        result = subprocess.run([sys.executable, "-m", "alembic", *args],
+            cwd=root, env=env, capture_output=True, text=True)
+        assert result.returncode == 0, result.stdout + result.stderr
+    # This fixture owns a unique schema in an isolated test database only.
+    migrate("downgrade", "0007")
+    with factory() as session:
+        user = User(email=f"migration-{uuid4()}@example.test", password_hash="unused-test-hash")
+        session.add(user); session.flush()
+        product = Product(user_id=user.id, name="Existing business", description="Retain me",
+            target_customer="Teams", problems_solved=[], best_fit=[], not_fit=[], currency="USD")
+        batch = ImportBatch(user_id=user.id, community_name="Existing", filename="synthetic.csv",
+            checksum=uuid4().hex, row_count=1)
+        session.add_all([product, batch]); session.flush()
+        message = Message(batch_id=batch.id, external_id="existing", conversation_id="thread",
+            author="QA", content="Existing source", normalized_content="existing source", timestamp=utcnow())
+        run = AnalysisRun(user_id=user.id, product_id=product.id, batch_id=batch.id,
+            product_snapshot={}, config_snapshot={}, idempotency_key=uuid4().hex, total_count=1,
+            status="completed", processed_count=1)
+        session.add_all([message, run]); session.flush()
+        analysis = Analysis(run_id=run.id, message_id=message.id, status="completed",
+            is_candidate=True, screening_reason="Existing", reason="Preserve result", provider_mode="real",
+            agent_output={"retained": True})
+        session.add(analysis); session.commit()
+        ids = user.id, product.id, analysis.id
+    migrate("upgrade", "head")
+    with factory() as session:
+        assert session.get(User, ids[0]).email.startswith("migration-")
+        assert session.get(Product, ids[1]).description == "Retain me"
+        assert session.get(Analysis, ids[2]).agent_output == {"retained": True}
+        assert session.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "0009"
+        assert {"discovery_searches", "discovery_prospects", "discovery_budgets"} <= set(inspect(engine).get_table_names())
+        assert {"operation_token", "operation_started_at"} <= {c["name"] for c in inspect(engine).get_columns("telegram_deliveries")}

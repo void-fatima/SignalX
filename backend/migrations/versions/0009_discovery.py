@@ -1,10 +1,10 @@
-"""Add independent discovery records after 0007; existing lead tables are untouched."""
+"""Add independent discovery records after Telegram recovery 0008; existing lead tables are untouched."""
 from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
 
-revision = "0008"
-down_revision = "0007"
+revision = "0009"
+down_revision = "0008"
 branch_labels = depends_on = None
 
 def upgrade():
