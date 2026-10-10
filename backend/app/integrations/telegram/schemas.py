@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from app.agents.contracts import AgentOutput, ContextMessage
 from app.integrations.telegram.normalization import TelegramMessage
@@ -37,6 +37,19 @@ class ApprovedReply(StrictModel):
 
 class DraftRequest(StrictModel):
     regenerate: bool = False
+
+
+class DeliveryReconciliation(StrictModel):
+    outcome: Literal["sent", "not_sent"]
+    telegram_message_id: int | None = Field(default=None, strict=True, gt=0, lt=2**63)
+
+    @model_validator(mode="after")
+    def consistent_delivery_result(self):
+        if self.outcome == "sent" and self.telegram_message_id is None:
+            raise ValueError("A confirmed send requires telegram_message_id")
+        if self.outcome == "not_sent" and self.telegram_message_id is not None:
+            raise ValueError("A confirmed non-send must not include telegram_message_id")
+        return self
 
 
 class DeliveryOut(StrictModel):

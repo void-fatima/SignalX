@@ -43,7 +43,9 @@ still attributed to its original attempt. Failed analyses can be listed with
 `GET /leads?run_id=<UUID>&status=failed`; failure_category is an allowlisted
 category and raw provider errors are not persisted. See
 [failure recovery](failure-recovery.md) for state transitions and Telegram send
-recovery behavior.
+recovery behavior. An uncertain Telegram send can be manually reconciled by its
+lead owner with `POST /leads/{lead_id}/telegram/reconcile`; this records a
+confirmed Telegram message ID or a confirmed non-send and never sends a message.
 
 Context is offline, limited to the same batch/conversation, up to three preceding
 and two following messages (parent prioritized), maximum five messages and 8000

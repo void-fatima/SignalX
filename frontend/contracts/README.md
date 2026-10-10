@@ -44,8 +44,10 @@ block new delivery. Pending scoped sessionStorage intents retain the exact appro
 text and key. Explicit checks replay that key; definitive acknowledgement permits
 another deliberate retry with a fresh key. Failed acknowledgements must contain
 valid recovery metadata and the matching approved text before clearing an intent.
-Cooldown expiry only enables a control. Reconciliation remains an operator action,
-without a new automatic endpoint. No browser calls Telegram's Bot API directly.
+Cooldown expiry only enables a control. An authenticated backend reconciliation
+endpoint is available for an owner who has manually checked an uncertain send;
+it never sends or retries a message. Client support is not part of this backend
+change. No browser calls Telegram's Bot API directly.
 
 See [the final Failure Handling audit](../../docs/frontend-failure-final-audit.md)
 for connected local HTTP tests and release limitations. Browser acceptance tests
