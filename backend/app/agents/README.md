@@ -110,21 +110,46 @@ These checks cannot detect changed Product text or a different author/run with
 identical evidence. Backend must enforce the persisted association and conversation
 isolation. No frozen schema fields were added for this step.
 
-Real drafting uses the same environment-only credentials, model, timeout, output
-limit and optional price rates as qualification. The request uses strict Responses
-structured output ([official OpenAI documentation](https://developers.openai.com/api/docs/guides/structured-outputs?api-mode=responses)),
-with `store=false`, no tools and no external actions. All supplied fields are
-explicitly untrusted data. Its private schema permits up to two whole Product
-fields and one natural clarifying question. Product claims must match the whole
-named Product field exactly, preserving negations and conditions; community price/
-capability statements cannot become product facts. Fields longer than 600 characters
-or in another language are omitted rather than inventing summaries/translations.
-The question follows the target's English/Persian language and cannot include
-prices, links, offers, promises, approval claims or multiple sentences. This cautious
-format intentionally favors clarification when factual answers are unavailable.
-Local checks do not prove every possible semantic presupposition safe, and the
-quality/truth of supplied Product facts remains the product owner's responsibility.
-Human review and live language/grounding evaluation remain necessary.
+### Request-aware replies (`reply_real_v2`)
+
+Real drafting retains the environment-only credentials, configured model/timeout,
+strict structured output, `store=false`, and absence of tools or sending. The
+public AgentInput/AgentOutput schemas, qualification prompts and score_v1 are unchanged.
+
+A deterministic local plan prioritizes pricing, demos, product/integration questions,
+comparisons, follow-ups and objections. It uses the target and supplied same-author
+context, retains exact company-size quotes, and tells the model not to ask again for
+known requirements. It does not qualify or score the lead and cannot book appointments.
+
+Pricing/demo requests require an exact safe acknowledgement and a relevant next-step
+question. Missing prices are acknowledged, not filled from community claims. A known
+price is usable only from a whole Product field, in the reply language, within the
+existing 600-character fact limit. The whole field must be quoted, preserving negation
+and conditions. Demo requests propose checking whether a demo can be arranged and
+never imply availability or a confirmed booking. Other questions retain existing
+commercial-claim guards; additional booking/appointment guards reject false commitments.
+Every output remains a draft requiring human approval, including REVIEW leads.
+
+Replies default to the target's English/Persian language. An authorized caller may
+explicitly pass `language="en"` or `language="fa"` to `generate_suggested_reply`.
+This optional Python argument changes neither public schema nor existing API behavior;
+no browser control or Backend route has been added for it. Community instructions
+cannot choose the language. Facts in a different language are omitted rather than
+translated into unverified claims.
+
+Drafting reuses the original Product snapshot and target. Context is deduplicated and
+bounded to 4,000 characters of whole messages, prioritizing direct replies/evidence;
+omitted source IDs are explicit. No message is truncated in a way that drops a negation.
+Qualification need/intent are compact drafting hints, not product facts; duplicate
+source quotes and scoring signals are not resent. Input payloads exceeding 20,000
+characters fail before HTTP rather than silently trimming Product claims. These are
+character budgets, not invented token measurements. Reply requests cap output at the
+smaller of the configured limit and 1,200 tokens; qualification retains its own unchanged
+limit. Rendered replies are at most 1,200 characters.
+
+Offline fake-HTTP regressions validate request handling, grounding, language, repairs,
+usage and budgets. They do not measure live model reply quality. A separately authorized
+real review remains needed, with no paid requests performed during implementation.
 
 Every actual call records `stage=suggested_reply` or `suggested_reply_repair`,
 attempt number, real model, available tokens, latency and outcome. At most one

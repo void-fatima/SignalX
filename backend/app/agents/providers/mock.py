@@ -6,6 +6,7 @@ from app.agents.providers.base import BaseProvider, ProviderError
 from app.agents.screening import screen
 from app.agents.scoring import SCORING_VERSION, calculate_score_with_reason, screening_decision_reason
 from app.agents.reply_draft import PERSIAN
+from app.agents.reply_plan import ReplyLanguage
 
 
 class MockProvider(BaseProvider):
@@ -13,11 +14,14 @@ class MockProvider(BaseProvider):
     provider_mode = "mock"
 
     def generate_reply_structured(self, inputs: AgentInput, qualification: QualificationResult,
-                                  decision: Decision) -> tuple[str, list[UsageInfo]]:
+                                  decision: Decision, *, language: ReplyLanguage | None = None) -> tuple[str, list[UsageInfo]]:
         """Explicitly synthetic development draft, never used by the real path."""
         if inputs.metadata.provider_mode != "mock" or decision == Decision.IGNORE:
             raise ProviderError("Mock reply requires mock mode and a review/respond lead", [])
-        text = ("چه چیزی می‌خواهید یاد بگیرید؟" if PERSIAN.search(inputs.message.content)
+        if language is not None and language not in ("en", "fa"):
+            raise ValueError("Reply language must be en or fa")
+        persian = language == "fa" if language else bool(PERSIAN.search(inputs.message.content))
+        text = ("چه چیزی می‌خواهید یاد بگیرید؟" if persian
                 else "What would you like to learn or achieve?")
         return text, [UsageInfo(stage="suggested_reply", provider_mode="mock", model="mock",
             estimated_cost=0, cost_status="mock", price_version="mock_v1", outcome="success")]

@@ -1,4 +1,4 @@
-from typing import Protocol
+from typing import Protocol, Literal
 from abc import ABC, abstractmethod
 from app.agents.contracts import AgentInput, AgentOutput, Decision, ProductSnapshot, TargetMessage, Qualification, QualificationResult, UsageEvent, UsageInfo
 
@@ -24,7 +24,7 @@ class StructuredProvider(Provider, Protocol):
                           context: list[TargetMessage]) -> tuple[QualificationResult, list[UsageInfo]]: ...
 
     def generate_reply_structured(self, inputs: AgentInput, qualification: QualificationResult,
-                                  decision: Decision) -> tuple[str, list[UsageInfo]]: ...
+                                  decision: Decision, *, language: Literal["en", "fa"] | None = None) -> tuple[str, list[UsageInfo]]: ...
 
 
 class ProviderError(Exception):
