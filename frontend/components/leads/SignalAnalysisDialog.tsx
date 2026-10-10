@@ -9,6 +9,7 @@ import Icon from "@/components/Icon";
 import Avatar from "./Avatar";
 import AnalysisFailure from "./AnalysisFailure";
 import DecisionBadge from "./DecisionBadge";
+import ProductSnapshot from "./ProductSnapshot";
 
 export default function SignalAnalysisDialog({ detail, demo, open, onDismiss }: { detail: LeadDetail; demo: boolean; open: boolean; onDismiss: () => void }) {
   const direction = useMessageDirection();
@@ -16,7 +17,8 @@ export default function SignalAnalysisDialog({ detail, demo, open, onDismiss }: 
   const metadata = demo ? demoMetadata[analysis.id] : undefined;
   const evidence = groundedEvidence(detail);
   const rows = [
-    ["purchase_intent", "Purchase intent"], ["product_fit", "Product fit"], ["confidence", "Confidence"],
+    ["purchase_intent", "Purchase intent"], ["product_fit", "Product fit"], ["need_strength", "Need strength"],
+    ["urgency", "Urgency"], ["confidence", "Confidence"], ["response_opportunity", "Response opportunity"],
   ] as const;
   if (analysis.status === "failed") return <Dialog open={open} onDismiss={onDismiss} title="Analysis failed" labelId="signal-dialog-title"><AnalysisFailure analysis={analysis}/><p dir="auto">{message.author}: {message.content}</p></Dialog>;
   const reference = demo && analysis.id === "demo-lead-1";
@@ -31,8 +33,8 @@ export default function SignalAnalysisDialog({ detail, demo, open, onDismiss }: 
     <section className="dialog-section" aria-labelledby="signal-breakdown"><h3 id="signal-breakdown">Signal breakdown</h3>{analysis.signals ? <div className="signal-breakdown">{rows.map(([key, label]) => {
       const value = analysis.signals![key];
       const valid = Number.isFinite(value) && value >= 0 && value <= 1;
-      return <div className="breakdown-row" key={key}><span>{label}</span><div className="signal-track" role="meter" aria-label={label} aria-valuemin={0} aria-valuemax={1} aria-valuenow={valid ? value : undefined} aria-valuetext={valid ? `${value} out of 1` : "Unavailable"}><span style={{ width: `${valid ? value * 100 : 0}%` }}/></div><span>{!valid ? "N/A" : value >= .75 ? key === "product_fit" ? "Strong" : "High" : value >= .5 ? "Moderate" : "Low"}</span></div>;
-    })}</div> : <p className="muted">Signals are unavailable for this analysis.</p>}<p className="breakdown-caption">Based on the {detail.offline_context ? "imported" : "selected"} conversation.{analysis.provider_mode === "mock" ? " Synthetic mock output." : ""}</p></section>
-
+      return <div className="breakdown-row" key={key}><span>{label}</span><div className="signal-track" role="meter" aria-label={label} aria-valuemin={0} aria-valuemax={1} aria-valuenow={valid ? value : undefined} aria-valuetext={valid ? `${value} out of 1` : "Unavailable"}><span style={{ width: `${valid ? value * 100 : 0}%` }}/></div><span className="signal-value">{valid ? `${value.toFixed(2)} / 1` : "N/A"}</span></div>;
+    })}</div> : <p className="muted">Signals are unavailable for this analysis.</p>}<p className="breakdown-caption">Normalized provider signals, shown without changing the deterministic score or decision. Based on the {detail.offline_context ? "imported" : "selected"} conversation.{analysis.provider_mode === "mock" ? " Synthetic mock output." : ""}</p></section>
+    <section className="dialog-section"><ProductSnapshot snapshot={detail.product_snapshot}/></section>
   </Dialog>;
 }
