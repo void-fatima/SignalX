@@ -1,0 +1,15 @@
+external_id,conversation_id,author,content,timestamp,reply_to_external_id
+msg-001,conv-101,course_admin,"API Launchpad is a practical program for building and deploying REST APIs with Python, FastAPI, and PostgreSQL.",2026-10-08T09:00:00+03:30,
+msg-002,conv-101,learner_001,"Hi, I'm a junior Python developer and I'm looking for a hands-on backend course. Is API Launchpad suitable if I have only built small scripts?",2026-10-08T09:04:00+03:30,msg-001
+msg-003,conv-101,course_admin,"Yes, it starts with the basics and guides you through a complete API project, database, authentication, and deployment.",2026-10-08T09:07:00+03:30,msg-002
+msg-004,conv-101,learner_001,"That sounds useful. I know basic Python and want to build a portfolio project. How long does the course take?",2026-10-08T09:10:00+03:30,msg-003
+msg-005,conv-101,learner_002,"What is the price, and can I pay in two installments?",2026-10-08T09:16:00+03:30,msg-001
+msg-006,conv-101,course_admin,"The listed price is 149 USD. Please contact the team to confirm current payment options.",2026-10-08T09:20:00+03:30,msg-005
+msg-007,conv-101,learner_002,"Thanks. I have used Flask once, but I have never deployed an app. Would this help me learn deployment?",2026-10-08T09:25:00+03:30,msg-006
+msg-008,conv-102,learner_003,"I am switching from data analysis to backend development. I know Python and want to learn FastAPI by building a real project. Where should I start?",2026-10-08T10:02:00Z,
+msg-009,conv-102,community_member,"There is a local developer meetup this Friday. Is anyone going?",2026-10-08T10:12:00Z,
+msg-010,conv-103,learner_004,"Does this course teach frontend design with CSS, or is it focused on backend APIs?",2026-10-08T11:01:00+03:30,
+msg-011,conv-103,course_admin,"It focuses on backend APIs. It is not a frontend design course.",2026-10-08T11:04:00+03:30,msg-010
+msg-012,conv-103,learner_004,"Got it, I am specifically looking for a frontend course, so this probably is not the right fit for me.",2026-10-08T11:08:00+03:30,msg-011
+msg-013,conv-104,learner_005,"I already know FastAPI basics, but I need help connecting PostgreSQL, adding authentication, and deploying a production-ready API. Is that covered?",2026-10-08T12:30:00Z,
+msg-014,conv-104,course_admin,"The program includes PostgreSQL, authentication, and a guided deployment project.",2026-10-08T12:34:00Z,msg-013

@@ -59,3 +59,34 @@
  .dialog-footer { flex-wrap: wrap; gap: 10px; } .dialog-footer .button { width: 100%; font-size: 12px; }
 }
 @media (prefers-reduced-motion: reduce) { .viewport-dialog { scroll-behavior: auto; } }
+
+/* Keep the workspace's purple signal treatment while preserving compact evidence cards. */
+.dialog-heading h2 svg { color: #c9b4f4; }
+.dialog-score-value strong { font-size: 68px; letter-spacing: -.05em; }
+.dialog-score-value span { color: #bbb1e7; }
+.score-meter { height: 10px; }
+.score-meter > span { background: #2a2c40; }
+.score-meter i { background: linear-gradient(#b381f6, #8f5deb); }
+.signal-track { height: 10px; }
+.signal-track span { background: linear-gradient(90deg, #9973ef, #a078ee); }
+.dialog-evidence blockquote[dir="rtl"] { text-align: right; }
+@media (max-width: 600px) { .dialog-score-value strong { font-size: 58px; } }
+@media (prefers-reduced-motion: no-preference) {
+  .viewport-dialog {
+    opacity: 0;
+    transform: translateY(8px) scale(.985);
+    transition: opacity 180ms ease, transform 220ms cubic-bezier(.2, .8, .2, 1), overlay 180ms allow-discrete, display 180ms allow-discrete;
+  }
+  .viewport-dialog[open] { opacity: 1; transform: translateY(0) scale(1); }
+  .viewport-dialog::backdrop {
+    background: transparent;
+    backdrop-filter: blur(0);
+    transition: background-color 180ms ease, backdrop-filter 220ms ease, overlay 180ms allow-discrete, display 180ms allow-discrete;
+  }
+  .viewport-dialog[open]::backdrop { background: #050910a3; backdrop-filter: blur(2px); }
+  @starting-style {
+    .viewport-dialog[open] { opacity: 0; transform: translateY(8px) scale(.985); }
+    .viewport-dialog[open]::backdrop { background: transparent; backdrop-filter: blur(0); }
+  }
+}
+@media (prefers-reduced-motion: reduce) { .viewport-dialog { scroll-behavior: auto; } }
