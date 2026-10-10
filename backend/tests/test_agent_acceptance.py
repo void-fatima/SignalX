@@ -47,8 +47,10 @@ def qualification(scenario="persian", **updates):
     return result
 
 
-def draft(text="دوست دارید با پایتون چه کاری انجام بدهید؟"):
-    return dict(parts=[dict(kind="question", text=text, product_field=None)])
+def draft(text="مایلید گزینه‌های قیمت بررسی شود؟"):
+    return dict(parts=[
+        dict(kind="request_acknowledgement", text="ممنون از پرسش درباره قیمت. در اطلاعات موجود قیمت تأییدشده‌ای ندارم.", product_field=None),
+        dict(kind="question", text=text, product_field=None)])
 
 
 def envelope(result, **updates):
@@ -140,7 +142,7 @@ def test_acceptance_three_requests_no_duplicate_qualification(transport, environ
     assert reply["score"] == persian["score"] and reply["decision"] == persian["decision"]
     assert reply["prior_usage"] == persian["usage"]
     assert reply["usage"][0]["stage"] == "suggested_reply" and reply["automatic_sending"] is False
-    assert reply["suggested_reply"] == draft()["parts"][0]["text"]
+    assert reply["suggested_reply"] == " ".join(part["text"] for part in draft()["parts"])
     assert all(0 < pause <= 30 for pause in environment[1])
     assert factory._real_client.get() is None
 

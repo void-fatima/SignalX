@@ -84,7 +84,9 @@ def llm_http():
                 product_fit=.9, need_strength=.8, urgency=0., confidence=.9, response_opportunity=.8,
                 evidence=[dict(message_id=target["id"], quote=target["content"], reason="Actual target")], limitations=[])
         else:
-            value = dict(parts=[dict(kind="question", text="What would you like to learn?", product_field=None)])
+            value = dict(parts=[
+                dict(kind="request_acknowledgement", text="Thanks for asking about pricing. I don't have a verified price to share here.", product_field=None),
+                dict(kind="question", text="Would you like to confirm the pricing options?", product_field=None)])
         return httpx.Response(200, json=dict(status="completed", model=body["model"],
             output=[dict(type="message", content=[dict(type="output_text", text=json.dumps(value, ensure_ascii=False))])],
             usage=dict(input_tokens=100, output_tokens=50, input_tokens_details=dict(cached_tokens=0))))
@@ -290,7 +292,7 @@ def test_suggested_reply_reuses_qualification_and_appends_usage_only(client, fac
     assert response.status_code == 200
     after = response.json()["analysis"]
     assert after["scoring"] == before["scoring"] and after["qualification"] == before["qualification"]
-    assert after["suggested_reply"] == "What would you like to learn?"
+    assert after["suggested_reply"] == "Thanks for asking about pricing. I don't have a verified price to share here. Would you like to confirm the pricing options?"
     assert [u["stage"] for u in after["usage"]] == ["qualification", "suggested_reply"]
     assert client.post(path, json={}, headers=auth_headers(client)).status_code == 200
     assert len(llm_http) == 2 and not telegram_http
