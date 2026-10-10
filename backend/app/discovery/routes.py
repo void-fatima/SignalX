@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from app.discovery.models import DiscoverySearch, DiscoveryProspect
 from app.discovery.schemas import SearchInput, SearchOut, SaveInput, ProspectOut, SourcesOut
 from app.discovery.providers import source_status
-from app.discovery.service import owned, perform_search, search_out, save_prospects
+from app.discovery.service import owned, perform_search, search_out, save_prospects, source_searches
 
 router=APIRouter(prefix="/discovery",tags=["Discovery"],responses={status:{"model":ErrorOut} for status in (401,403,429,503,504)})
 DB=Annotated[Session,Depends(get_session)]
@@ -26,7 +26,7 @@ def search(payload:SearchInput,session:DB,current:Current,key:Annotated[str,Head
 
 @router.get("/searches",response_model=list[SearchOut])
 def history(session:DB,current:Current,limit:Annotated[int,Query(ge=1,le=50)]=20,offset:Annotated[int,Query(ge=0)]=0):
-    rows=session.scalars(select(DiscoverySearch).where(DiscoverySearch.user_id==str(current.id)).order_by(DiscoverySearch.created_at.desc(),DiscoverySearch.id).limit(limit).offset(offset)).all()
+    rows=session.scalars(select(DiscoverySearch).where(source_searches(),DiscoverySearch.user_id==str(current.id)).order_by(DiscoverySearch.created_at.desc(),DiscoverySearch.id).limit(limit).offset(offset)).all()
     return [search_out(row) for row in rows]
 
 @router.get("/searches/{id}",response_model=SearchOut)

@@ -1,5 +1,5 @@
 """User-scoped explicit searches. Quotas are reserved before external I/O."""
-from datetime import timedelta
+from datetime import datetime, timedelta
 import hashlib
 import json
 from sqlalchemy import select, func
@@ -42,10 +42,18 @@ def budget(session, scope, now, *, hourly_limit=100, cooldown=2):
     if row.request_count >= hourly_limit: raise AppError("discovery_quota","Discovery request budget exhausted for this hour",429)
     row.request_count+=1; row.last_request_at=now
 
+def source_searches():
+    """Cache receipts are durable idempotency records, not new source searches."""
+    return DiscoverySearch.query["_cache_search_id"].as_string().is_(None)
+
+
 def search_out(row, *, cached=False):
-    return SearchOut(id=row.id,product_id=row.product_id,source=row.source,status=row.status,
+    receipt_id = row.query.get("_cache_search_id")
+    created_at = datetime.fromisoformat(row.query["_cache_created_at"]) if receipt_id else row.created_at
+    cached = cached or bool(receipt_id)
+    return SearchOut(id=receipt_id or row.id,product_id=row.product_id,source=row.source,status=row.status,
         results=[DiscoveryResult.model_validate(r) for r in row.results],cached=cached,
-        request_count=0 if cached else row.request_count,error_code=row.error_code,error=row.error,created_at=row.created_at)
+        request_count=0 if cached else row.request_count,error_code=row.error_code,error=row.error,created_at=created_at)
 
 def perform_search(session, user_id, inputs, key):
     key=key_value(key)
@@ -64,9 +72,16 @@ def perform_search(session, user_id, inputs, key):
     now=utcnow()
     if inputs.source != "places":
         cached=session.scalar(select(DiscoverySearch).where(DiscoverySearch.user_id==str(user_id),DiscoverySearch.fingerprint==fingerprint,
-            DiscoverySearch.status=="completed",DiscoverySearch.created_at>now-timedelta(seconds=CACHE_SECONDS)).order_by(DiscoverySearch.created_at.desc()).limit(1))
-        if cached: return search_out(cached,cached=True)
-    recent=select(DiscoverySearch).where(DiscoverySearch.user_id==str(user_id),DiscoverySearch.created_at>now-timedelta(hours=1))
+            source_searches(),DiscoverySearch.status=="completed",DiscoverySearch.created_at>now-timedelta(seconds=CACHE_SECONDS)).order_by(DiscoverySearch.created_at.desc()).limit(1))
+        if cached:
+            # Snapshot the established response independently of cache expiry.
+            receipt=DiscoverySearch(user_id=str(user_id),product_id=product.id,source=inputs.source,
+                idempotency_key=key,fingerprint=fingerprint,
+                query={**query,"_cache_search_id":cached.id,"_cache_created_at":cached.created_at.isoformat()},
+                product_snapshot=snapshot,status="completed",results=cached.results,request_count=0)
+            session.add(receipt); session.commit()
+            return search_out(receipt)
+    recent=select(DiscoverySearch).where(source_searches(),DiscoverySearch.user_id==str(user_id),DiscoverySearch.created_at>now-timedelta(hours=1))
     if session.scalar(select(func.count()).select_from(recent.subquery())) >= USER_SEARCHES_PER_HOUR:
         raise AppError("discovery_quota","Your hourly discovery search budget is exhausted",429)
     latest=session.scalar(recent.order_by(DiscoverySearch.created_at.desc()).limit(1))

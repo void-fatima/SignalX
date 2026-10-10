@@ -51,3 +51,35 @@ def test_postgres_additive_tables_keep_existing_product(postgres_factory):
     with factory() as session:
         assert session.get(Product,id).description=="Existing description"
         assert session.scalars(select(DiscoverySearch)).all()==[]
+
+
+def test_postgres_concurrent_cache_receipts_replay_after_expiry(postgres_factory,monkeypatch):
+    from datetime import timedelta
+    from app.models import utcnow
+    factory=postgres_factory
+    with factory() as session:
+        user=User(email=f"cache-{uuid4()}@example.test",password_hash="unused-test-hash")
+        session.add(user); session.flush()
+        product=Product(user_id=user.id,name="Profile",description="Finance",target_customer="Teams",
+            problems_solved=[],best_fit=[],not_fit=[],currency="USD")
+        session.add(product);session.commit();owner=user.id;product_id=product.id
+    monkeypatch.setenv("BRAVE_SEARCH_API_KEY","offline-source-key")
+    monkeypatch.setenv("DISCOVERY_BRAVE_STORAGE_ALLOWED","true")
+    calls=[];now=utcnow();monkeypatch.setattr(service,"utcnow",lambda:now)
+    class Adapter:
+        def search(self,inputs):
+            calls.append(inputs)
+            return [DiscoveryResult(source="brave",source_id="one",title="Finance",url="https://company.example.com/",excerpt="Tools")]
+    monkeypatch.setattr(service,"get_discovery_provider",lambda source:Adapter())
+    inputs=SearchInput(product_id=product_id,source="brave",keywords="finance")
+    def run(key):
+        with factory() as session:return perform_search(session,owner,inputs,key)
+    first=run("first")
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        results=list(pool.map(run,["cached","cached"]))
+    assert all(result.id==first.id for result in results)
+    now+=timedelta(minutes=16)
+    assert run("cached").id==first.id and len(calls)==1
+    with factory() as session:
+        assert len(session.scalars(select(DiscoverySearch)).all())==2
+        assert session.get(DiscoveryBudget,"brave").request_count==1

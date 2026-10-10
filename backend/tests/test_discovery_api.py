@@ -90,3 +90,24 @@ def test_provider_failure_persisted_no_automatic_retry(client,monkeypatch):
     id=product(client); failed=search(client,id).json(); replay=search(client,id).json()
     assert failed["status"]==replay["status"]=="failed" and failed["error_code"]=="source_rate_limit"
     assert "secret" not in failed["error"] and len(requests)==1
+
+
+def test_cache_receipt_survives_expiry_without_refreshing_cache(client,factory,source,monkeypatch):
+    now=utcnow(); monkeypatch.setattr(service,"utcnow",lambda:now)
+    id=product(client); first=search(client,id).json()
+    for key in ("cached-key","cached-2","cached-3","cached-4","cached-5"):
+        cached=search(client,id,key).json()
+        assert cached["id"]==first["id"] and cached["request_count"]==0
+    with factory() as session:
+        assert session.scalar(select(DiscoverySearch).where(DiscoverySearch.idempotency_key=="cached-key")) is not None
+        assert session.get(DiscoveryBudget,"brave").request_count==1
+    assert len(client.get("/api/v1/discovery/searches").json())==1
+    now+=timedelta(minutes=16)
+    replay=search(client,id,"cached-key").json()
+    assert replay["results"]==first["results"] and replay["id"]==first["id"]
+    assert replay["created_at"]==first["created_at"] and len(source)==1
+    assert search(client,id,"cached-key",keywords="different").status_code==409
+    fresh=search(client,id,"fresh-key").json()
+    assert fresh["status"]=="completed" and fresh["id"]!=first["id"] and len(source)==2
+    assert search(client,id,"cached-key").json()["id"]==first["id"]
+    assert len(client.get("/api/v1/discovery/searches").json())==2
