@@ -44,9 +44,19 @@
   }
 
   .workspace :is(.workflow-warning, .workflow-error, .run-issues, .validation-success,
-    .preferences-notice, .preferences-error),
-  .auth-main .auth-feedback {
+    .preferences-notice, .preferences-error, .product-feedback, .run-warning,
+    .field-error, .telegram-action-error, .telegram-delivery),
+  .auth-main :is(.auth-feedback, .field-error) {
     animation: motion-surface-in 220ms cubic-bezier(.2, .8, .2, 1) both;
+  }
+
+  .workspace .queue-filters,
+  .workspace .saved-products[open] > div,
+  .workspace .import-page .message-preview,
+  .workspace .detail-column > .conversation-panel,
+  .workspace .detail-column > .reply-panel,
+  .workspace .telegram-reply-text {
+    animation: motion-disclosure-in 200ms cubic-bezier(.2, .8, .2, 1) both;
   }
 
   .workspace .queue-row {
