@@ -13,3 +13,34 @@
 .signal-breakdown { display: grid; gap: 12px; }.breakdown-row { display: grid; grid-template-columns: 150px minmax(0, 1fr) 75px; gap: 18px; align-items: center; color: #bcb6d5; font-size: 13px; }.signal-track { height: 14px; background: #2b2d43; border-radius: 6px; overflow: hidden; }.signal-track span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #9973ef, #a078ee); }.breakdown-caption { font-size: 12px; color: #8e87ac; margin: 21px 0 0; }.dialog-footer { display: flex; gap: 20px; align-items: center; padding-top: 16px; }.dialog-footer > svg { color: #b9b2d4; flex-shrink: 0; }.dialog-footer-info { flex: 1; min-width: 0; }.dialog-footer-info strong { font-size: 13px; font-weight: 600; display: block; overflow-wrap: anywhere; }.dialog-footer-info span { font-size: 12px; color: var(--muted); }.dialog-footer .button { white-space: nowrap; padding: 12px 22px; }
 @media (max-width: 600px) { .viewport-dialog { width: calc(100vw - 24px); max-height: calc(100dvh - 24px); padding: 20px; border-radius: 12px; }.dialog-heading h2 { font-size: 23px; gap: 10px; }.escape-hint { display: none; }.dialog-meta { align-items: start; }.dialog-source-meta { gap: 5px 9px; font-size: 11px; }.signal-overview { grid-template-columns: 1fr; gap: 20px; }.dialog-score { padding: 0; border: 0; }.dialog-score-value strong { font-size: 64px; }.dialog-evidence li { grid-template-columns: 34px minmax(0, 1fr); gap: 12px; }.dialog-evidence-number { width: 32px; height: 32px; }.dialog-evidence blockquote { grid-column: 2; font-size: 18px; }.breakdown-row { grid-template-columns: 100px minmax(0, 1fr) 43px; gap: 8px; font-size: 11px; }.dialog-footer { flex-wrap: wrap; gap: 12px; }.dialog-footer .button { width: 100%; font-size: 13px; }.dialog-section h3 { font-size: 20px; } }
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+
+@media (prefers-reduced-motion: no-preference) {
+  .viewport-dialog {
+    opacity: 0;
+    transform: translateY(8px) scale(.985);
+    transition: opacity 180ms ease, transform 220ms cubic-bezier(.2, .8, .2, 1),
+      overlay 180ms allow-discrete, display 180ms allow-discrete;
+  }
+
+  .viewport-dialog[open] {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  .viewport-dialog::backdrop {
+    background: transparent;
+    backdrop-filter: blur(0);
+    transition: background-color 180ms ease, backdrop-filter 220ms ease,
+      overlay 180ms allow-discrete, display 180ms allow-discrete;
+  }
+
+  .viewport-dialog[open]::backdrop {
+    background: #050910a3;
+    backdrop-filter: blur(2px);
+  }
+
+  @starting-style {
+    .viewport-dialog[open] { opacity: 0; transform: translateY(8px) scale(.985); }
+    .viewport-dialog[open]::backdrop { background: transparent; backdrop-filter: blur(0); }
+  }
+}

@@ -1,0 +1,160 @@
+/* Motion stays short and restrained; route-level animation is defined in globals.css. */
+@media (prefers-reduced-motion: no-preference) {
+  .workspace button,
+  .workspace .button,
+  .workspace a:not(.account-action),
+  .auth-main button,
+  .auth-main .button {
+    transition: color 180ms ease, background-color 200ms ease, border-color 180ms ease,
+      box-shadow 200ms ease, transform 180ms cubic-bezier(.2, .8, .2, 1),
+      opacity 180ms ease, filter 180ms ease, text-decoration-color 180ms ease;
+  }
+
+  .workspace :is(.auth-input, .topbar-search, .queue-search) {
+    transition: border-color 180ms ease, background-color 200ms ease, box-shadow 200ms ease;
+  }
+
+  .workspace details > summary {
+    transition: color 180ms ease, background-color 200ms ease, border-color 180ms ease,
+      box-shadow 200ms ease, transform 180ms cubic-bezier(.2, .8, .2, 1);
+  }
+
+  .workspace details > summary:hover { color: var(--text); }
+  .workspace details[open] > summary { color: var(--text); }
+
+  .workspace-picker summary > svg:last-child {
+    transform: rotate(90deg);
+    transition: transform 220ms cubic-bezier(.2, .8, .2, 1);
+  }
+
+  .workspace-picker[open] summary > svg:last-child { transform: rotate(270deg); }
+
+  .workspace-picker[open] .workspace-picker-menu,
+  .sidebar-utility[open] > p {
+    transform-origin: top center;
+    animation: motion-disclosure-in 200ms cubic-bezier(.2, .8, .2, 1) both;
+  }
+
+  .context-section details[open] > p,
+  .context-section details[open] .context-message,
+  .source-diagnostics[open] .diagnostics-content,
+  .demo-state-controls[open] > :not(summary) {
+    animation: motion-disclosure-in 200ms cubic-bezier(.2, .8, .2, 1) both;
+  }
+
+  .workspace :is(.workflow-warning, .workflow-error, .run-issues, .validation-success,
+    .preferences-notice, .preferences-error),
+  .auth-main .auth-feedback {
+    animation: motion-surface-in 220ms cubic-bezier(.2, .8, .2, 1) both;
+  }
+
+  .workspace .queue-row {
+    transition: color 160ms ease, background-color 200ms ease, border-color 180ms ease,
+      border-radius 200ms ease, box-shadow 200ms ease, transform 180ms ease;
+  }
+
+  .workspace .queue-row:active { transform: scale(.995); }
+
+  .workspace .queue-tabs button {
+    transition: color 180ms ease, background-color 200ms ease, border-color 180ms ease,
+      box-shadow 200ms ease;
+  }
+
+  .workspace .queue-tabs button:not([aria-pressed="true"]):hover {
+    color: var(--text);
+    background: #ffffff08;
+  }
+
+  .workspace .signal-card {
+    transition: color 180ms ease, background-color 200ms ease, border-color 180ms ease,
+      box-shadow 220ms ease, transform 200ms cubic-bezier(.2, .8, .2, 1);
+  }
+
+  .workspace .signal-card:hover,
+  .workspace .signal-card:focus-visible {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 26px #0003, inset 0 0 0 1px #9765ef24;
+  }
+
+  .workspace .decision-summary a,
+  .workspace .review-list a {
+    transition: color 180ms ease, background-color 200ms ease, border-color 180ms ease,
+      box-shadow 200ms ease, transform 180ms cubic-bezier(.2, .8, .2, 1);
+  }
+
+  .workspace .decision-summary a:hover,
+  .workspace .review-list a:hover {
+    background-color: #ffffff07;
+    border-color: var(--panel-border);
+  }
+
+  .workspace .queue-more,
+  .workspace .workflow-warning .text-action {
+    transition: color 180ms ease, background-color 180ms ease, transform 180ms ease;
+  }
+
+  .workspace .queue-more > svg,
+  .workspace .workflow-warning .text-action > svg {
+    transition: transform 200ms cubic-bezier(.2, .8, .2, 1);
+  }
+
+  .workspace .queue-more[aria-expanded="true"] > svg,
+  .workspace .workflow-warning .text-action[aria-expanded="true"] > svg {
+    transform: rotate(90deg);
+  }
+
+  .workspace .analysis-progress > span,
+  .workspace .score-meter i,
+  .workspace .signal-track span {
+    transition: width 420ms cubic-bezier(.2, .8, .2, 1);
+  }
+
+  .workspace .run-state:not(.terminal):not(.attention)::before {
+    animation: motion-status-pulse 1.8s ease-in-out infinite;
+  }
+
+  .workspace button:not(:disabled):not(.text-action):not(.generate-reply):not(.reject-button):not(.queue-row):not(.icon-button):not(.mobile-navigation-backdrop):not(.settings-reset):not(.session-retry):not(.account-action):hover,
+  .workspace a.button:hover,
+  .auth-main button:not(:disabled):hover,
+  .auth-main .button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 7px 18px #0003;
+    filter: brightness(1.04);
+  }
+
+  .workspace button:not(:disabled):active:not(.queue-row):not(.mobile-navigation-backdrop),
+  .workspace a.button:active,
+  .auth-main button:not(:disabled):active,
+  .auth-main .button:active {
+    transform: scale(.985);
+    filter: brightness(.98);
+  }
+
+  .workspace .icon-button:not(:disabled):hover { border-color: var(--control-hover-border); color: var(--text); }
+  .workspace .icon-button:not(:disabled):active { transform: scale(.93); }
+  .workspace .queue-tabs button:hover,
+  .workspace .session-retry:hover { transform: none; box-shadow: none; filter: none; }
+  .workspace .queue-tabs button:active,
+  .workspace .session-retry:active { transform: none; filter: none; }
+
+  .workspace a:not(.button):hover { text-decoration-color: currentColor; }
+}
+
+@keyframes motion-disclosure-in {
+  from { opacity: 0; transform: translateY(-5px) scale(.99); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes motion-surface-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes motion-status-pulse {
+  0%, 100% { opacity: .6; box-shadow: 0 0 0 0 color-mix(in srgb, currentColor 28%, transparent); }
+  50% { opacity: 1; box-shadow: 0 0 0 4px transparent; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workspace .run-state:not(.terminal):not(.attention)::before { animation: none !important; }
+}
