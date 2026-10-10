@@ -39,9 +39,9 @@ def test_additive_migration_preserves_existing_profiles(tmp_path):
     migrate("upgrade","0007")
     with sqlite3.connect(database) as db:
         db.execute("INSERT INTO products (id,created_at,name,description,target_customer,problems_solved,best_fit,not_fit,currency) VALUES ('retained','2026-10-10','Profile','Original description','Owners','[]','[]','[]','USD')")
-    for operation,revision in (("upgrade","0008"),("downgrade","0007")):
+    for operation,revision in (("upgrade","0009"),("downgrade","0007")):
         migrate(operation,revision)
         with sqlite3.connect(database) as db:
             assert db.execute("SELECT description FROM products WHERE id='retained'").fetchone()==('Original description',)
             tables={row[0] for row in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
-            assert ("discovery_prospects" in tables)==(revision=="0008")
+            assert ("discovery_prospects" in tables)==(revision=="0009")
