@@ -60,7 +60,7 @@ def plan_reply(inputs: AgentInput, qualification: QualificationResult,
     price, demo = "pricing" in requests, "demo" in requests
     acknowledgement = next_question = None
     pricing_field = None
-    for field in ("description", "name"):
+    for field in (("description", "name") if price else ()):
         value = getattr(inputs.product, field)
         if (len(value) <= 600 and bool(PERSIAN_LETTERS.search(value)) == (language == "fa")
                 and re.search(REQUEST_PATTERNS["pricing"], normalize(value))

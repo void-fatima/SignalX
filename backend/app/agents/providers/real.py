@@ -13,7 +13,7 @@ from app.agents.contracts import (
 )
 from app.agents.cost import calculate_cost
 from app.agents.prompts.qualification import PROMPT_VERSION, build_messages, output_schema
-from app.agents.prompts.reply import build_reply_messages, output_schema as reply_schema
+from app.agents.prompts.reply import REPLY_MAX_OUTPUT_TOKENS, build_reply_messages, output_schema as reply_schema
 from app.agents.providers.base import BaseProvider, ProviderError
 from app.agents.providers.config import RealProviderConfig
 from app.agents.qualification import validate_qualification_result
@@ -99,7 +99,10 @@ class RealProvider(BaseProvider):
         if inputs.metadata.provider_mode != "real" or decision == Decision.IGNORE:
             raise ProviderError("Real reply requires real mode and a review/respond lead", [])
         plan = plan_reply(inputs, qualification, language)
-        messages = build_reply_messages(inputs, qualification, decision, plan=plan)
+        try:
+            messages = build_reply_messages(inputs, qualification, decision, plan=plan)
+        except ValueError:
+            raise ProviderError("Reply input exceeds the bounded drafting budget", []) from None
         records: list[UsageInfo] = []
         manager = (nullcontext(self._client) if self._client is not None else
                    httpx.Client(timeout=self.config.timeout_seconds, follow_redirects=False))
@@ -117,7 +120,7 @@ class RealProvider(BaseProvider):
                         headers={"Authorization": "Bearer " + self._api_key.get_secret_value()},
                         timeout=self.config.timeout_seconds, follow_redirects=False,
                         json={"model": self.config.model, "store": False,
-                              "max_output_tokens": self.config.max_output_tokens,
+                              "max_output_tokens": min(self.config.max_output_tokens, REPLY_MAX_OUTPUT_TOKENS),
                               "input": request_messages,
                               "text": {"format": {"type": "json_schema", "name": "suggested_reply",
                                                   "strict": True, "schema": reply_schema()}}})

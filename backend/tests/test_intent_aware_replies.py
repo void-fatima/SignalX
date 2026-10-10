@@ -143,3 +143,25 @@ def test_known_company_size_is_not_requested_again(real_provider):
     real_provider([envelope(draft)] * 2)
     with pytest.raises(ProviderError):
         generate_suggested_reply(item, analysis_for(item, q))
+
+
+@pytest.mark.parametrize("message,topic,question", [
+    ("Does LedgerFlow generate invoices?", "product_question", "Which reporting period matters to you?"),
+    ("Does it integrate with our CRM?", "integration", "Which connection details need checking?"),
+    ("Compare it with our existing tool", "comparison", "Which differences matter most to you?"),
+    ("Following up, any update?", "follow_up", "Which point would you like clarified?"),
+    ("It sounds expensive and I'm not sure", "objection", "What budget would you be comfortable with?"),
+])
+def test_noncommercial_requests_keep_exact_product_grounding(message, topic, question, real_provider):
+    item = make_input(message)
+    q = qualified(item)
+    draft = {"parts": [
+        {"kind": "product_fact", "text": item.product.description, "product_field": "description"},
+        {"kind": "question", "text": question, "product_field": None},
+    ]}
+    _, requests, _ = real_provider([envelope(draft)])
+    output = generate_suggested_reply(item, analysis_for(item, q))
+    data = json.loads(json.loads(requests[0].content)["input"][-1]["content"])
+    assert topic in data["reply_plan"]["requests"]
+    assert item.product.description in output.suggested_reply
+    assert len(requests) == 1

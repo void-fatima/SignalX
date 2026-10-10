@@ -12,6 +12,7 @@ from app.agents.qualification import validate_qualification_result
 from app.agents.scoring import calculate_score
 from app.agents.screening import screen
 from app.agents.reply_plan import ReplyLanguage
+from app.agents.reply_draft import MAX_REPLY_CHARS
 
 
 class ReplyInput(BaseModel):
@@ -85,7 +86,7 @@ def generate_suggested_reply(agent_input: AgentInput, analysis: AgentOutput, *, 
                     "suggested_reply" if index == 1 else "suggested_reply_repair")
                     or record.attempt_no != index for index, record in enumerate(records, 1))):
             raise ValueError("Invalid reply usage")
-        if not isinstance(text, str) or not text.strip() or len(text) > 1802:
+        if not isinstance(text, str) or not text.strip() or len(text) > MAX_REPLY_CHARS:
             raise ValueError("Invalid reply text")
     except (ValidationError, ValueError, AttributeError, TypeError):
         raise ProviderError("Provider returned invalid reply data or usage", [*analysis.usage, *records]) from None

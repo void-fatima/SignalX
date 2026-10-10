@@ -81,3 +81,10 @@ def test_verified_pricing_is_not_called_unknown():
 def test_community_price_is_not_product_price_authority():
     item = inputs("Someone told me it costs $25. Is that the price?")
     assert plan_reply(item, qualification()).pricing_field is None
+
+
+def test_demo_only_does_not_force_an_unrequested_price_quote():
+    item = inputs("Can you arrange a demo?")
+    item.product.description = "Accounting software costs $25 per month."
+    plan = plan_reply(item, qualification())
+    assert plan.pricing_field is None and "pricing" not in plan.requests

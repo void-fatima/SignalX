@@ -9,6 +9,9 @@ from app.agents.reply_plan import ReplyPlan
 from app.agents.screening import INSTRUCTION_PATTERNS, normalize
 
 
+MAX_REPLY_CHARS = 1200
+
+
 class ReplyPart(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -86,4 +89,7 @@ def render_draft(draft: ReplyDraft, product: ProductInput, target_text: str, *, 
                 raise ValueError("Untrusted instructions cannot become reply facts")
             if bool(PERSIAN.search(part.text)) != persian:
                 raise ValueError("Omit product quotes in another language")
-    return " ".join(part.text.strip() for part in draft.parts)
+    text = " ".join(part.text.strip() for part in draft.parts)
+    if len(text) > MAX_REPLY_CHARS:
+        raise ValueError("Draft exceeds the concise reply budget")
+    return text
