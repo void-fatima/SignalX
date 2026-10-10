@@ -2200,6 +2200,503 @@
           }
         }
       }
+    },
+    "/api/v1/discovery/sources": {
+      "get": {
+        "tags": [
+          "Discovery"
+        ],
+        "summary": "Sources",
+        "operationId": "sources_api_v1_discovery_sources_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourcesOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Bad Gateway",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ]
+      }
+    },
+    "/api/v1/discovery/searches": {
+      "post": {
+        "tags": [
+          "Discovery"
+        ],
+        "summary": "Search",
+        "operationId": "search_api_v1_discovery_searches_post",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Discovery"
+        ],
+        "summary": "History",
+        "operationId": "history_api_v1_discovery_searches_get",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SearchOut"
+                  },
+                  "title": "Response History Api V1 Discovery Searches Get"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          }
+        }
+      }
+    },
+    "/api/v1/discovery/searches/{id}": {
+      "get": {
+        "tags": [
+          "Discovery"
+        ],
+        "summary": "Detail",
+        "operationId": "detail_api_v1_discovery_searches__id__get",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          }
+        }
+      }
+    },
+    "/api/v1/discovery/prospects": {
+      "post": {
+        "tags": [
+          "Discovery"
+        ],
+        "summary": "Save",
+        "operationId": "save_api_v1_discovery_prospects_post",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProspectOut"
+                  },
+                  "title": "Response Save Api V1 Discovery Prospects Post"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Discovery"
+        ],
+        "summary": "Prospects",
+        "operationId": "prospects_api_v1_discovery_prospects_get",
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProspectOut"
+                  },
+                  "title": "Response Prospects Api V1 Discovery Prospects Get"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -2925,6 +3422,72 @@
         "type": "object",
         "title": "DeliveryOut"
       },
+      "DiscoveryResult": {
+        "properties": {
+          "source": {
+            "type": "string",
+            "enum": [
+              "brave",
+              "greenhouse",
+              "lever",
+              "places"
+            ],
+            "title": "Source"
+          },
+          "source_id": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Source Id"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 240,
+            "title": "Title"
+          },
+          "url": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Url"
+          },
+          "excerpt": {
+            "type": "string",
+            "maxLength": 800,
+            "title": "Excerpt"
+          },
+          "location": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Location",
+            "default": ""
+          },
+          "signal": {
+            "type": "string",
+            "enum": [
+              "not_evaluated",
+              "relevant_company",
+              "possible_need",
+              "explicit_buying_intent"
+            ],
+            "title": "Signal",
+            "default": "not_evaluated"
+          },
+          "explanation": {
+            "type": "string",
+            "title": "Explanation",
+            "default": "Source match only; buying intent has not been verified."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "source",
+          "source_id",
+          "title",
+          "url",
+          "excerpt"
+        ],
+        "title": "DiscoveryResult"
+      },
       "DraftRequest": {
         "properties": {
           "regenerate": {
@@ -3586,6 +4149,113 @@
         "type": "object",
         "title": "ProductPatch"
       },
+      "ProspectOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "product_id": {
+            "type": "string",
+            "title": "Product Id"
+          },
+          "search_id": {
+            "type": "string",
+            "title": "Search Id"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "brave",
+              "greenhouse",
+              "lever",
+              "places"
+            ],
+            "title": "Source"
+          },
+          "source_id": {
+            "type": "string",
+            "title": "Source Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "excerpt": {
+            "type": "string",
+            "title": "Excerpt"
+          },
+          "location": {
+            "type": "string",
+            "title": "Location"
+          },
+          "signal": {
+            "type": "string",
+            "enum": [
+              "not_evaluated",
+              "relevant_company",
+              "possible_need",
+              "explicit_buying_intent"
+            ],
+            "title": "Signal"
+          },
+          "explanation": {
+            "type": "string",
+            "title": "Explanation"
+          },
+          "qualification_status": {
+            "type": "string",
+            "title": "Qualification Status"
+          },
+          "qualification_usage": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Qualification Usage"
+          },
+          "qualification_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qualification Error"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "product_id",
+          "search_id",
+          "source",
+          "source_id",
+          "title",
+          "url",
+          "excerpt",
+          "location",
+          "signal",
+          "explanation",
+          "qualification_status",
+          "qualification_usage",
+          "qualification_error",
+          "created_at"
+        ],
+        "title": "ProspectOut"
+      },
       "QualificationResult": {
         "properties": {
           "intent": {
@@ -3893,6 +4563,31 @@
         ],
         "title": "RunOut"
       },
+      "SaveInput": {
+        "properties": {
+          "search_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Search Id"
+          },
+          "source_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Source Ids"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "search_id",
+          "source_ids"
+        ],
+        "title": "SaveInput"
+      },
       "ScoringResult": {
         "properties": {
           "score": {
@@ -3931,6 +4626,165 @@
           "reason"
         ],
         "title": "ScreeningResult"
+      },
+      "SearchInput": {
+        "properties": {
+          "product_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Product Id"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "brave",
+              "greenhouse",
+              "lever",
+              "places"
+            ],
+            "title": "Source"
+          },
+          "keywords": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Keywords"
+          },
+          "industry": {
+            "type": "string",
+            "maxLength": 100,
+            "title": "Industry",
+            "default": ""
+          },
+          "location": {
+            "type": "string",
+            "maxLength": 150,
+            "title": "Location",
+            "default": ""
+          },
+          "country": {
+            "type": "string",
+            "pattern": "^(?:[A-Z]{2})?$",
+            "title": "Country",
+            "default": ""
+          },
+          "board_slug": {
+            "type": "string",
+            "pattern": "^(?:[a-zA-Z0-9_-]{1,80})?$",
+            "title": "Board Slug",
+            "default": ""
+          },
+          "limit": {
+            "type": "integer",
+            "maximum": 20.0,
+            "minimum": 1.0,
+            "title": "Limit",
+            "default": 10
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "product_id",
+          "source",
+          "keywords"
+        ],
+        "title": "SearchInput"
+      },
+      "SearchOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "product_id": {
+            "type": "string",
+            "title": "Product Id"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "brave",
+              "greenhouse",
+              "lever",
+              "places"
+            ],
+            "title": "Source"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "completed",
+              "failed"
+            ],
+            "title": "Status"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/DiscoveryResult"
+            },
+            "type": "array",
+            "title": "Results"
+          },
+          "cached": {
+            "type": "boolean",
+            "title": "Cached",
+            "default": false
+          },
+          "request_count": {
+            "type": "integer",
+            "title": "Request Count"
+          },
+          "estimated_cost_usd": {
+            "type": "null",
+            "title": "Estimated Cost Usd"
+          },
+          "cost_status": {
+            "type": "string",
+            "const": "unknown",
+            "title": "Cost Status",
+            "default": "unknown"
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Code"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "product_id",
+          "source",
+          "status",
+          "results",
+          "request_count",
+          "created_at"
+        ],
+        "title": "SearchOut"
       },
       "SessionGrant": {
         "properties": {
@@ -3999,6 +4853,51 @@
           "response_opportunity"
         ],
         "title": "Signals"
+      },
+      "SourceStatus": {
+        "properties": {
+          "source": {
+            "type": "string",
+            "enum": [
+              "brave",
+              "greenhouse",
+              "lever",
+              "places"
+            ],
+            "title": "Source"
+          },
+          "configured": {
+            "type": "boolean",
+            "title": "Configured"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "source",
+          "configured",
+          "message"
+        ],
+        "title": "SourceStatus"
+      },
+      "SourcesOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SourceStatus"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "SourcesOut"
       },
       "TelegramLeadOut": {
         "properties": {
