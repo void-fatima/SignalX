@@ -4,6 +4,8 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from app.discovery import models as discovery_models  # noqa: F401
+from app.discovery.routes import router as discovery_router
 from app.core.config import settings
 from app.core.errors import AppError
 from app.agents.pipeline import get_provider
@@ -48,3 +50,5 @@ app.include_router(router, prefix="/api/v1")
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(telegram_router, prefix="/api/v1")
 app.include_router(webhook_router)
+
+app.include_router(discovery_router, prefix="/api/v1")
