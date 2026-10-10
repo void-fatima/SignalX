@@ -8,7 +8,7 @@ from app.models import User, Product, utcnow
 from app.core.errors import AppError
 from app.discovery.models import DiscoverySearch, DiscoveryProspect, DiscoveryBudget
 from app.discovery.schemas import SearchOut, DiscoveryResult
-from app.discovery.providers import DiscoveryError, get_discovery_provider, public_url, source_status
+from app.discovery.providers import DiscoveryError, get_discovery_provider, public_url, source_status, validate_no_credentials
 
 CACHE_SECONDS = 900
 USER_SEARCHES_PER_HOUR = 5
@@ -99,6 +99,7 @@ def perform_search(session, user_id, inputs, key):
         for result in results:
             if result.source != inputs.source or result.signal != "not_evaluated" or public_url(result.url) != result.url:
                 raise DiscoveryError("source_invalid_output","Source attribution or URL is invalid",502,1)
+        validate_no_credentials([item.model_dump() for item in results])
         row.results=[item.model_dump() for item in results]; row.status="completed"; row.request_count=1
     except DiscoveryError as exc:
         row.status="failed"; row.request_count=exc.request_count; row.error_code=exc.code; row.error=str(exc)

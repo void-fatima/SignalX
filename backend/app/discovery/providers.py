@@ -1,4 +1,5 @@
 """Fixed-host public APIs. No arbitrary page fetching, model calls or fallback."""
+import base64
 import hashlib
 import ipaddress
 import json
@@ -8,7 +9,7 @@ from contextlib import nullcontext
 from html import unescape
 from html.parser import HTMLParser
 from typing import Protocol
-from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
+from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode, unquote
 import httpx
 from app.discovery.schemas import DiscoveryResult, SearchInput, SourceStatus
 
@@ -18,6 +19,44 @@ class DiscoveryError(Exception):
     def __init__(self, code, message, status=502, request_count=0):
         super().__init__(message)
         self.code, self.status, self.request_count = code, status, request_count
+
+def validate_no_credentials(value):
+    """Reject credential echoes before retention, including common encoded forms.
+
+    Inspect keys as well as values; never interpolate source data into errors.
+    Decoding is bounded and does not execute or fetch source content.
+    """
+    secrets = [os.getenv(name, "").strip() for name in
+        ("BRAVE_SEARCH_API_KEY", "GOOGLE_PLACES_API_KEY")]
+    needles = set()
+    for secret in filter(None, secrets):
+        needles.add(secret)
+        raw = secret.encode("utf-8")
+        for encoded in (base64.b64encode(raw).decode(), base64.urlsafe_b64encode(raw).decode()):
+            needles.update((encoded, encoded.rstrip("=")))
+        needles.update((raw.hex(), raw.hex().upper()))
+    if not needles:
+        return
+    pending = [value]
+    while pending:
+        item = pending.pop()
+        if isinstance(item, dict):
+            pending.extend(item.keys()); pending.extend(item.values())
+        elif isinstance(item, (list, tuple)):
+            pending.extend(item)
+        elif isinstance(item, str):
+            for _ in range(5):
+                if any(needle in item for needle in needles):
+                    raise DiscoveryError("source_invalid_output", "Source response contains unsafe data.", 502, 1)
+                decoded = re.sub(r"\\(?:u([0-9a-fA-F]{4})|x([0-9a-fA-F]{2}))",
+                    lambda match: chr(int(match.group(1) or match.group(2), 16)), unescape(unquote(item)))
+                if decoded == item:
+                    break
+                item = decoded
+            else:
+                # Reject further encoded layers rather than letting an unchecked value escape.
+                raise DiscoveryError("source_invalid_output", "Source response contains excessive encoding.", 502, 1)
+
 
 class DiscoveryProvider(Protocol):
     def search(self, inputs: SearchInput) -> list[DiscoveryResult]: ...
@@ -81,10 +120,8 @@ class PublicAPIProvider:
                     data.extend(chunk)
                     if len(data)>MAX_BODY_BYTES: raise DiscoveryError("source_response_too_large","Source response exceeded the bounded search budget.",502,1)
                 body = json.loads(data)
-                for name in ("BRAVE_SEARCH_API_KEY", "GOOGLE_PLACES_API_KEY"):
-                    secret = os.getenv(name, "").strip()
-                    if secret and secret in data.decode("utf-8", errors="replace"):
-                        raise DiscoveryError("source_invalid_output", "Source response contains unsafe data.", 502, 1)
+                validate_no_credentials(data.decode("utf-8", errors="replace"))
+                validate_no_credentials(body)
                 return body
         except DiscoveryError: raise
         except httpx.TimeoutException:
@@ -148,6 +185,7 @@ class PublicAPIProvider:
             results.append(DiscoveryResult(source=self.source,source_id=source_id,title=title[:240],url=url,excerpt=excerpt,location=location,
                 explanation="Hiring activity is a possible business signal, not evidence of buying intent." if self.source in {"greenhouse","lever"} else "Source match only; product fit and buying intent have not been verified."))
             if len(results)>=inputs.limit: break
+        validate_no_credentials([result.model_dump() for result in results])
         return results
 
 def get_discovery_provider(source):
