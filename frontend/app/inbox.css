@@ -55,3 +55,13 @@
 @media (max-width: 900px) { .inbox-grid { grid-template-columns: minmax(0, 1fr); } }
 
 .reply-expand-link { display: flex; align-items: center; gap: 7px; width: fit-content; margin: 9px 0 0 auto; font-size: 11px; }
+
+.product-snapshot { border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; min-width: 0; }
+.product-snapshot summary { color: var(--text); cursor: pointer; font-size: 14px; font-weight: 600; }
+.product-snapshot dl { display: grid; gap: 12px; margin-bottom: 0; }
+.product-snapshot dl > div { display: grid; grid-template-columns: 135px minmax(0, 1fr); gap: 12px; }
+.product-snapshot dt { color: var(--muted); font-size: 12px; }
+.product-snapshot dd { margin: 0; font-size: 13px; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.7; }
+.product-snapshot ul { margin: 0; padding-inline-start: 18px; }
+.signal-value { font-variant-numeric: tabular-nums; text-align: end; white-space: nowrap; }
+@media (max-width: 550px) { .product-snapshot dl > div { grid-template-columns: minmax(0, 1fr); gap: 3px; } }
