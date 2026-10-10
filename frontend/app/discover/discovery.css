@@ -1,0 +1,24 @@
+.discovery-page { display: grid; gap: 20px; }
+.discovery-page header p, .discovery-note { color: var(--muted); font-size: 12px; line-height: 1.7; }
+.discovery-page .card { margin: 0; min-width: 0; }
+.discovery-form fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.discovery-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 18px; }
+.discovery-wide { grid-column: 1 / -1; }
+.discovery-error { color: #f2a2b9; overflow-wrap: anywhere; }
+.discovery-results { display: grid; gap: 12px; margin-bottom: 18px; }
+.discovery-results article, .discovery-saved { padding: 16px; border: 1px solid var(--line); border-radius: 8px; min-width: 0; }
+.discovery-result-heading, .discovery-section-heading { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.discovery-result-heading input { width: 18px; height: 18px; flex-shrink: 0; }
+.discovery-result-heading h3 { flex: 1; margin: 0; font-size: 16px; overflow-wrap: anywhere; }
+.discovery-results p { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 13px; margin: 12px 0; }
+.discovery-signal { display: inline-block; padding: 3px 8px; margin-top: 12px; border: 1px solid #3d5c58; border-radius: 5px; color: var(--mint); font-size: 11px; }
+.discovery-section-heading { justify-content: space-between; margin-bottom: 16px; }
+.discovery-section-heading h2 { margin: 0; }
+.discovery-section-heading span { color: var(--muted); font-size: 12px; }
+.discovery-saved { margin-top: 12px; }
+.discovery-saved h3 { margin: 0 0 10px; font-size: 16px; overflow-wrap: anywhere; }
+.discovery-saved p { overflow-wrap: anywhere; }
+.discovery-saved > span { font-size: 11px; color: var(--muted); }
+.discovery-history { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; width: 100%; margin-top: 12px; padding: 12px; background: var(--surface); border-color: var(--line); text-align: left; font-size: 12px; }
+.discovery-page summary { cursor: pointer; }
+@media (max-width: 600px) { .discovery-fields { grid-template-columns: minmax(0, 1fr); } .discovery-page .card { padding: 16px; } }

@@ -239,7 +239,10 @@ def test_repair_and_reply_preserve_qualification_metadata_and_all_usage(examples
     provider, requests = run_real([
         envelope({"score": 100, "decision_reason": "LLM cannot decide"}, usage),
         envelope(qualification, usage),
-        envelope(dict(parts=[dict(kind="question", text="What would you like to learn?", product_field=None)]), usage),
+        envelope(dict(parts=[
+            dict(kind="request_acknowledgement", text="Thanks for asking about pricing. I don't have a verified price to share here.", product_field=None),
+            dict(kind="question", text="Would you like to confirm the pricing options?", product_field=None),
+        ]), usage),
     ])
     inputs = AgentInput.model_validate(example["agent_input"])
     analysis = orchestrator.analyze_agent(inputs)

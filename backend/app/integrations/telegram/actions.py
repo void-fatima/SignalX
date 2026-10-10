@@ -303,6 +303,9 @@ def send_reply(session, user_id, analysis_id, text, client, *, idempotency_key=N
             return lead_view(session, user_id, analysis_id)
         raise AppError("delivery_requires_review", "Another reply operation claimed this lead; reload before sending", 409)
     session.commit()
+    # The claim bypasses identity-map synchronization; reload its token/state
+    # before applying the provider result when expire_on_commit is disabled.
+    session.expire_all()
     try:
         sent_id = client.send_message(chat_id=source.chat_id, message_id=source.message_id,
             text=text, thread_id=source.message_thread_id)

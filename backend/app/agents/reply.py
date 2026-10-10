@@ -11,6 +11,8 @@ from app.agents.providers.factory import get_provider
 from app.agents.qualification import validate_qualification_result
 from app.agents.scoring import calculate_score
 from app.agents.screening import screen
+from app.agents.reply_plan import ReplyLanguage
+from app.agents.reply_draft import MAX_REPLY_CHARS
 
 
 class ReplyInput(BaseModel):
@@ -31,7 +33,7 @@ class ReplyProvider(Protocol):
     def generate_reply(self, payload: ReplyInput) -> tuple[ReplyResult, list[UsageEvent]]: ...
 
 
-def generate_suggested_reply(agent_input: AgentInput, analysis: AgentOutput) -> AgentOutput:
+def generate_suggested_reply(agent_input: AgentInput, analysis: AgentOutput, *, language: ReplyLanguage | None = None) -> AgentOutput:
     """Generate a draft only on this explicit call; never send or approve it.
 
     The frozen output has no input identity. Backend must load the exact stored
@@ -39,6 +41,8 @@ def generate_suggested_reply(agent_input: AgentInput, analysis: AgentOutput) -> 
     We verify all observable invariants without changing the existing analysis.
     ProviderError.usage includes prior analysis plus failed draft attempts.
     """
+    if language is not None and language not in ("en", "fa"):
+        raise ValueError("Reply language must be en or fa")
     inputs, product, target, context = _prepare_input(agent_input)
     # A new nested instance protects the caller's analysis from mutation.
     analysis = AgentOutput.model_validate(analysis.model_dump(), strict=True)
@@ -71,7 +75,8 @@ def generate_suggested_reply(agent_input: AgentInput, analysis: AgentOutput) -> 
     if provider.provider_mode != mode:
         raise ProviderError("Reply provider mode does not match the supplied mode", analysis.usage)
     try:
-        text, records = provider.generate_reply_structured(inputs, qualification, analysis.scoring.decision)
+        options = {"language": language} if language is not None else {}
+        text, records = provider.generate_reply_structured(inputs, qualification, analysis.scoring.decision, **options)
     except ProviderError as exc:
         raise ProviderError(str(exc), [*analysis.usage, *exc.usage]) from None
     try:
@@ -81,7 +86,7 @@ def generate_suggested_reply(agent_input: AgentInput, analysis: AgentOutput) -> 
                     "suggested_reply" if index == 1 else "suggested_reply_repair")
                     or record.attempt_no != index for index, record in enumerate(records, 1))):
             raise ValueError("Invalid reply usage")
-        if not isinstance(text, str) or not text.strip() or len(text) > 1802:
+        if not isinstance(text, str) or not text.strip() or len(text) > MAX_REPLY_CHARS:
             raise ValueError("Invalid reply text")
     except (ValidationError, ValueError, AttributeError, TypeError):
         raise ProviderError("Provider returned invalid reply data or usage", [*analysis.usage, *records]) from None

@@ -28,6 +28,7 @@ from app.services.response_service import (
 from app.services.analytics_service import overview as analytics_overview
 from app.auth.contracts import CurrentUser
 from app.auth.dependencies import get_current_user, verify_origin
+from app.discovery.models import DiscoverySearch, DiscoveryProspect, DiscoveryBudget
 from app.integrations.telegram.models import TelegramChatMapping, TelegramDelivery, TelegramReceipt
 
 router = APIRouter()
@@ -74,6 +75,8 @@ def ready(session: DB):
         for model in (User, UserSession, Product, ImportBatch, Message, AnalysisRun, Analysis, Usage,
                       SuggestedResponse, LeadFeedback, TelegramChatMapping, TelegramReceipt, TelegramDelivery):
             session.execute(select(model.id).limit(1))
+        for model in (DiscoverySearch, DiscoveryProspect, DiscoveryBudget):
+            session.execute(select(model).limit(1))
     except Exception as exc:
         raise AppError("not_ready", "Database or migration is not ready", 503) from exc
     return {"status": "ready", "revision": revision}
