@@ -71,31 +71,31 @@ def plan_reply(inputs: AgentInput, qualification: QualificationResult,
             break
     if language == "en":
         if price and demo:
-            acknowledgement = "Thanks for asking about pricing and a demo. I don't have verified pricing or a confirmed demo appointment to share."
-            next_question = "Would you like to confirm pricing and whether a demo can be arranged?"
+            acknowledgement = "Thanks for asking about pricing and a demo. I don't have verified pricing to share here."
+            next_question = "Would you like to confirm pricing and discuss the next steps for a demo?"
         elif price:
             acknowledgement = "Thanks for asking about pricing. I don't have a verified price to share here."
             next_question = "Would you like to confirm the pricing options?"
         elif demo:
-            acknowledgement = "Thanks for requesting a demo. A demo appointment has not been confirmed."
-            next_question = "Would you like to check whether a demo can be arranged?"
+            acknowledgement = "Thanks for requesting a demo."
+            next_question = "Do you have a preferred time for a demo discussion?"
     else:
         if price and demo:
-            acknowledgement = "ممنون از درخواست قیمت و دمو. در حال حاضر قیمت تأییدشده یا زمان قطعی دمو در اطلاعات موجود نیست."
-            next_question = "مایلید قیمت و امکان هماهنگی دمو بررسی شود؟"
+            acknowledgement = "ممنون از درخواست قیمت و دمو. قیمت تأییدشده‌ای در اطلاعات موجود ندارم."
+            next_question = "مایلید ابتدا قیمت بررسی شود یا دربارهٔ مراحل هماهنگی دمو صحبت کنیم؟"
         elif price:
             acknowledgement = "ممنون از پرسش درباره قیمت. در اطلاعات موجود قیمت تأییدشده‌ای ندارم."
             next_question = "مایلید گزینه‌های قیمت بررسی شود؟"
         elif demo:
-            acknowledgement = "ممنون از درخواست دمو. هنوز زمانی برای دمو تأیید نشده است."
-            next_question = "مایلید امکان هماهنگی دمو بررسی شود؟"
+            acknowledgement = "ممنون از درخواست دمو."
+            next_question = "برای گفتگو دربارهٔ دمو چه زمانی را ترجیح می‌دهید؟"
     if price and pricing_field:
         acknowledgement = (
             "Thanks for asking about pricing. The supplied pricing information is quoted below."
             if language == "en" else "ممنون از پرسش درباره قیمت. اطلاعات قیمت موجود در ادامه نقل شده است.")
         if demo:
-            acknowledgement += (" A demo appointment has not been confirmed." if language == "en"
-                                else " هنوز زمانی برای دمو تأیید نشده است.")
+            acknowledgement += (" Thanks for requesting a demo as well." if language == "en"
+                                else " ممنون از درخواست دمو هم.")
     # Retain an exact customer quote rather than turning company size into an
     # assertion about product suitability or account terms.
     size = None

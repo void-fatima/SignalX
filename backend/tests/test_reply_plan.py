@@ -40,7 +40,7 @@ def test_combined_price_demo_and_company_size():
     assert plan.requests[:2] == ("pricing", "demo")
     assert plan.customer_size_quote == "20 employees"
     assert "verified pricing" in plan.acknowledgement
-    assert "whether a demo can be arranged" in plan.next_question
+    assert "next steps for a demo" in plan.next_question
     assert "$" not in plan.acknowledgement and "booked" not in plan.acknowledgement
 
 
@@ -75,7 +75,8 @@ def test_verified_pricing_is_not_called_unknown():
     plan = plan_reply(item, qualification())
     assert plan.pricing_field == "description"
     assert "quoted below" in plan.acknowledgement
-    assert "appointment has not been confirmed" in plan.acknowledgement
+    assert "Thanks for requesting a demo" in plan.acknowledgement
+    assert "appointment" not in plan.acknowledgement
 
 
 def test_community_price_is_not_product_price_authority():
