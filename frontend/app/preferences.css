@@ -1,9 +1,12 @@
 /* Preferences change the existing token palette; page structure stays shared. */
-:root[data-theme="light"] { color-scheme: light; --ink: #f4f3fa; --surface: #fff; --surface-raised: #eeedf6; --line: #cdd0e0; --text: #1c2333; --muted: #605b78; --violet: #7039be; --mint: #08765b; --amber: #8c5708; }
+:root[data-theme="light"] { color-scheme: light; --ink: #f4f3fa; --surface: #fff; --surface-raised: #eeedf6; --line: #cdd0e0; --text: #1c2333; --muted: #605b78; --violet: #7039be; --mint: #08765b; --amber: #8c5708; --control-surface: #fff; --control-border: #c8cbd9; --control-hover-border: #9d87c0; --control-focus: #7540c6; --control-grip: #a49ab5; --panel-border: #d8d9e5; --panel-shadow: 0 12px 30px #24183b0d; }
+:root[data-theme="light"] textarea { scrollbar-color: #aaa0bf #eeedf6; }
+:root[data-theme="light"] ::-webkit-scrollbar-thumb { background: #aaa0bf; background-clip: padding-box; }
+:root[data-theme="light"] ::-webkit-scrollbar-thumb:hover { background: #817397; background-clip: padding-box; }
 :root[data-theme="light"] :is(.sidebar, .topbar, .workspace-picker-menu, .sidebar-utility p, input, textarea, select, .topbar-search, .queue-search, .workflow-table-scroll th, .secondary-button, .overview-metrics, .queue-panel, .conversation-panel, .reply-panel, .run-metrics, .signal-card, .viewport-dialog) { background: var(--surface); color: var(--text); }
 :root[data-theme="light"] :is(.badge, .text-action, .context-link, .evidence-link, .settings-reset, .generate-reply, .reply-expand-link, a:not(.button)) { color: #7138ac; }
 :root[data-theme="light"] :is(.sidebar nav a, .sidebar-settings) { color: var(--muted); }
-:root[data-theme="light"] :is(.sidebar nav a[aria-current], .sidebar-settings[aria-current], .queue-tabs button[aria-pressed="true"], .density-options input:checked + span) { color: #4c2479; background: #e6d9fb; }
+:root[data-theme="light"] :is(.sidebar nav a[aria-current], .sidebar-settings[aria-current], .queue-tabs button[aria-pressed="true"], .density-options input:checked + span) { color: #4c2479; background-color: #e6d9fb; }
 :root[data-theme="light"] :is(.queue-row, .queue-preview, .queue-group-title, .signal-card-bottom, .signal-card-score > span > span, .dialog-score-value span, .breakdown-row, .breakdown-caption, .workflow-warning p, .preferences-error, .reply-feedback button) { color: var(--text); }
 :root[data-theme="light"] .queue-row.is-selected { background: #f1e7ff; }
 :root[data-theme="light"] :is(.intent-tags > span, .count-pill, .escape-hint, .queue-tabs button span, .evidence-number, .score-meter > span, .signal-track, .topbar-search kbd) { background: var(--surface-raised); color: var(--muted); }
@@ -15,6 +18,9 @@
 :root[data-theme="light"] :is(.product-editor h2, .product-field label, .product-preview p, .product-preview li, .product-preview footer, .product-preview .eyebrow, .product-guidance p, .field-hint, .auth-brand-content p, .auth-eyebrow, .auth-subtitle, .auth-input > svg, .auth-input input::placeholder, .auth-switch, .auth-footer, .auth-hint, .password-toggle, .review-original h3, .review-context h3, .validation-success p, .feedback-sample p) { color: var(--muted); }
 :root[data-theme="light"] :is(.workflow-error, .error-message, .field-error, .auth-feedback:not(.success), .product-error, .preferences-error) { color: #a12947; }
 :root[data-theme="light"] :is(.settings-section-title > span, .dialog-heading h2 svg, .signal-card-title > svg) { color: var(--violet); }
+:root[data-theme="light"] .session-boundary { border-color: var(--line); background: radial-gradient(ellipse at 50% 0, #7138fc0d, transparent 58%), linear-gradient(145deg, #fff, #f6f4fb); box-shadow: 0 20px 55px #24183b12; }
+:root[data-theme="light"] .session-demo-link { border-color: var(--line); background: var(--surface-raised); color: var(--text); }
+:root[data-theme="light"] .session-demo-link:hover { border-color: #9b72d1; background: #f0e8fb; }
 :root[data-theme="light"] .feedback-choices button[aria-pressed="true"] { color: var(--mint); }
 :root[data-theme="light"] :is(.fit-check, .analysis-stages .done > span) { color: white; }
 :root[data-theme="light"] .saved-count strong { color: var(--muted); background: var(--surface-raised); }
@@ -27,3 +33,6 @@
 :root[data-density="compact"] .context-message { padding-block: 7px; }
 :root[data-message-direction="ltr"] :is(.source-quote, .reply-text, .context-message p, .dialog-evidence blockquote) { text-align: left; }
 :root[data-message-direction="rtl"] :is(.source-quote, .reply-text, .context-message p, .dialog-evidence blockquote) { text-align: right; }
+:root[data-theme="light"] :is(.topbar-search input, .queue-search input, .auth-input input) { background: transparent; border: 0; color: var(--text); }
+:root[data-theme="light"] :is(.product-field input, .product-field textarea, .settings-row select, .queue-filters input, .queue-filters select, .import-fields input:not(.csv-file-input), .import-fields select, .reply-text, .reply-feedback textarea, .demo-state-controls select) { border-color: var(--control-border); background: var(--control-surface); color: var(--text); }
+:root[data-theme="light"] :is(.product-preview, .product-guidance) { border-color: var(--panel-border); }

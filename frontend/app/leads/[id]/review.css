@@ -8,3 +8,20 @@
 .review-source .source-quote { margin: 26px 0 20px; min-height: 150px; font-size: 17px; line-height: 1.9; padding: 22px 18px; }.review-source .evidence-number { display: none; }.review-context { border-top: 1px solid var(--line); margin: 24px 0 28px; }.review-context > p { display: flex; gap: 18px; color: var(--muted); font-size: 14px; align-items: flex-start; }.review-context > p > svg { flex-shrink: 0; }.review-source .signal-card { width: 100%; margin: 0 0 26px; padding: 20px; }.review-source .signal-card-score > span > b { font-size: 56px; }.review-source .signal-card-bottom { font-size: 13px; }.review-source-footer { display: flex; gap: 12px; align-items: center; border-top: 1px solid var(--line); padding-top: 22px; color: var(--muted); font-size: 11px; flex-wrap: wrap; }.review-source-footer > svg { flex-shrink: 0; }.review-source-footer > div { flex: 1; min-width: 0; }.review-source-footer small { display: block; margin-bottom: 6px; }.review-source-footer strong { display: block; font-weight: 400; overflow-wrap: anywhere; }.review-editor-column { display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: 15px; min-width: 0; }.review-editor-column .reply-panel { padding: 23px 22px; border-color: var(--line); }.review-editor-column .reply-text { min-height: 200px; font-size: 16px; border-color: var(--line); padding: 24px 18px; }.review-editor-column .reply-actions { border: 0; padding: 0; margin-top: 17px; }.review-editor-column .reply-notice { text-align: right; font-size: 11px; }
 @media (max-width: 1150px) { .review-grid { grid-template-columns: minmax(0, 1fr); }.review-editor-column .reply-text { min-height: 200px; }.review-title p { font-size: 16px; } }
 @media (max-width: 550px) { .review-main { padding: 20px 16px; }.review-page { gap: 17px; }.review-source, .review-editor-column .reply-panel { padding: 18px 15px; }.review-identity .avatar { width: 48px; height: 48px; font-size: 25px; }.review-identity p { font-size: 11px; }.review-source .source-quote { padding-inline: 12px; font-size: 16px; }.review-editor-column .reply-text { font-size: 16px; }.review-source .signal-card { padding: 16px; } }
+
+/* Keep reply editing readable and use the same smooth panel treatment as the inbox. */
+.review-source, .reply-feedback, .review-editor-column .reply-panel {
+  border-color: var(--panel-border);
+  border-radius: 12px;
+  box-shadow: var(--panel-shadow);
+  transition: border-color 200ms ease, box-shadow 220ms ease, background-color 220ms ease;
+}
+.review-editor-column .reply-panel { border-color: #6e429f; }
+.review-editor-column .reply-text { font-size: 20px; border-color: #7041bc; }
+.review-source .source-quote { font-size: clamp(20px, 1.8vw, 28px); }
+.review-source .source-quote, .review-editor-column .reply-text, .feedback-choices button, .feedback-save button {
+  transition: color 180ms ease, background-color 200ms ease, border-color 200ms ease, box-shadow 220ms ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .review-source, .reply-feedback, .review-editor-column .reply-panel, .review-source .source-quote, .review-editor-column .reply-text, .feedback-choices button, .feedback-save button { transition: none; }
+}
