@@ -118,7 +118,7 @@ class PublicAPIProvider:
                 data=bytearray()
                 for chunk in response.iter_bytes():
                     data.extend(chunk)
-                    if len(data)>MAX_BODY_BYTES: raise DiscoveryError("source_response_too_large","Source response exceeded the bounded search budget.",502,1)
+                    if len(data)>MAX_BODY_BYTES: raise DiscoveryError("source_response_too_large","Source response exceeds the 2 MB search budget. Try a smaller job board or a more specific search; no retry was made.",502,1)
                 body = json.loads(data)
                 validate_no_credentials(data.decode("utf-8", errors="replace"))
                 validate_no_credentials(body)
@@ -146,7 +146,7 @@ class PublicAPIProvider:
                     raise DiscoveryError("source_invalid_output","Web result envelope is invalid.",502,1)
                 items=body.get("web",{}).get("results",[])
             elif self.source == "greenhouse":
-                body=self._request(client,"GET",f"https://boards-api.greenhouse.io/v1/boards/{inputs.board_slug}/jobs",params={"content":"true"})
+                body=self._request(client,"GET",f"https://boards-api.greenhouse.io/v1/boards/{inputs.board_slug}/jobs",params={"content":"false"})
                 items=body.get("jobs") if isinstance(body,dict) else None
             elif self.source == "lever":
                 items=self._request(client,"GET",f"https://api.lever.co/v0/postings/{inputs.board_slug}",params={"mode":"json","limit":20,"skip":0},headers={"Accept":"application/json"})
@@ -156,7 +156,7 @@ class PublicAPIProvider:
             else: raise DiscoveryError("unsupported_source","Unsupported discovery source.",422,0)
         if not isinstance(items,list): raise DiscoveryError("source_invalid_output","Source result list is invalid.",502,1)
         results=[]; seen=set()
-        for item in items[:500]:
+        for item in items:
             if not isinstance(item,dict): continue
             if self.source == "places":
                 source_id=item.get("id")
@@ -171,7 +171,9 @@ class PublicAPIProvider:
                 source_id=str(item.get("id", "")); title=plain(item.get("title") if self.source == "greenhouse" else item.get("text"),200)
                 title=f"{inputs.board_slug}: {title}"
                 url=item.get("absolute_url") if self.source == "greenhouse" else item.get("hostedUrl")
-                excerpt=plain(item.get("content") if self.source == "greenhouse" else item.get("descriptionPlain"))
+                # Greenhouse listings deliberately omit full descriptions. Retain
+                # actual listing evidence, not invented description text.
+                excerpt=plain(item.get("title") if self.source == "greenhouse" else item.get("descriptionPlain"))
                 loc=item.get("location") if self.source == "greenhouse" else item.get("categories")
                 location=plain(loc.get("name" if self.source == "greenhouse" else "location"),200) if isinstance(loc,dict) else ""
                 searchable=(title+" "+excerpt).casefold()
