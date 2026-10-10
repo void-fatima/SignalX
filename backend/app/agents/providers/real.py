@@ -20,6 +20,7 @@ from app.agents.qualification import validate_qualification_result
 from app.agents.screening import screen
 from app.agents.scoring import screening_decision_reason
 from app.agents.reply_draft import ReplyDraft, render_draft
+from app.agents.reply_plan import ReplyLanguage, plan_reply
 
 
 def _legacy_result(result: QualificationResult) -> Qualification:
@@ -93,11 +94,12 @@ class RealProvider(BaseProvider):
             outcome="unknown")
 
     def generate_reply_structured(self, inputs: AgentInput, qualification: QualificationResult,
-                                  decision: Decision) -> tuple[str, list[UsageInfo]]:
+                                  decision: Decision, *, language: ReplyLanguage | None = None) -> tuple[str, list[UsageInfo]]:
         """Explicit drafting only. The public reply entry point owns eligibility."""
         if inputs.metadata.provider_mode != "real" or decision == Decision.IGNORE:
             raise ProviderError("Real reply requires real mode and a review/respond lead", [])
-        messages = build_reply_messages(inputs, qualification, decision)
+        plan = plan_reply(inputs, qualification, language)
+        messages = build_reply_messages(inputs, qualification, decision, plan=plan)
         records: list[UsageInfo] = []
         manager = (nullcontext(self._client) if self._client is not None else
                    httpx.Client(timeout=self.config.timeout_seconds, follow_redirects=False))
@@ -107,7 +109,7 @@ class RealProvider(BaseProvider):
                 if attempt == 2:
                     request_messages.insert(1, {"role": "developer", "content":
                         "The previous draft failed local schema, language or grounding checks. "
-                        "Regenerate using only exact Product facts and one cautious question. "
+                        "Regenerate using the exact required acknowledgement, whole Product facts and one safe next-step question. "
                         "Omit uncertain claims. Never include scores, decisions or approval."})
                 started = perf_counter()
                 try:
@@ -158,7 +160,7 @@ class RealProvider(BaseProvider):
                     if body.get("status") != "completed" or len(texts) != 1:
                         raise ValueError("missing or ambiguous structured reply")
                     draft = ReplyDraft.model_validate(json.loads(texts[0]), strict=True)
-                    text = render_draft(draft, inputs.product, inputs.message.content)
+                    text = render_draft(draft, inputs.product, inputs.message.content, plan=plan)
                     if self._api_key.get_secret_value() in text:
                         raise ValueError("secret in reply output")
                 except (ValidationError, ValueError, TypeError, KeyError, AttributeError, RecursionError, ProviderError):
