@@ -1,4 +1,6 @@
 """Backend mapping, validation and persistence for the shared Agent contract."""
+from collections.abc import Iterable
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -11,9 +13,11 @@ from app.agents.contracts import (
     ProductInput,
     RunConfig,
     TargetMessage,
+    UsageEvent,
+    UsageInfo,
 )
 from app.agents.context import select_context
-from app.models import Analysis, Usage
+from app.models import Analysis, AnalysisRun, Usage
 
 
 def build_agent_input(
@@ -89,6 +93,55 @@ def validate_agent_output(inputs: AgentInput, raw_output: AgentOutput | dict) ->
     return output
 
 
+def project_intent(intent: str | None) -> str | None:
+    """Bound only the legacy VARCHAR projection; structured output stays intact.
+
+    Python slices Unicode characters, matching PostgreSQL VARCHAR character
+    limits rather than UTF-8 byte lengths.
+    """
+    limit = Analysis.__table__.c.intent.type.length
+    return intent[:limit] if intent is not None else None
+
+
+def persist_analysis_usage(
+    session: Session, *, run_id: str, message_id: str, run_attempt_no: int,
+    events: Iterable[UsageInfo | UsageEvent | dict], analysis_id: str | None = None,
+) -> list[Usage]:
+    """Record each analysis provider attempt once, optionally before its result.
+
+    The run-row lock serializes late-worker accounting as well as normal writes.
+    Stage/attempt identify calls within a message's run attempt. Explicit run
+    retries have a new run_attempt_no and therefore retain their actual new calls.
+    Suggested-reply regeneration uses its existing separate accounting path.
+    The caller owns commit/rollback; nullable analysis_id permits independent
+    accounting even when an Analysis cannot be inserted.
+    """
+    session.scalar(select(AnalysisRun.id).where(AnalysisRun.id == run_id).with_for_update())
+    existing = session.scalars(select(Usage).where(
+        Usage.run_id == run_id, Usage.message_id == message_id,
+        Usage.run_attempt_no == run_attempt_no,
+    )).all()
+    by_attempt = {(row.stage, row.attempt_no): row for row in existing}
+    rows = []
+    for event in events:
+        values = event.model_dump() if hasattr(event, "model_dump") else dict(event)
+        if "estimated_cost" in values:
+            values["cost_usd"] = values.pop("estimated_cost")
+        values.pop("request_id", None)
+        values.pop("run_attempt_no", None)
+        key = (values["stage"], values.get("attempt_no", 1))
+        row = by_attempt.get(key)
+        if row is None:
+            row = Usage(run_id=run_id, message_id=message_id, analysis_id=analysis_id,
+                        run_attempt_no=run_attempt_no, **values)
+            session.add(row)
+            by_attempt[key] = row
+        elif analysis_id is not None and row.analysis_id is None:
+            row.analysis_id = analysis_id
+        rows.append(row)
+    return rows
+
+
 def persist_agent_output(
     session: Session,
     *,
@@ -100,6 +153,8 @@ def persist_agent_output(
 ) -> Analysis:
     """Validate and persist the complete contract output plus API projection."""
     output = validate_agent_output(inputs, raw_output)
+    usage_rows = persist_analysis_usage(session, run_id=run_id, message_id=target_message_id,
+        run_attempt_no=run_attempt_no, events=output.usage)
     qualification = output.qualification
     scoring = output.scoring
     decision = scoring.decision.value.lower() if scoring else ("ignore" if not output.screening.is_candidate else None)
@@ -120,7 +175,7 @@ def persist_agent_output(
             if qualification
             else None
         ),
-        intent=qualification.intent if qualification else None,
+        intent=project_intent(qualification.intent) if qualification else None,
         need=qualification.need if qualification else None,
         # The Agent contract has no budget field; preserve the legacy API's
         # explicit unknown sentinel for qualified leads.
@@ -144,6 +199,9 @@ def persist_agent_output(
         analysis = Analysis(run_id=run_id, message_id=target_message_id, **values)
         session.add(analysis)
     elif analysis.status == "completed":
+        for event in usage_rows:
+            if event.analysis_id is None:
+                event.analysis_id = analysis.id
         return analysis
     else:
         # Retry the failed/missing message in place so analysis IDs, feedback,
@@ -151,24 +209,7 @@ def persist_agent_output(
         for name, value in values.items():
             setattr(analysis, name, value)
     session.flush()
-    for event in output.usage:
-        session.add(
-            Usage(
-                run_id=run_id,
-                run_attempt_no=run_attempt_no,
-                message_id=target_message_id,
-                analysis_id=analysis.id,
-                stage=event.stage,
-                attempt_no=event.attempt_no,
-                model=event.model,
-                provider_mode=event.provider_mode,
-                input_tokens=event.input_tokens,
-                output_tokens=event.output_tokens,
-                cost_usd=event.estimated_cost,
-                cost_status=event.cost_status,
-                price_version=event.price_version,
-                latency_ms=event.latency_ms,
-                outcome=event.outcome,
-            )
-        )
+    for event in usage_rows:
+        if event.analysis_id is None:
+            event.analysis_id = analysis.id
     return analysis
